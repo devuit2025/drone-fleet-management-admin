@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { Sidebar } from '../sidebar/Sidebar';
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
     return (

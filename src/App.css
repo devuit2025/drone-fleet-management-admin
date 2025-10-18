@@ -1,14 +1,28 @@
-html, body, #root {
-  height: 100%;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+
+html,
+body,
+#root {
+    height: 100%;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+    width: 8px;
+    height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground));
-  border-radius: 9999px;
+    background: hsl(var(--muted-foreground));
+    border-radius: 9999px;
 }
+
+html,
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+.font-inter {
+    font-family: 'Inter', sans-serif;
+  }
