@@ -1,4 +1,5 @@
 // Dashboard.tsx
+import { DashboardSummaryCards } from '@/components/dashboard/DashboardSummaryCards';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
@@ -8,19 +9,7 @@ export default function Dashboard() {
             <h1 className="text-2xl font-semibold tracking-tight">Dashboard Overview</h1>
             <Separator />
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {['Users', 'Orders', 'Revenue', 'Performance'].map(title => (
-                    <Card key={title}>
-                        <CardHeader>
-                            <CardTitle>{title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-3xl font-bold">1,234</p>
-                            <p className="text-xs text-muted-foreground">+12% from last month</p>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+            <DashboardSummaryCards />
 
             <Card>
                 <CardHeader>

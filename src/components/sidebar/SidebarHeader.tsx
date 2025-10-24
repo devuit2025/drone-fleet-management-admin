@@ -1,24 +1,29 @@
-// src/components/sidebar/SidebarHeader.tsx
-import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import { Drone } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useAdminLayout } from '@/contexts/AdminLayoutContext';
 
-interface SidebarHeaderProps {
-    collapsed: boolean;
-    onToggle: () => void;
-}
+interface SidebarHeaderProps {}
 
-export function SidebarHeader({ collapsed, onToggle }: SidebarHeaderProps) {
+export function SidebarHeader({}: SidebarHeaderProps) {
+    const { collapsed } = useAdminLayout();
+
     return (
-        <div className="flex items-center justify-between p-4 ">
-            {!collapsed && <h1 className="text-lg font-semibold tracking-tight">Admin Panel</h1>}
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggle}
-                className="text-muted-foreground hover:text-foreground"
-            >
-                <Menu className="h-5 w-5" />
-            </Button>
+        <div className={cn('flex items-center justify-between px-4 py-3 border-b bg-background')}>
+            {/* Icon + Title */}
+            <div className="flex items-center space-x-3">
+                <Drone
+                    className={cn(
+                        'transition-all text-blue-600 dark:text-blue-400',
+                        collapsed ? 'h-6 w-6' : 'h-10 w-10',
+                    )}
+                />
+                {!collapsed && (
+                    <div className="flex flex-col leading-tight">
+                        <span className="font-semibold text-lg text-600">DroneFleet</span>
+                        <span className="text-xs text-muted-foreground">Fleet Management</span>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
