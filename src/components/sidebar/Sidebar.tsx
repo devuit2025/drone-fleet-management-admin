@@ -37,7 +37,6 @@ export function Sidebar({ className }: SidebarProps) {
 
             {/* Sidebar Body */}
             <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-
                 {/* Dashboard */}
                 <SidebarItem
                     icon={<Home className="h-5 w-5" />}
