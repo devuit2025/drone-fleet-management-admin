@@ -1,11 +1,15 @@
 import './App.css';
-import Dashboard from '@/pages/Dashboard';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { Suspense } from 'react';
+import { useRoutes } from 'react-router-dom';
+import { routes } from './routes';
 
 function App() {
+    const routing = useRoutes(routes);
+
     return (
         <DashboardLayout>
-            <Dashboard />
+            <Suspense fallback={<div>Loading...</div>}>{routing}</Suspense>
         </DashboardLayout>
     );
 }

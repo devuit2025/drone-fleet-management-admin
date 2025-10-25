@@ -1,7 +1,9 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 
 interface AdminLayoutContextType {
+    isActive: (path: string) => boolean;
     collapsed: boolean;
     toggleCollapse: () => void;
 }
@@ -10,14 +12,20 @@ const AdminLayoutContext = createContext<AdminLayoutContextType | undefined>(und
 
 export function AdminLayoutProvider({ children }: { children: ReactNode }) {
     const [collapsed, setCollapsed] = useState(false);
+    const location = useLocation();
+    const isActive = (path: string) => {
+        // Customize match rule here (startsWith, equals, regex, etc.)
+        return location.pathname === path;
+    };
 
     const toggleCollapse = () => setCollapsed(prev => !prev);
 
-    return (
-        <AdminLayoutContext.Provider value={{ collapsed, toggleCollapse }}>
-            {children}
-        </AdminLayoutContext.Provider>
+    const value = useMemo(
+        () => ({ collapsed, toggleCollapse, isActive }),
+        [collapsed, location.pathname],
     );
+
+    return <AdminLayoutContext.Provider value={value}>{children}</AdminLayoutContext.Provider>;
 }
 
 export function useAdminLayout() {
