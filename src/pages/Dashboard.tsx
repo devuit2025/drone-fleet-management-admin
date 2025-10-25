@@ -1,9 +1,13 @@
-// Dashboard.tsx
+import { useTodos } from '@/api/useTodos';
 import { DashboardSummaryCards } from '@/components/dashboard/DashboardSummaryCards';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useStore } from '@/stores/useStore';
 
 export default function Dashboard() {
+    const { count, increase } = useStore();
+    const { data, isLoading, error } = useTodos();
+
     return (
         <div className="space-y-6">
             <h1 className="text-2xl font-semibold tracking-tight">Dashboard Overview</h1>
@@ -11,6 +15,26 @@ export default function Dashboard() {
 
             <DashboardSummaryCards />
 
+            <Card>
+                <div>
+                    <p>Count: {count}</p>
+                    <button onClick={increase}>Increase</button>
+                </div>
+            </Card>
+
+           <Card>
+            {isLoading ? (
+                <p>Loading...</p>
+            ) : error ? (
+                <p>Error occurred</p>
+            ) : (
+                <ul>
+                {data.map((todo: any) => (
+                    <li key={todo.id}>{todo.title}</li>
+                ))}
+                </ul>
+            )}
+            </Card>
             <Card>
                 <CardHeader>
                     <CardTitle>Recent Activity</CardTitle>
