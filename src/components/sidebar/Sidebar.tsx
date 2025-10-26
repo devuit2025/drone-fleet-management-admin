@@ -46,6 +46,18 @@ export function Sidebar({ className }: SidebarProps) {
                     active
                 />
 
+                {/* Real-Time Monitoring */}
+                <SidebarGroup
+                    icon={<Activity className="h-5 w-5" />}
+                    label="Giám sát Thời gian thực"
+                    collapsed={collapsed}
+                    items={[
+                        { label: 'Bản đồ trực tiếp', href: '/monitoring/map' },
+                        { label: 'Bảng Telemetry', href: '/monitoring/telemetry' },
+                        { label: 'Bảng Cảnh báo', href: '/monitoring/alerts' },
+                    ]}
+                />
+
                 {/* Drone Management */}
                 <SidebarGroup
                     icon={<Plane className="h-5 w-5" />}
@@ -53,8 +65,10 @@ export function Sidebar({ className }: SidebarProps) {
                     collapsed={collapsed}
                     items={[
                         { label: 'Danh sách Drone', href: '/drones' },
-                        { label: 'Chi tiết Drone', href: '/drones/details' },
-                        { label: 'Nhật ký bảo trì', href: '/drones/maintenance' },
+                        { label: 'Tạo Drone', href: '/drones/create' },
+                        { label: 'Thương hiệu', href: '/branchs' },
+                        { label: 'Phân loại', href: '/categories' },
+                        // { label: 'Nhật ký bảo trì', href: '/drones/maintenance' },
                     ]}
                 />
 
@@ -79,18 +93,6 @@ export function Sidebar({ className }: SidebarProps) {
                         { label: 'Danh sách Nhiệm vụ', href: '/missions' },
                         { label: 'Tạo Nhiệm vụ mới', href: '/missions/create' },
                         { label: 'Chi tiết Nhiệm vụ', href: '/missions/details' },
-                    ]}
-                />
-
-                {/* Real-Time Monitoring */}
-                <SidebarGroup
-                    icon={<Activity className="h-5 w-5" />}
-                    label="Giám sát Thời gian thực"
-                    collapsed={collapsed}
-                    items={[
-                        { label: 'Bản đồ trực tiếp', href: '/monitoring/map' },
-                        { label: 'Bảng Telemetry', href: '/monitoring/telemetry' },
-                        { label: 'Bảng Cảnh báo', href: '/monitoring/alerts' },
                     ]}
                 />
 

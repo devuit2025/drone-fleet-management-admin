@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DataTable } from '@/components/table/DataTable';
 import type { ColumnDef } from '@/components/table/types';
+import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
 
 interface Drone {
     id: number;
@@ -85,6 +86,8 @@ export default function DroneList() {
 
     return (
         <div className="">
+            <AutoBreadcrumb />
+
             <DataTable
                 columns={columns}
                 data={data}

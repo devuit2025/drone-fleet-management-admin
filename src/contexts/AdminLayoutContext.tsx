@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 
 interface AdminLayoutContextType {
     isActive: (path: string) => boolean;
+    labelMap: Object;
     collapsed: boolean;
     toggleCollapse: () => void;
 }
@@ -20,8 +21,16 @@ export function AdminLayoutProvider({ children }: { children: ReactNode }) {
 
     const toggleCollapse = () => setCollapsed(prev => !prev);
 
+    const labelMap = {
+        projects: "Projects",
+        drone: "Drone Control",
+        settings: "Settings",
+        users: "User Management",
+        dashboard: "Dashboard",
+    };
+    
     const value = useMemo(
-        () => ({ collapsed, toggleCollapse, isActive }),
+        () => ({ collapsed, toggleCollapse, isActive, labelMap, }),
         [collapsed, location.pathname],
     );
 

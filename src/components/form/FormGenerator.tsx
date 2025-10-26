@@ -58,7 +58,7 @@ export function FormGenerator<T extends z.ZodTypeAny>({
     });
 
     return (
-        <Card className="w-full sm:max-w-md">
+        <Card className="w-full ">
             <CardHeader>
                 {title && <CardTitle>{title}</CardTitle>}
                 {description && <CardDescription>{description}</CardDescription>}
