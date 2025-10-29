@@ -1,4 +1,3 @@
-// src/store/useStore.ts
 import { create } from 'zustand';
 
 interface AppState {

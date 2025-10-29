@@ -22,15 +22,15 @@ export function AdminLayoutProvider({ children }: { children: ReactNode }) {
     const toggleCollapse = () => setCollapsed(prev => !prev);
 
     const labelMap = {
-        projects: "Projects",
-        drone: "Drone Control",
-        settings: "Settings",
-        users: "User Management",
-        dashboard: "Dashboard",
+        projects: 'Projects',
+        drone: 'Drone Control',
+        settings: 'Settings',
+        users: 'User Management',
+        dashboard: 'Dashboard',
     };
-    
+
     const value = useMemo(
-        () => ({ collapsed, toggleCollapse, isActive, labelMap, }),
+        () => ({ collapsed, toggleCollapse, isActive, labelMap }),
         [collapsed, location.pathname],
     );
 

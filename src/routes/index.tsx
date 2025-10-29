@@ -1,3 +1,7 @@
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { PrivateRoute } from '@/components/navigation/PrivateRoute';
+import { PublicRoute } from '@/components/navigation/PublicRoute';
+import Login from '@/pages/auth/Login';
 import DroneCategoryList from '@/pages/models/drone_category/DroneCategoryList';
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
@@ -10,37 +14,64 @@ const DroneBranchList = lazy(() => import('../pages/models/drone_branch/DroneBra
 const MonitoringMap = lazy(() => import('../pages/monitoring/MonitoringMap'));
 
 export const routes: RouteObject[] = [
+    // Public route (no layout)
+    {
+        path: '/login',
+        element: (
+            <PublicRoute>
+                <Login />
+            </PublicRoute>
+        ),
+    },
+
+    // Protected section with Dashboard layout
     {
         path: '/',
-        element: <Dashboard />,
+        element: (
+            <PrivateRoute>
+                <DashboardLayout />
+            </PrivateRoute>
+        ),
+        children: [
+            { index: true, element: <Dashboard /> },
+            { path: 'drones', element: <DroneList /> },
+            // add more dashboard routes here
+        ],
     },
-    {
-        path: '/users/create',
-        element: <UserCreate />,
-    },
-    {
-        path: '/drones',
-        element: <DroneList />,
-    },
-    {
-        path: '/drones/create',
-        element: <DroneCreate />,
-    },
-    {
-        path: '/branchs',
-        element: <DroneBranchList />,
-    },
-    {
-        path: '/categories',
-        element: <DroneCategoryList />,
-    },
-    {
-        path: '/monitoring/map',
-        element: <MonitoringMap />,
-    },
-    // {
-    //     path: '/monitoring/map-view',
-    //     element: <MapView />,
-    // },
-    
 ];
+
+// export const routes: RouteObject[] = [
+//     {
+//         path: '/',
+//         element: <Dashboard />,
+//     },
+//     {
+//         path: '/users/create',
+//         element: <UserCreate />,
+//     },
+//     {
+//         path: '/drones',
+//         element: <DroneList />,
+//     },
+//     {
+//         path: '/drones/create',
+//         element: <DroneCreate />,
+//     },
+//     {
+//         path: '/branchs',
+//         element: <DroneBranchList />,
+//     },
+//     {
+//         path: '/categories',
+//         element: <DroneCategoryList />,
+//     },
+//     {
+//         path: '/monitoring/map',
+//         element: <MonitoringMap />,
+//     },
+//     // {
+//     //     path: '/monitoring/map-view',
+//     //     element: <MapView />,
+//     // },
+
+// ];

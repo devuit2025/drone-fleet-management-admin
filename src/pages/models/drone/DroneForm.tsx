@@ -7,10 +7,7 @@ export const droneModelSchema = z.object({
         .string()
         .min(3, 'Model name must be at least 3 characters')
         .max(50, 'Model name cannot exceed 50 characters'),
-    brand_id: z
-        .string()
-        .min(1, 'Brand is required')
-        .describe('Reference to drone brand ID'),
+    brand_id: z.string().min(1, 'Brand is required').describe('Reference to drone brand ID'),
     category_id: z
         .string()
         .min(1, 'Category is required')
@@ -21,22 +18,11 @@ export const droneModelSchema = z.object({
             invalid_type_error: 'Weight must be a number',
         })
         .positive('Weight must be positive'),
-    max_payload: z
-        .number()
-        .min(0, 'Payload must be at least 0 kg'),
-    battery_capacity: z
-        .number()
-        .min(1, 'Battery capacity must be at least 1 mAh'),
-    max_speed: z
-        .number()
-        .min(1, 'Speed must be at least 1 km/h'),
-    flight_time: z
-        .number()
-        .min(1, 'Flight time must be at least 1 minute'),
-    description: z
-        .string()
-        .max(500, 'Description cannot exceed 500 characters')
-        .optional(),
+    max_payload: z.number().min(0, 'Payload must be at least 0 kg'),
+    battery_capacity: z.number().min(1, 'Battery capacity must be at least 1 mAh'),
+    max_speed: z.number().min(1, 'Speed must be at least 1 km/h'),
+    flight_time: z.number().min(1, 'Flight time must be at least 1 minute'),
+    description: z.string().max(500, 'Description cannot exceed 500 characters').optional(),
 });
 
 // ---------- Default Values ----------
@@ -108,10 +94,7 @@ export const droneModelFields = [
     },
 ];
 
-
-
 export default function DroneForm() {
-    
     return (
         <FormGenerator
             schema={droneModelSchema}
@@ -126,5 +109,3 @@ export default function DroneForm() {
         />
     );
 }
-
-
