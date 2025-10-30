@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DataTable } from '@/components/table/DataTable';
 import type { ColumnDef } from '@/components/table/types';
 import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
+import { getDrones } from '@/api/models/drone/droneEndpoint';
 
 interface Drone {
     id: number;
@@ -13,6 +14,7 @@ interface Drone {
 
 export default function DroneList() {
     const [data, setData] = useState<Drone[]>([]);
+    const [all, setAll] = useState<Drone[]>([]);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -50,39 +52,55 @@ export default function DroneList() {
         { key: 'lastMission', header: 'Last Mission' },
     ];
 
-    // 🔧 Fake async data fetcher
-    const fetchData = async () => {
+    // Prevent duplicate in-flight requests (e.g., React StrictMode double-invoke in dev)
+    const inFlightRef = useRef(false);
+
+    // Fetch from API and map to table rows
+    const fetchData = async (params?: Record<string, any>) => {
+        const queryParams = (params ? `?${new URLSearchParams(params).toString()}` : '');
+        console.log('queryParams', queryParams);
+        if (inFlightRef.current) return;
+        inFlightRef.current = true;
         setLoading(true);
+        try {
+            const res = await getDrones(params);
+            const all = Array.isArray(res.data) ? res.data : [];
 
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 600));
+            // Map API drones to table row model
+            const mapped: Drone[] = all.map((d: any) => ({
+                id: d.id,
+                name: d.name,
+                status: d.status,
+                // No battery percentage in API; using a stable pseudo value from id as placeholder
+                battery: Math.abs(((d.id ?? 0) * 37) % 100),
+                lastMission: (d.lastMaintenance || d.updatedAt || d.createdAt || new Date().toISOString()).slice(0, 10),
+            }));
 
-        // Generate fake drone data
-        const totalItems = 57;
+            setAll(mapped);
+            setTotal(mapped.length);
+        } catch (err) {
+            console.error('Failed to load drones', err);
+            setData([]);
+            setTotal(0);
+        } finally {
+            setLoading(false);
+            inFlightRef.current = false;
+        }
+    };
+
+    // Fetch once on mount
+    useEffect(() => {
+        fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Slice locally on page change or when data arrives
+    useEffect(() => {
         const pageSize = 10;
         const start = (page - 1) * pageSize;
         const end = start + pageSize;
-
-        const allDrones: Drone[] = Array.from({ length: totalItems }, (_, i) => ({
-            id: i + 1,
-            name: `Drone ${i + 1}`,
-            status: ['Active', 'Idle', 'Charging', 'Maintenance'][Math.floor(Math.random() * 4)],
-            battery: Math.floor(Math.random() * 100),
-            lastMission: new Date(
-                Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 30,
-            ).toLocaleDateString(),
-        }));
-
-        const pagedData = allDrones.slice(start, end);
-
-        setData(pagedData);
-        setTotal(totalItems);
-        setLoading(false);
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, [page]);
+        setData(all.slice(start, end));
+    }, [page, all]);
 
     return (
         <div className="">
@@ -96,6 +114,10 @@ export default function DroneList() {
                 pageSize={10}
                 loading={loading}
                 onPageChange={setPage}
+                onFilterChange={(filters) => {
+                    setPage(1);
+                    fetchData(filters);
+                }}
             />
         </div>
     );

@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DataTablePagination } from './DataTablePagination';
 import { DataTableToolbar } from './DataTableToolbar';
 import type { DataTableProps } from './types';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export function DataTable<T>({
     columns,
@@ -28,12 +29,23 @@ export function DataTable<T>({
     const [selectedRows, setSelectedRows] = useState<number[]>([]);
     const [visibleColumns, setVisibleColumns] = useState<string[]>(columns.map(c => c.key));
 
+    const debouncedSearch = useDebounce((newFilters: Record<string, string>) => handleSearch(newFilters), 500);
+
     // ---- Filter handling ----
-    const handleFilterChange = (key: string, value: string) => {
+    const handleFilterChange = (key: string, value: string, debounce: boolean = false) => {
         const newFilters = { ...filters, [key]: value };
         setFilters(newFilters);
-        onFilterChange?.(newFilters);
+        if (debounce) {
+            debouncedSearch(newFilters);
+        } else {
+            handleSearch(newFilters);
+        }
     };
+
+    const handleSearch = (newFilters: Record<string, string>) => {
+        // const newFilters = { ...filters, [key]: value };
+        onFilterChange?.(newFilters);
+    }
 
     // ---- Row selection handling ----
     const toggleRow = (index: number) => {
@@ -140,6 +152,7 @@ export function DataTable<T>({
                                                             handleFilterChange(
                                                                 String(col.key),
                                                                 e.target.value,
+                                                                true,
                                                             )
                                                         }
                                                         placeholder={`Filter ${col.header}`}

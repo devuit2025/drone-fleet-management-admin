@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,8 +30,25 @@ export function DataTableToolbar<T>({
 }: Props<T>) {
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [visibleColumns, setVisibleColumns] = useState<string[]>(columns.map(c => c.key));
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const handleChange = (value: string) => {
+    const handleChange = (value: string, debounce: boolean = false) => {
+        console.log('handleChange', value, debounce);
+
+        if (debounce) {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+
+            debounceRef.current = setTimeout(() => {
+                handleSearch(value);
+            }, 1000);
+        } else {
+            handleSearch(value);
+        }
+    };
+
+    const handleSearch = (value: string) => {
         const newFilters = { ...filters, global: value };
         setFilters(newFilters);
         onFilterChange?.(newFilters);
@@ -58,7 +75,7 @@ export function DataTableToolbar<T>({
                     className="pl-8 w-full sm:w-64"
                     placeholder="Search all columns..."
                     value={filters.global || ''}
-                    onChange={e => handleChange(e.target.value)}
+                    onChange={e => handleChange(e.target.value, true)}
                 />
             </div>
 
