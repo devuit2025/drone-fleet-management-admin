@@ -1,10 +1,10 @@
 // Header.tsx
-import { Bell, Menu, PanelLeft, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Bell, PanelLeft } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAdminLayout } from '@/contexts/AdminLayoutContext';
 import { cn } from '@/lib/utils';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
 
 export function Header() {
     const { toggleCollapse } = useAdminLayout();
@@ -44,18 +44,10 @@ export function Header() {
 
                 <div className="flex items-center gap-2 w-full max-w-xs border-l border-gray-200 dark:border-blue-800 pl-3">
                     {/* Label */}
-                    <a href="/dashboard/overview" className="text-sm font-medium">
-                        Search
-                    </a>
+                    <span className="text-sm font-medium shrink-0">Search</span>
 
-                    {/* Input with icon */}
-                    <div className="relative flex-1">
-                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none w-4 h-4" />
-                        <Input
-                            placeholder="Drones, missions,..."
-                            className="h-8 text-sm pl-7 pr-2 rounded-md"
-                        />
-                    </div>
+                    {/* Global Search Component */}
+                    <GlobalSearch />
                 </div>
             </div>
 

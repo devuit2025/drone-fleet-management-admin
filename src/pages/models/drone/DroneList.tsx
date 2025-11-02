@@ -77,8 +77,7 @@ export default function DroneList() {
                     ...filters,
                 };
                 const response = await getDrones(params);
-                const drones = Array.isArray(response.data) ? response.data : [];
-
+                const drones = Array.isArray(response) ? response : [];
                 // Get total from X-Total header
                 const totalHeader = response.headers?.['x-total'] || 
                                     response.headers?.['X-Total'];
@@ -112,7 +111,6 @@ export default function DroneList() {
     };
 
     const handleFilterChange = (newFilters: Record<string, string>) => {
-        console.log(newFilters);
         setFilters(newFilters);
         setPage(1); // Reset to first page when filters change
     };

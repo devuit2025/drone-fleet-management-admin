@@ -28,7 +28,6 @@ export function DataTable<T>({
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [selectedRows, setSelectedRows] = useState<number[]>([]);
     const [visibleColumns, setVisibleColumns] = useState<string[]>(columns.map(c => c.key));
-
     const debouncedSearch = useDebounce(
         (newFilters: Record<string, string>) => handleSearch(newFilters),
         500,
@@ -36,8 +35,6 @@ export function DataTable<T>({
 
     // ---- Filter handling ----
     const handleFilterChange = (key: string | Record<string, string>, value: string, debounce: boolean = false) => {
-        console.log('key', key);
-        console.log('value', value);
         let newFilters = null
         if (typeof key ==='object') {
             newFilters = { ...filters, ...key };

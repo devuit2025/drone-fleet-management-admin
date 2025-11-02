@@ -170,7 +170,8 @@ export const useDroneStore = create<DroneState>((set, get) => ({
     try {
       const response = await getStatus();
       // Backend returns string[] directly
-      const statuses = Array.isArray(response.data) ? response.data : [];
+      const statuses = Array.isArray(response) ? response : [];
+
       set({ statuses });
       return statuses;
     } catch (error) {
