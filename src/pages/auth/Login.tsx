@@ -3,17 +3,13 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { FormGenerator } from '@/components/form/FormGenerator';
-import { Drone } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useLogin } from '@/hooks/useAuth';
 
-// -------- Zod schema for login --------
 const loginSchema = z.object({
     email: z.string().email({ message: 'Địa chỉ email không hợp lệ' }),
     password: z.string().min(6, { message: 'Mật khẩu phải có ít nhất 6 ký tự' }),
 });
 
-// -------- Fields definition --------
 const loginFields = [
     {
         name: 'email',

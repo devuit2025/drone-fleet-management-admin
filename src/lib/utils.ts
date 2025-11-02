@@ -13,5 +13,5 @@ export function getByPath<T = any>(obj: any, path: string | string[], fallback?:
         if (cur == null) return fallback;
         cur = cur[p];
     }
-    return (cur === undefined ? fallback : (cur as T));
+    return cur === undefined ? fallback : (cur as T);
 }

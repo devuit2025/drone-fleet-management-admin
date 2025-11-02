@@ -27,7 +27,7 @@ type FormFieldSchema = {
     placeholder?: string;
     description?: string;
     type?: 'text' | 'textarea'; // can expand to select, checkbox, etc
-    inputType?: 'password';
+    inputType?: 'text' | 'password' | 'email' | 'number';
     maxLength?: number;
     minLength?: number;
 };
@@ -111,7 +111,7 @@ export function FormGenerator<T extends z.ZodTypeAny>({
                                                 <Input
                                                     id={field.name}
                                                     name={field.name}
-                                                    type={field.inputType}
+                                                    type={f.inputType}
                                                     value={field.state.value}
                                                     onBlur={field.handleBlur}
                                                     onChange={e =>

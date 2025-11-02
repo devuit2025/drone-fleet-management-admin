@@ -29,7 +29,10 @@ export function DataTable<T>({
     const [selectedRows, setSelectedRows] = useState<number[]>([]);
     const [visibleColumns, setVisibleColumns] = useState<string[]>(columns.map(c => c.key));
 
-    const debouncedSearch = useDebounce((newFilters: Record<string, string>) => handleSearch(newFilters), 500);
+    const debouncedSearch = useDebounce(
+        (newFilters: Record<string, string>) => handleSearch(newFilters),
+        500,
+    );
 
     // ---- Filter handling ----
     const handleFilterChange = (key: string | Record<string, string>, value: string, debounce: boolean = false) => {
@@ -52,7 +55,7 @@ export function DataTable<T>({
     const handleSearch = (newFilters: Record<string, string>) => {
         // const newFilters = { ...filters, [key]: value };
         onFilterChange?.(newFilters);
-    }
+    };
 
     // ---- Row selection handling ----
     const toggleRow = (index: number) => {
