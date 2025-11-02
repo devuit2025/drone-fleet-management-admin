@@ -32,8 +32,15 @@ export function DataTable<T>({
     const debouncedSearch = useDebounce((newFilters: Record<string, string>) => handleSearch(newFilters), 500);
 
     // ---- Filter handling ----
-    const handleFilterChange = (key: string, value: string, debounce: boolean = false) => {
-        const newFilters = { ...filters, [key]: value };
+    const handleFilterChange = (key: string | Record<string, string>, value: string, debounce: boolean = false) => {
+        console.log('key', key);
+        console.log('value', value);
+        let newFilters = null
+        if (typeof key ==='object') {
+            newFilters = { ...filters, ...key };
+        } else {
+            newFilters = { ...filters, [key]: value };
+        }
         setFilters(newFilters);
         if (debounce) {
             debouncedSearch(newFilters);

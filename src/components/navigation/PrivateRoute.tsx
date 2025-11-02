@@ -8,9 +8,8 @@ interface PrivateRouteProps {
 }
 
 export const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
-    const token = useAuthStore(s => s.token);
+    const token = useAuthStore(s => s.accessToken);
     const location = useLocation();
-
     if (!token) {
         // Redirect to login page and preserve the attempted path
         return <Navigate to="/login" state={{ from: location }} replace />;

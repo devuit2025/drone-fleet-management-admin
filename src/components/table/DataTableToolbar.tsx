@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Search, SlidersHorizontal, MoreVertical } from 'lucide-react';
 import type { ColumnDef } from './types';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Props<T> {
     columns: ColumnDef<T>[];
@@ -30,27 +31,22 @@ export function DataTableToolbar<T>({
 }: Props<T>) {
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [visibleColumns, setVisibleColumns] = useState<string[]>(columns.map(c => c.key));
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const debouncedSearch = useDebounce((newFilters: Record<string, string>) => handleSearch(newFilters), 500);
 
     const handleChange = (value: string, debounce: boolean = false) => {
-        console.log('handleChange', value, debounce);
-
+        console.log('value', value);
+        const newFilters = { ...filters, global: value };
+        console.log('newFilters', newFilters);
+        setFilters(newFilters);
         if (debounce) {
-            if (debounceRef.current) {
-                clearTimeout(debounceRef.current);
-            }
-
-            debounceRef.current = setTimeout(() => {
-                handleSearch(value);
-            }, 1000);
+            debouncedSearch(newFilters);
         } else {
-            handleSearch(value);
+            handleSearch(newFilters);
         }
     };
 
-    const handleSearch = (value: string) => {
-        const newFilters = { ...filters, global: value };
-        setFilters(newFilters);
+    const handleSearch = (newFilters: Record<string, string>) => {
         onFilterChange?.(newFilters);
     };
 

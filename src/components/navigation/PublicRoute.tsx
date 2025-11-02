@@ -8,7 +8,7 @@ interface PublicRouteProps {
 }
 
 export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
-    const token = useAuthStore(s => s.token);
+    const token = useAuthStore(s => s.accessToken);
     const location = useLocation();
 
     if (token) {
