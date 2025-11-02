@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { DataTable } from '@/components/table/DataTable';
 import type { ColumnDef } from '@/components/table/types';
 import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
-import { getDrones } from '@/api/models/drone/droneEndpoint';
+import { getDrones } from '@/api/models/drone/droneClient.ts';
 
 interface Drone {
     id: number;

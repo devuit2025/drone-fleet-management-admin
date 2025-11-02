@@ -1,16 +1,20 @@
-// src/api/models/droneQuery.ts
-import { useQuery } from '@tanstack/react-query';
-import { getDrones, getDroneById } from './droneEndpoint';
+// api/models/drone/droneQuery.ts
+import { DroneClient, type Drone, type DroneStatus } from './droneClient'
 
-export const useDronesQuery = () =>
-    useQuery({
-        queryKey: ['drones'],
-        queryFn: getDrones,
-    });
+export const droneQuery = {
+  async getAll(): Promise<Drone[]> {
+    return DroneClient.findAll()
+  },
 
-export const useDroneQuery = (id: number) =>
-    useQuery({
-        queryKey: ['drone', id],
-        queryFn: () => getDroneById(id),
-        enabled: !!id,
-    });
+  async getAvailable(): Promise<Drone[]> {
+    return DroneClient.findAvailable()
+  },
+
+  async getByStatus(status: DroneStatus): Promise<Drone[]> {
+    return DroneClient.findByStatus(status)
+  },
+
+  async getById(id: number): Promise<Drone> {
+    return DroneClient.findOne(id)
+  },
+}
