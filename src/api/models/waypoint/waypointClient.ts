@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from '@/api/axios';
 
 export interface Waypoint {
     id: number;
@@ -30,35 +30,23 @@ export interface UpdateWaypointDto {
 }
 
 export const WaypointClient = {
-    axios: axios.create({
-        baseURL: '/api/v1/waypoints',
-        withCredentials: true,
-    }),
-
     async create(data: CreateWaypointDto) {
-        const res = await this.axios.post<Waypoint>('/', data);
-        return res.data;
+        return api.post<Waypoint>('/waypoints', data);
     },
 
     async findAll(missionId?: number) {
-        const res = await this.axios.get<Waypoint[]>('/', {
-            params: missionId ? { missionId } : {},
-        });
-        return res.data;
+        return api.get<Waypoint[]>('/waypoints', { params: missionId ? { missionId } : {} });
     },
 
     async findOne(id: number) {
-        const res = await this.axios.get<Waypoint>(`/${id}`);
-        return res.data;
+        return api.get<Waypoint>(`/waypoints/${id}`);
     },
 
     async update(id: number, data: UpdateWaypointDto) {
-        const res = await this.axios.patch<Waypoint>(`/${id}`, data);
-        return res.data;
+        return api.patch<Waypoint>(`/waypoints/${id}`, data);
     },
 
     async remove(id: number) {
-        const res = await this.axios.delete<void>(`/${id}`);
-        return res.data;
+        return api.delete<void>(`/waypoints/${id}`);
     },
 };

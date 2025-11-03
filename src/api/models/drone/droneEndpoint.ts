@@ -21,3 +21,6 @@ export const createDrone = (data: Partial<Drone>) => api.post('/drones', data);
 export const updateDrone = (id: number, data: Partial<Drone>) => api.put(`/drones/${id}`, data);
 export const deleteDrone = (id: number) => api.delete(`/drones/${id}`);
 export const getStatus = () => api.get<string[]>('/drones/statuses');
+export const getAvailableDrones = () => api.get<Drone[]>('/drones/available');
+export const updateDroneStatus = (id: number, data: { status: string; battery_health?: number }) =>
+    api.patch(`/drones/${id}/status`, data);

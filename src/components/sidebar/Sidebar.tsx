@@ -138,6 +138,7 @@ export function Sidebar({ className }: SidebarProps) {
                     label="Mô phỏng & Kiểm thử"
                     collapsed={collapsed}
                     items={[
+                        { label: 'Điều khiển Drone', href: '/control' },
                         { label: 'Kết nối ArduPilot', href: '/simulation/ardupilot' },
                         { label: 'Nhiệm vụ mô phỏng', href: '/simulation/missions' },
                         { label: 'So sánh dữ liệu', href: '/simulation/compare' },

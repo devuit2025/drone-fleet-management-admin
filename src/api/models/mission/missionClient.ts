@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from '@/api/axios';
 
 export interface Mission {
     id: number;
@@ -40,7 +40,11 @@ export interface UpdateMissionDto {
     endTime?: string;
 }
 
-export const MissionClient = axios.create({
-    baseURL: '/api/v1/missions',
-    withCredentials: true,
-});
+export const MissionClient = {
+    async update(id: number, data: Partial<UpdateMissionDto>) {
+        return api.patch(`/missions/${id}`, data);
+    },
+    async create(data: CreateMissionDto) {
+        return api.post(`/missions`, data);
+    },
+};

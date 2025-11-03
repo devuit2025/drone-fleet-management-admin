@@ -1,5 +1,5 @@
 // api/models/drone/droneClient.ts
-import axios from 'axios';
+import { api } from '@/api/axios';
 
 export type DroneStatus =
     | 'available'
@@ -55,43 +55,43 @@ export interface UpdateDroneStatusDto {
 }
 
 export class DroneClient {
-    private static base = '/api/v1/drones';
+    private static base = '/drones';
 
     static async create(data: CreateDroneDto): Promise<Drone> {
-        const res = await axios.post<Drone>(this.base, data);
-        return res.data;
+        const res = await api.post<Drone>(this.base, data);
+        return res as unknown as Drone;
     }
 
     static async findAll(): Promise<Drone[]> {
-        const res = await axios.get<Drone[]>(this.base);
-        return res.data;
+        const res = await api.get<Drone[]>(this.base);
+        return res as unknown as Drone[];
     }
 
     static async findAvailable(): Promise<Drone[]> {
-        const res = await axios.get<Drone[]>(`${this.base}/available`);
-        return res.data;
+        const res = await api.get<Drone[]>(`${this.base}/available`);
+        return res as unknown as Drone[];
     }
 
     static async findByStatus(status: DroneStatus): Promise<Drone[]> {
-        const res = await axios.get<Drone[]>(`${this.base}/status/${status}`);
-        return res.data;
+        const res = await api.get<Drone[]>(`${this.base}/status/${status}`);
+        return res as unknown as Drone[];
     }
 
     static async findOne(id: number): Promise<Drone> {
-        const res = await axios.get<Drone>(`${this.base}/${id}`);
-        return res.data;
+        const res = await api.get<Drone>(`${this.base}/${id}`);
+        return res as unknown as Drone;
     }
 
     static async update(id: number, data: UpdateDroneDto): Promise<Drone> {
-        const res = await axios.patch<Drone>(`${this.base}/${id}`, data);
-        return res.data;
+        const res = await api.patch<Drone>(`${this.base}/${id}`, data);
+        return res as unknown as Drone;
     }
 
     static async remove(id: number): Promise<void> {
-        await axios.delete(`${this.base}/${id}`);
+        await api.delete(`${this.base}/${id}`);
     }
 
     static async updateStatus(id: number, data: UpdateDroneStatusDto): Promise<void> {
-        await axios.patch(`${this.base}/${id}/status`, data);
+        await api.patch(`${this.base}/${id}/status`, data);
     }
 }

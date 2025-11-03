@@ -7,13 +7,11 @@ export type LoginDto = {
 };
 
 export type LoginResponse = {
-    data: {
-        token: string;
-        user: {
-            id: string;
-            email: string;
-            name?: string;
-        };
+    token: string;
+    user: {
+        id: string;
+        email: string;
+        name?: string;
     };
 };
 

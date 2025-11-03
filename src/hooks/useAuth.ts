@@ -7,10 +7,10 @@ export function useLogin() {
     const setUser = useAuthStore(s => s.setUser);
 
     const login = async (email: string, password: string) => {
-        const { data } = await loginApi({ email, password });
-        setToken(data.token);
-        setUser(data.user);
-        return data;
+        const res = await loginApi({ email, password });
+        setToken(res.token);
+        setUser(res.user);
+        return res;
     };
 
     return { login };

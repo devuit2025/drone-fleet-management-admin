@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from '@/api/axios';
 
 export interface Telemetry {
     id: number;
@@ -26,28 +26,19 @@ export interface CreateTelemetryDto {
 }
 
 export const TelemetryClient = {
-    axios: axios.create({
-        baseURL: '/api/v1/telemetry',
-        withCredentials: true,
-    }),
-
     async create(data: CreateTelemetryDto) {
-        const res = await this.axios.post<Telemetry>('/', data);
-        return res.data;
+        return api.post<Telemetry>('/telemetry', data);
     },
 
     async findAll(params?: { missionId?: number; droneId?: number }) {
-        const res = await this.axios.get<Telemetry[]>('/', { params });
-        return res.data;
+        return api.get<Telemetry[]>('/telemetry', { params });
     },
 
     async findOne(id: number) {
-        const res = await this.axios.get<Telemetry>(`/${id}`);
-        return res.data;
+        return api.get<Telemetry>(`/telemetry/${id}`);
     },
 
     async remove(id: number) {
-        const res = await this.axios.delete<void>(`/${id}`);
-        return res.data;
+        return api.delete<void>(`/telemetry/${id}`);
     },
 };

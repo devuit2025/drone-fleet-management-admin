@@ -6,11 +6,12 @@ export const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    withCredentials: true,
 });
 
 api.interceptors.request.use(config => {
-    // Example: attach token if needed
-    const token = localStorage.getItem('accessToken');
+    // Attach token from store (persisted as 'access_token'); support legacy 'accessToken'
+    const token = localStorage.getItem('access_token') || localStorage.getItem('accessToken');
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
 });
