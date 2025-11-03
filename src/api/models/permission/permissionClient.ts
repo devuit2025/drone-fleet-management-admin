@@ -20,7 +20,7 @@ export interface UpdatePermissionDto {
 
 export const PermissionClient = {
     axios: axios.create({
-        baseURL: '/api/v1/permissions',
+        baseURL: `${import.meta.env.VITE_API_PREFIX}/permissions`,
         withCredentials: true,
     }),
 

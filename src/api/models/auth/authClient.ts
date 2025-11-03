@@ -29,6 +29,6 @@ export interface LoginDto {
 }
 
 export const AuthClient = axios.create({
-    baseURL: '/api/v1/auth',
+    baseURL: `${import.meta.env.VITE_API_PREFIX}/auth`,
     withCredentials: true,
 });

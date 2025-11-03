@@ -24,7 +24,7 @@ export interface UpdateFlightLogDto {
 
 export const FlightLogClient = {
     axios: axios.create({
-        baseURL: '/api/v1/flight-logs',
+        baseURL: `${import.meta.env.VITE_API_PREFIX}/flight-logs`,
         withCredentials: true,
     }),
 

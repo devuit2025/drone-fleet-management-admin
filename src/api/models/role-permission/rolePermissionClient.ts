@@ -15,7 +15,7 @@ export interface RoleWithPermissions {
  */
 export const RolePermissionClient = {
     axios: axios.create({
-        baseURL: '/api/v1/roles',
+        baseURL: `${import.meta.env.VITE_API_PREFIX}/roles`,
         withCredentials: true,
     }),
 

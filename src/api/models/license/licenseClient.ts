@@ -29,6 +29,6 @@ export interface CreateLicenseDto {
 }
 
 export const LicenseClient = axios.create({
-    baseURL: '/api/v1/licenses',
+    baseURL: `${import.meta.env.VITE_API_PREFIX}/licenses`,
     withCredentials: true,
 });

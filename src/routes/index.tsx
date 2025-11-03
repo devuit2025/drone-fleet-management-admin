@@ -2,6 +2,9 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PrivateRoute } from '@/components/navigation/PrivateRoute';
 import { PublicRoute } from '@/components/navigation/PublicRoute';
 import Login from '@/pages/auth/Login';
+import DroneBrandCreate from '@/pages/models/drone-branch/DroneBranchCreate';
+import DroneBrandList from '@/pages/models/drone-branch/DroneBrandList';
+import DroneCategoryList from '@/pages/models/drone-category/DroneCategoryList';
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
@@ -31,8 +34,13 @@ export const routes: RouteObject[] = [
         children: [
             { index: true, element: <Dashboard /> },
             { path: 'drones', element: <DroneList /> },
+            { path: 'drones/create', element: <DroneList /> },
+            { path: 'brands', element: <DroneBrandList /> },
+            { path: 'brands/create', element: <DroneBrandCreate /> },
+
+            { path: 'categories', element: <DroneCategoryList /> },
+
             { path: 'control', element: <DroneControl /> },
-            // add more dashboard routes here
         ],
     },
 ];

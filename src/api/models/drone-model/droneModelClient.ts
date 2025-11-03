@@ -41,7 +41,7 @@ export interface UpdateDroneModelDto {
 
 export const DroneModelClient = {
     axios: axios.create({
-        baseURL: '/api/v1/drone-models',
+        baseURL: `${import.meta.env.VITE_API_PREFIX}/drone-models`,
         withCredentials: true,
     }),
 

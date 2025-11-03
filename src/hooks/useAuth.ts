@@ -8,6 +8,7 @@ export function useLogin() {
 
     const login = async (email: string, password: string) => {
         const res = await loginApi({ email, password });
+        console.log(res)
         setToken(res.token);
         setUser(res.user);
         return res;

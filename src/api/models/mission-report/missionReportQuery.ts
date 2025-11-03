@@ -25,7 +25,7 @@ export type UpdateMissionReportDto = Partial<CreateMissionReportDto>;
 export class MissionReportQuery {
     async getAll(missionId?: number): Promise<MissionReport[]> {
         const params = missionId ? { missionId } : undefined;
-        const { data } = await api.get<MissionReport[]>('/api/v1/mission-reports', { params });
+        const { data } = await api.get<MissionReport[]>(`${import.meta.env.VITE_API_PREFIX}/mission-reports`, { params });
         return data;
     }
 

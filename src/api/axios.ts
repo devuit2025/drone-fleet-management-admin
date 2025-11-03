@@ -1,8 +1,9 @@
 // /src/api/axios.ts
+import { toastError } from '@/lib/toast';
 import axios from 'axios';
 
 export const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -23,3 +24,22 @@ api.interceptors.response.use(
         throw error.response?.data || error;
     },
 );
+
+api.interceptors.response.use(
+    (response) => response,
+    error => {
+      console.error("[API Error]", error);
+  
+      const message = error.response?.data?.message || error.message || "Something went wrong";
+  
+      toastError(message);
+  
+      // Return a structured object instead of throwing raw error
+      return Promise.reject({
+        message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+    }
+  );
+  

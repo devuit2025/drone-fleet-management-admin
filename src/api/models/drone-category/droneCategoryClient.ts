@@ -24,7 +24,7 @@ export interface UpdateDroneCategoryDto {
  */
 export const DroneCategoryClient = {
     axios: axios.create({
-        baseURL: '/api/v1/drone-categories',
+        baseURL: `${import.meta.env.VITE_API_PREFIX}/drone-categories`,
         withCredentials: true,
     }),
 

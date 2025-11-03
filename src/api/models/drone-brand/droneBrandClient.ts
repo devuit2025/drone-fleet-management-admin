@@ -27,7 +27,7 @@ export interface UpdateDroneBrandDto {
  */
 export const DroneBrandClient = {
     axios: axios.create({
-        baseURL: '/api/v1/drone-brands',
+        baseURL: `${import.meta.env.VITE_API_PREFIX}/drone-brands`,
         withCredentials: true,
     }),
 

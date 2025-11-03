@@ -17,6 +17,7 @@ import { SidebarItem } from './SidebarItem';
 import { SidebarGroup } from './SidebarGroup';
 import { SidebarHeader } from './SidebarHeader';
 import { useAdminLayout } from '@/contexts/AdminLayoutContext';
+import { useLogout } from '@/hooks/useAuth';
 
 interface SidebarProps {
     className?: string;
@@ -24,6 +25,7 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
     const { collapsed } = useAdminLayout();
+    const { logout } = useLogout()
 
     return (
         <aside
@@ -66,7 +68,7 @@ export function Sidebar({ className }: SidebarProps) {
                     items={[
                         { label: 'Danh sách Drone', href: '/drones' },
                         { label: 'Tạo Drone', href: '/drones/create' },
-                        { label: 'Thương hiệu', href: '/branchs' },
+                        { label: 'Thương hiệu', href: '/brands' },
                         { label: 'Phân loại', href: '/categories' },
                         // { label: 'Nhật ký bảo trì', href: '/drones/maintenance' },
                     ]}
@@ -175,7 +177,7 @@ export function Sidebar({ className }: SidebarProps) {
                 <SidebarItem
                     icon={<LogOut className="h-5 w-5" />}
                     label="Đăng xuất"
-                    href="/logout"
+                    onClick={logout}
                     collapsed={collapsed}
                 />
             </div>

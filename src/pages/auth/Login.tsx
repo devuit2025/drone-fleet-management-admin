@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { FormGenerator } from '@/components/form/FormGenerator';
@@ -29,13 +28,8 @@ export default function LoginPage() {
     const navigate = useNavigate();
     
     const handleSubmit = async (values: z.infer<typeof loginSchema>) => {
-        try {
-            await login(values.email, values.password);
-            toast.success('Đăng nhập thành công!');
-            navigate('/');
-        } catch (error: any) {
-            toast.error(error?.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.');
-        }
+        await login(values.email, values.password);
+        navigate('/');
     };
 
     return (

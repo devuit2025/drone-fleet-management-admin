@@ -7,7 +7,7 @@ import type {
 
 export class MissionReportMutation {
     async create(data: CreateMissionReportDto): Promise<MissionReport> {
-        const res = await api.post<MissionReport>('/api/v1/mission-reports', data);
+        const res = await api.post<MissionReport>(`${import.meta.env.VITE_API_PREFIX}/mission-reports`, data);
         return res.data;
     }
 

@@ -24,7 +24,7 @@ export interface UpdateNoFlyZoneDto {
 
 export const NoFlyZoneClient = {
     axios: axios.create({
-        baseURL: '/api/v1/no-fly-zones',
+        baseURL: `${import.meta.env.VITE_API_PREFIX}/no-fly-zones`,
         withCredentials: true,
     }),
 

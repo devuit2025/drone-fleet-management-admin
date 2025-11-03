@@ -19,7 +19,7 @@ export interface CreatePilotDto {
 
 export const PilotClient = {
     axios: axios.create({
-        baseURL: '/api/v1/pilots',
+        baseURL: `${import.meta.env.VITE_API_PREFIX}/pilots`,
         withCredentials: true,
     }),
 

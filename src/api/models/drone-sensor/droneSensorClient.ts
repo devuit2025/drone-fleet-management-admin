@@ -34,7 +34,7 @@ export interface UpdateDroneSensorDto {
 
 export const DroneSensorClient = {
     axios: axios.create({
-        baseURL: '/api/v1/drone-sensors',
+        baseURL: `${import.meta.env.VITE_API_PREFIX}/drone-sensors`,
         withCredentials: true,
     }),
 
