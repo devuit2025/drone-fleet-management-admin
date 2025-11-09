@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from '@/api/axios';
 
 export type PilotStatus = 'active' | 'inactive';
 
@@ -17,19 +17,36 @@ export interface CreatePilotDto {
     status?: PilotStatus;
 }
 
-export const PilotClient = {
-    axios: axios.create({
-        baseURL: `${import.meta.env.VITE_API_PREFIX}/pilots`,
-        withCredentials: true,
-    }),
+export interface UpdatePilotDto {
+    userId?: number;
+    name?: string;
+    status?: PilotStatus;
+}
 
-    async findAll() {
-        const res = await this.axios.get<Pilot[]>('/');
-        return res.data;
-    },
+export class PilotClient {
+    private static base = '/pilots';
 
-    async create(data: CreatePilotDto) {
-        const res = await this.axios.post<Pilot>('/', data);
-        return res.data;
-    },
-};
+    static async findAll(): Promise<Pilot[]> {
+        const res = await api.get<Pilot[]>(this.base);
+        return res as unknown as Pilot[];
+    }
+
+    static async findOne(id: number): Promise<Pilot> {
+        const res = await api.get<Pilot>(`${this.base}/${id}`);
+        return res as unknown as Pilot;
+    }
+
+    static async create(data: CreatePilotDto): Promise<Pilot> {
+        const res = await api.post<Pilot>(this.base, data);
+        return res as unknown as Pilot;
+    }
+
+    static async update(id: number, data: UpdatePilotDto): Promise<Pilot> {
+        const res = await api.patch<Pilot>(`${this.base}/${id}`, data);
+        return res as unknown as Pilot;
+    }
+
+    static async remove(id: number): Promise<void> {
+        await api.delete(`${this.base}/${id}`);
+    }
+}

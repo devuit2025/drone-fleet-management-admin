@@ -10,6 +10,9 @@ import DroneCategoryCreate from '@/pages/models/drone-category/DroneCategoryCrea
 import DroneCategoryEdit from '@/pages/models/drone-category/DroneCategoryEdit';
 import DroneCreate from '@/pages/models/drone/DroneCreate';
 import DroneEdit from '@/pages/models/drone/DroneEdit';
+import PilotList from '@/pages/models/pilot/PilotList';
+import PilotCreate from '@/pages/models/pilot/PilotCreate';
+import PilotEdit from '@/pages/models/pilot/PilotEdit';
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
@@ -48,6 +51,9 @@ export const routes: RouteObject[] = [
             { path: 'drone-category', element: <DroneCategoryList /> },
             { path: 'drone-category/create', element: <DroneCategoryCreate /> },
             { path: 'drone-category/edit/:id', element: <DroneCategoryEdit /> },
+            { path: 'pilots', element: <PilotList /> },
+            { path: 'pilots/create', element: <PilotCreate /> },
+            { path: 'pilots/edit/:id', element: <PilotEdit /> },
 
             { path: 'control', element: <DroneControl /> },
             { path: 'demo/mavlink', element: <MavlinkDemo /> },

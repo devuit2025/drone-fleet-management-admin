@@ -80,8 +80,8 @@ export function Sidebar({ className }: SidebarProps) {
                     collapsed={collapsed}
                     items={[
                         { label: 'Danh sách Phi công', href: '/pilots' },
-                        { label: 'Chi tiết Phi công', href: '/pilots/details' },
-                        { label: 'Xác thực Giấy phép', href: '/pilots/license' },
+                        // { label: 'Chi tiết Phi công', href: '/pilots/details' },
+                        // { label: 'Xác thực Giấy phép', href: '/pilots/license' },
                     ]}
                 />
 
