@@ -16,6 +16,12 @@ import PilotEdit from '@/pages/models/pilot/PilotEdit';
 import MissionList from '@/pages/models/mission/MissionList';
 import MissionCreate from '@/pages/models/mission/MissionCreate';
 import MissionEdit from '@/pages/models/mission/MissionEdit';
+import DroneModelList from '@/pages/models/drone-model/DroneModelList';
+import DroneModelCreate from '@/pages/models/drone-model/DroneModelCreate';
+import DroneModelEdit from '@/pages/models/drone-model/DroneModelEdit';
+import DroneSensorList from '@/pages/models/drone-sensor/DroneSensorList';
+import DroneSensorCreate from '@/pages/models/drone-sensor/DroneSensorCreate';
+import DroneSensorEdit from '@/pages/models/drone-sensor/DroneSensorEdit';
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
@@ -60,6 +66,12 @@ export const routes: RouteObject[] = [
             { path: 'missions', element: <MissionList /> },
             { path: 'missions/create', element: <MissionCreate /> },
             { path: 'missions/edit/:id', element: <MissionEdit /> },
+            { path: 'drone-models', element: <DroneModelList /> },
+            { path: 'drone-models/create', element: <DroneModelCreate /> },
+            { path: 'drone-models/edit/:id', element: <DroneModelEdit /> },
+            { path: 'drone-sensors', element: <DroneSensorList /> },
+            { path: 'drone-sensors/create', element: <DroneSensorCreate /> },
+            { path: 'drone-sensors/edit/:id', element: <DroneSensorEdit /> },
 
             { path: 'control', element: <DroneControl /> },
             { path: 'demo/mavlink', element: <MavlinkDemo /> },

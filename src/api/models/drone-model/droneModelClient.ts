@@ -10,9 +10,16 @@ export interface DroneModel {
     maxFlightTime: number | null;
     maxPayload: number | null;
     batteryCapacity: number | null;
-    dimensions: Record<string, any> | null;
+    dimensions: {
+        length?: number;
+        width?: number;
+        height?: number;
+        weight?: number;
+    } | null;
     createdAt: string;
     updatedAt: string;
+    brand?: Record<string, any>;
+    category?: Record<string, any>;
 }
 
 export interface CreateDroneModelDto {
@@ -24,7 +31,12 @@ export interface CreateDroneModelDto {
     maxFlightTime?: number;
     maxPayload?: number;
     batteryCapacity?: number;
-    dimensions?: Record<string, any>;
+    dimensions?: {
+        length?: number;
+        width?: number;
+        height?: number;
+        weight?: number;
+    };
 }
 
 export interface UpdateDroneModelDto {
@@ -36,31 +48,38 @@ export interface UpdateDroneModelDto {
     maxFlightTime?: number;
     maxPayload?: number;
     batteryCapacity?: number;
-    dimensions?: Record<string, any>;
+    dimensions?: {
+        length?: number;
+        width?: number;
+        height?: number;
+        weight?: number;
+    };
 }
 
 export class DroneModelClient {
-    static async create(data: CreateDroneModelDto): Promise<DroneModel> {
-        const res = await api.post<DroneModel>('/drone-models', data);
-        return res as unknown as DroneModel;
-    }
+    private static base = '/drone-models';
 
     static async findAll(): Promise<DroneModel[]> {
-        const res = await api.get<DroneModel[]>('/drone-models');
+        const res = await api.get<DroneModel[]>(this.base);
         return res as unknown as DroneModel[];
     }
 
     static async findOne(id: number): Promise<DroneModel> {
-        const res = await api.get<DroneModel>(`/drone-models/${id}`);
+        const res = await api.get<DroneModel>(`${this.base}/${id}`);
+        return res as unknown as DroneModel;
+    }
+
+    static async create(data: CreateDroneModelDto): Promise<DroneModel> {
+        const res = await api.post<DroneModel>(this.base, data);
         return res as unknown as DroneModel;
     }
 
     static async update(id: number, data: UpdateDroneModelDto): Promise<DroneModel> {
-        const res = await api.patch<DroneModel>(`/drone-models/${id}`, data);
+        const res = await api.patch<DroneModel>(`${this.base}/${id}`, data);
         return res as unknown as DroneModel;
     }
 
     static async remove(id: number): Promise<void> {
-        await api.delete(`/drone-models/${id}`);
+        await api.delete(`${this.base}/${id}`);
     }
 }

@@ -1,17 +1,18 @@
-import axios from 'axios';
+import { api } from '@/api/axios';
 
-export type DroneSensorStatus = 'active' | 'inactive' | 'faulty';
+export type SensorStatus = 'active' | 'inactive' | 'faulty';
 
 export interface DroneSensor {
     id: number;
     droneId: number;
     type: string;
-    model?: string | null;
-    resolution?: string | null;
-    fieldOfView?: number | null;
-    status: DroneSensorStatus;
+    model: string | null;
+    resolution: string | null;
+    fieldOfView: number | null;
+    status: SensorStatus;
     createdAt: string;
     updatedAt: string;
+    drone?: Record<string, any>;
 }
 
 export interface CreateDroneSensorDto {
@@ -20,7 +21,7 @@ export interface CreateDroneSensorDto {
     model?: string;
     resolution?: string;
     fieldOfView?: number;
-    status?: DroneSensorStatus;
+    status?: SensorStatus;
 }
 
 export interface UpdateDroneSensorDto {
@@ -29,39 +30,33 @@ export interface UpdateDroneSensorDto {
     model?: string;
     resolution?: string;
     fieldOfView?: number;
-    status?: DroneSensorStatus;
+    status?: SensorStatus;
 }
 
-export const DroneSensorClient = {
-    axios: axios.create({
-        baseURL: `${import.meta.env.VITE_API_PREFIX}/drone-sensors`,
-        withCredentials: true,
-    }),
+export class DroneSensorClient {
+    private static base = '/drone-sensors';
 
-    async create(data: CreateDroneSensorDto) {
-        const res = await this.axios.post<DroneSensor>('/', data);
-        return res.data;
-    },
+    static async findAll(): Promise<DroneSensor[]> {
+        const res = await api.get<DroneSensor[]>(this.base);
+        return res as unknown as DroneSensor[];
+    }
 
-    async findAll(droneId?: number) {
-        const res = await this.axios.get<DroneSensor[]>('/', {
-            params: droneId ? { droneId } : {},
-        });
-        return res.data;
-    },
+    static async findOne(id: number): Promise<DroneSensor> {
+        const res = await api.get<DroneSensor>(`${this.base}/${id}`);
+        return res as unknown as DroneSensor;
+    }
 
-    async findOne(id: number) {
-        const res = await this.axios.get<DroneSensor>(`/${id}`);
-        return res.data;
-    },
+    static async create(data: CreateDroneSensorDto): Promise<DroneSensor> {
+        const res = await api.post<DroneSensor>(this.base, data);
+        return res as unknown as DroneSensor;
+    }
 
-    async update(id: number, data: UpdateDroneSensorDto) {
-        const res = await this.axios.patch<DroneSensor>(`/${id}`, data);
-        return res.data;
-    },
+    static async update(id: number, data: UpdateDroneSensorDto): Promise<DroneSensor> {
+        const res = await api.patch<DroneSensor>(`${this.base}/${id}`, data);
+        return res as unknown as DroneSensor;
+    }
 
-    async remove(id: number) {
-        const res = await this.axios.delete<void>(`/${id}`);
-        return res.data;
-    },
-};
+    static async remove(id: number): Promise<void> {
+        await api.delete(`${this.base}/${id}`);
+    }
+}

@@ -63,7 +63,7 @@ export class DroneClient {
     }
 
     static async findAll(): Promise<Drone[]> {
-        const res = await api.get<Drone[]>(`${this.base}/drones`);
+        const res = await api.get<Drone[]>(`${this.base}`);
         return res as unknown as Drone[];
     }
 

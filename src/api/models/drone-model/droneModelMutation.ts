@@ -1,9 +1,4 @@
-import {
-    DroneModelClient,
-    type DroneModel,
-    type CreateDroneModelDto,
-    type UpdateDroneModelDto,
-} from './droneModelClient';
+import { DroneModelClient, type CreateDroneModelDto, type UpdateDroneModelDto, type DroneModel } from './droneModelClient';
 
 export const DroneModelMutation = {
     async create(data: CreateDroneModelDto): Promise<DroneModel> {

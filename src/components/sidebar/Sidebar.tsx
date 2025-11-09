@@ -69,6 +69,8 @@ export function Sidebar({ className }: SidebarProps) {
                         { label: 'Danh sách Drone', href: '/drones' },
                         { label: 'Thương hiệu', href: '/drone-brand' },
                         { label: 'Phân loại', href: '/drone-category' },
+                        { label: 'Model', href: '/drone-models' },
+                        { label: 'Sensor', href: '/drone-sensors' },
                         // { label: 'Nhật ký bảo trì', href: '/drones/maintenance' },
                     ]}
                 />
