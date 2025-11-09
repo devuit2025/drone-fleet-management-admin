@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from '@/api/axios';
 
 export interface DroneBrand {
     id: number;
@@ -25,33 +25,32 @@ export interface UpdateDroneBrandDto {
  * DroneBrandClient
  * Defines all API endpoints related to drone brands.
  */
-export const DroneBrandClient = {
-    axios: axios.create({
-        baseURL: `${import.meta.env.VITE_API_PREFIX}/drone-brands`,
-        withCredentials: true,
-    }),
+export class DroneBrandClient {
+    private static base = '/drone-brands';
 
-    async create(data: CreateDroneBrandDto): Promise<DroneBrand> {
-        const res = await this.axios.post<DroneBrand>('/', data);
-        return res.data;
-    },
 
-    async findAll(): Promise<DroneBrand[]> {
-        const res = await this.axios.get<DroneBrand[]>('/');
-        return res.data;
-    },
+    static async create(data: CreateDroneBrandDto): Promise<DroneBrand> {
+        const res = await api.post<DroneBrand>(this.base, data);
+        console.log(res);
+        return res as unknown as DroneBrand;
+    }
 
-    async findOne(id: number): Promise<DroneBrand> {
-        const res = await this.axios.get<DroneBrand>(`/${id}`);
-        return res.data;
-    },
+    static async findAll(): Promise<DroneBrand[]> {
+        const res = await api.get<DroneBrand[]>(this.base);
+        return res as unknown as DroneBrand[];
+    }
 
-    async update(id: number, data: UpdateDroneBrandDto): Promise<DroneBrand> {
-        const res = await this.axios.patch<DroneBrand>(`/${id}`, data);
-        return res.data;
-    },
+    static async findOne(id: number): Promise<DroneBrand> {
+        const res = await api.get<DroneBrand>(`${this.base}/${id}`);
+        return res as unknown as DroneBrand;
+    }
 
-    async remove(id: number): Promise<void> {
-        await this.axios.delete(`/${id}`);
-    },
+    static async update(id: number, data: UpdateDroneBrandDto): Promise<DroneBrand> {
+        const res = await api.patch<DroneBrand>(`${this.base}/${id}`, data);
+        return res as unknown as DroneBrand;
+    }
+
+    static async remove(id: number): Promise<void> {
+        await api.delete(`${this.base}/${id}`);
+    }
 };

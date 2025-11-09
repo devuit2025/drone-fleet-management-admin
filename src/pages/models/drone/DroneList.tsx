@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DataTable } from '@/components/table/DataTable';
 import type { ColumnDef } from '@/components/table/types';
 import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
+import { toast } from 'sonner';
 import { getDrones } from '@/api/models/drone/droneEndpoint';
 import type { Drone as ApiDrone } from '@/api/models/drone/droneEndpoint';
+import { droneMutation } from '@/api/models/drone/droneMutation';
 import { useDroneStore } from '@/stores/useDroneStore';
 
 interface Drone {
     id: number;
     name: string;
     status: string;
-    battery: number;
+    batteryHealth: number;
     lastMission: string;
 }
 
 export default function DroneList() {
+    const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [pageSize] = useState(10);
     const [total, setTotal] = useState(0);
@@ -28,8 +32,7 @@ export default function DroneList() {
             id: d.id,
             name: d.name,
             status: d.status,
-            // No battery percentage in API; using a stable pseudo value from id as placeholder
-            battery: Math.abs(((d.id ?? 0) * 37) % 100),
+            batteryHealth: d.batteryHealth ?? 0,
             lastMission: (d.lastMaintenance || d.updatedAt || d.createdAt || new Date().toISOString()).slice(0, 10),
         }));
     }, [apiDrones]);
@@ -61,10 +64,35 @@ export default function DroneList() {
         {
             key: 'battery',
             header: 'Battery',
-            render: r => `${r.battery}%`,
+            render: r => `${r.batteryHealth}%`,
         },
         { key: 'lastMission', header: 'Last Mission' },
     ];
+
+    const handleEdit = (row: Drone) => {
+        navigate(`/drones/edit/${row.id}`);
+    };
+
+    const handleDelete = async (row: Drone) => {
+        if (!confirm('Bạn có chắc chắn muốn xóa drone này?')) {
+            return;
+        }
+        try {
+            await droneMutation.remove(row.id);
+            toast.success('Xóa drone thành công');
+            // Refresh data
+            const params = {
+                ...filters,
+            };
+            const response = await getDrones(params);
+            const drones = Array.isArray(response) ? response : [];
+            setApiDrones(drones);
+            setTotal(drones.length);
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message || 'Xóa drone thất bại');
+            console.error(error);
+        }
+    };
 
     // Fetch data when page, pageSize, or filters change
     useEffect(() => {
@@ -120,6 +148,7 @@ export default function DroneList() {
             <AutoBreadcrumb />
 
             <DataTable
+                prefix="drones"
                 columns={columns}
                 data={data}
                 total={total}
@@ -128,6 +157,8 @@ export default function DroneList() {
                 loading={loading}
                 onPageChange={handlePageChange}
                 onFilterChange={handleFilterChange}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
             />
         </div>
     );

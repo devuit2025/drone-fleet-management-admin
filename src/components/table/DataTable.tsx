@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import {
     Table,
@@ -9,12 +9,15 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Edit, Trash2 } from 'lucide-react';
 import { DataTablePagination } from './DataTablePagination';
 import { DataTableToolbar } from './DataTableToolbar';
-import type { DataTableProps } from './types';
+import type { DataTableProps, ColumnDef } from './types';
 import { useDebounce } from '@/hooks/useDebounce';
 
 export function DataTable<T>({
+    prefix,
     columns,
     data,
     total,
@@ -24,10 +27,52 @@ export function DataTable<T>({
     onPageChange,
     onSortChange,
     onFilterChange,
+    onEdit,
+    onDelete,
 }: DataTableProps<T>) {
+    console.log('data', data);
+    // Ensure data is always an array
+    const safeData = Array.isArray(data) ? data : [];
+    
+    // Add operation column if onEdit or onDelete is provided
+    const columnsWithOperation = useMemo<ColumnDef<T>[]>(() => {
+        if (!onEdit && !onDelete) {
+            return columns;
+        }
+        return [
+            ...columns,
+            {
+                key: 'operation',
+                header: 'Operation',
+                render: (row: T) => (
+                    <div className="flex gap-2">
+                        {onEdit && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onEdit(row)}
+                            >
+                                <Edit className="h-4 w-4" />
+                            </Button>
+                        )}
+                        {onDelete && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onDelete(row)}
+                            >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        )}
+                    </div>
+                ),
+            },
+        ];
+    }, [columns, onEdit, onDelete]);
+    
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [selectedRows, setSelectedRows] = useState<number[]>([]);
-    const [visibleColumns, setVisibleColumns] = useState<string[]>(columns.map(c => c.key));
+    const [visibleColumns, setVisibleColumns] = useState<string[]>(columnsWithOperation.map(c => c.key));
     const debouncedSearch = useDebounce(
         (newFilters: Record<string, string>) => handleSearch(newFilters),
         500,
@@ -62,10 +107,10 @@ export function DataTable<T>({
     };
 
     const toggleSelectAll = () => {
-        if (selectedRows.length === data.length) {
+        if (selectedRows.length === safeData.length) {
             setSelectedRows([]);
         } else {
-            setSelectedRows(data.map((_, i) => i));
+            setSelectedRows(safeData.map((_, i) => i));
         }
     };
 
@@ -83,14 +128,15 @@ export function DataTable<T>({
     // ---- Reset filters when columns change ----
     useEffect(() => {
         setFilters({});
-        setVisibleColumns(columns.map(c => c.key));
-    }, [columns]);
+        setVisibleColumns(columnsWithOperation.map(c => c.key));
+    }, [columnsWithOperation]);
 
     return (
         <div className="flex flex-col gap-4">
             {/* Toolbar on top */}
             <DataTableToolbar
-                columns={columns}
+                prefix={prefix}
+                columns={columnsWithOperation}
                 selectedCount={selectedRows.length}
                 onBulkAction={handleBulkAction}
                 onColumnToggle={setVisibleColumns}
@@ -109,15 +155,18 @@ export function DataTable<T>({
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
                             <TableHead className="w-10 px-4">
                                 <Checkbox
-                                    checked={selectedRows.length === data.length && data.length > 0}
-                                    indeterminate={
-                                        selectedRows.length > 0 && selectedRows.length < data.length
+                                    checked={
+                                        selectedRows.length === safeData.length && safeData.length > 0
+                                            ? true
+                                            : selectedRows.length > 0 && selectedRows.length < safeData.length
+                                              ? 'indeterminate'
+                                              : false
                                     }
                                     onCheckedChange={toggleSelectAll}
                                 />
                             </TableHead>
 
-                            {columns.map(
+                            {columnsWithOperation.map(
                                 col =>
                                     visibleColumns.includes(col.key) && (
                                         <TableHead
@@ -141,7 +190,7 @@ export function DataTable<T>({
                         {/* Filter inputs Row */}
                         <TableRow className="border-t border-border bg-card/80">
                             <TableHead className="px-4" />
-                            {columns.map(
+                            {columnsWithOperation.map(
                                 col =>
                                     visibleColumns.includes(col.key) && (
                                         <TableHead key={String(col.key)} className="px-4 py-2">
@@ -191,8 +240,8 @@ export function DataTable<T>({
                                     Loading...
                                 </TableCell>
                             </TableRow>
-                        ) : data.length ? (
-                            data.map((row, i) => (
+                        ) : safeData.length ? (
+                            safeData.map((row, i) => (
                                 <TableRow
                                     key={i}
                                     className={cn(
@@ -207,7 +256,7 @@ export function DataTable<T>({
                                         />
                                     </TableCell>
 
-                                    {columns.map(
+                                    {columnsWithOperation.map(
                                         col =>
                                             visibleColumns.includes(col.key) && (
                                                 <TableCell

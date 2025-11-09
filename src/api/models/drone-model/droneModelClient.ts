@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from '@/api/axios';
 
 export interface DroneModel {
     id: number;
@@ -39,33 +39,28 @@ export interface UpdateDroneModelDto {
     dimensions?: Record<string, any>;
 }
 
-export const DroneModelClient = {
-    axios: axios.create({
-        baseURL: `${import.meta.env.VITE_API_PREFIX}/drone-models`,
-        withCredentials: true,
-    }),
+export class DroneModelClient {
+    static async create(data: CreateDroneModelDto): Promise<DroneModel> {
+        const res = await api.post<DroneModel>('/drone-models', data);
+        return res as unknown as DroneModel;
+    }
 
-    async create(data: CreateDroneModelDto): Promise<DroneModel> {
-        const res = await this.axios.post<DroneModel>('/', data);
-        return res.data;
-    },
+    static async findAll(): Promise<DroneModel[]> {
+        const res = await api.get<DroneModel[]>('/drone-models');
+        return res as unknown as DroneModel[];
+    }
 
-    async findAll(): Promise<DroneModel[]> {
-        const res = await this.axios.get<DroneModel[]>('/');
-        return res.data;
-    },
+    static async findOne(id: number): Promise<DroneModel> {
+        const res = await api.get<DroneModel>(`/drone-models/${id}`);
+        return res as unknown as DroneModel;
+    }
 
-    async findOne(id: number): Promise<DroneModel> {
-        const res = await this.axios.get<DroneModel>(`/${id}`);
-        return res.data;
-    },
+    static async update(id: number, data: UpdateDroneModelDto): Promise<DroneModel> {
+        const res = await api.patch<DroneModel>(`/drone-models/${id}`, data);
+        return res as unknown as DroneModel;
+    }
 
-    async update(id: number, data: UpdateDroneModelDto): Promise<DroneModel> {
-        const res = await this.axios.patch<DroneModel>(`/${id}`, data);
-        return res.data;
-    },
-
-    async remove(id: number): Promise<void> {
-        await this.axios.delete(`/${id}`);
-    },
-};
+    static async remove(id: number): Promise<void> {
+        await api.delete(`/drone-models/${id}`);
+    }
+}

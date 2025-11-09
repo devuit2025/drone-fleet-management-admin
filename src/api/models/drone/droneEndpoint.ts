@@ -8,7 +8,7 @@ export interface Drone {
     status: 'available' | 'in_mission' | 'maintenance';
 
     maxPayload: number; // kg
-    batteryCapacity: number; // mAh
+    batteryHealth: number; // mAh
     lastMaintenance: string; // ISO date string
 
     createdAt: string; // ISO timestamp

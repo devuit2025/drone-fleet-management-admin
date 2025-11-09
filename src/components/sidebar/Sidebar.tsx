@@ -67,9 +67,8 @@ export function Sidebar({ className }: SidebarProps) {
                     collapsed={collapsed}
                     items={[
                         { label: 'Danh sách Drone', href: '/drones' },
-                        { label: 'Tạo Drone', href: '/drones/create' },
-                        { label: 'Thương hiệu', href: '/brands' },
-                        { label: 'Phân loại', href: '/categories' },
+                        { label: 'Thương hiệu', href: '/drone-brand' },
+                        { label: 'Phân loại', href: '/drone-category' },
                         // { label: 'Nhật ký bảo trì', href: '/drones/maintenance' },
                     ]}
                 />

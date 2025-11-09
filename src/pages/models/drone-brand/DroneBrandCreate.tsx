@@ -5,6 +5,7 @@ import { FormGenerator } from '@/components/form/FormGenerator';
 import { type CreateDroneBrandDto } from '@/api/models/drone-brand/droneBrandClient'
 import { DroneBrandMutation } from '@/api/models/drone-brand/droneBrandMutation'
 import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
+import { toast } from 'sonner';
 
 const droneBrandSchema = z.object({
   name: z.string().min(1, { message: 'Tên thương hiệu không được để trống' }),
@@ -34,6 +35,7 @@ export default function DroneBrandCreate() {
   const navigate = useNavigate();
 
   const handleSubmit = async (values: z.infer<typeof droneBrandSchema>) => {
+    console.log('values', values);
     const payload: CreateDroneBrandDto = {
       name: values.name,
       country: values.country || undefined,
@@ -42,10 +44,11 @@ export default function DroneBrandCreate() {
 
     try {
       await DroneBrandMutation.create(payload);
-      navigate('/drone-brands'); // Redirect to list page after create
+      navigate('/drone-brands');
+      toast.success('Drone brand created successfully!');
     } catch (err: any) {
-      // Optionally, show error toast here
       console.error(err);
+      toast.error(err?.response?.data?.message || 'Failed to create drone brand');
     }
   };
 

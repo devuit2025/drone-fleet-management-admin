@@ -10,11 +10,13 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Search, SlidersHorizontal, MoreVertical } from 'lucide-react';
+import { Search, SlidersHorizontal, MoreVertical, Plus } from 'lucide-react';
 import type { ColumnDef } from './types';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useNavigate } from 'react-router-dom';
 
 interface Props<T> {
+    prefix: string;
     columns: ColumnDef<T>[];
     onFilterChange?: (filters: Record<string, string>) => void;
     onColumnToggle?: (visibleColumns: string[]) => void;
@@ -23,12 +25,14 @@ interface Props<T> {
 }
 
 export function DataTableToolbar<T>({
+    prefix,
     columns,
     onFilterChange,
     onColumnToggle,
     onBulkAction,
     selectedCount = 0,
 }: Props<T>) {
+    const navigate = useNavigate();
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [visibleColumns, setVisibleColumns] = useState<string[]>(columns.map(c => c.key));
     // const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -77,6 +81,11 @@ export function DataTableToolbar<T>({
 
             {/* Right-side Controls */}
             <div className="flex items-center gap-2">
+                {/* Create New Button */}
+                <Button onClick={() => navigate(`/${prefix}/create`)}>
+                    <Plus/>
+                    Create New
+                </Button>
                 {/* Bulk Actions */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

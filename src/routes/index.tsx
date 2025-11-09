@@ -2,15 +2,21 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PrivateRoute } from '@/components/navigation/PrivateRoute';
 import { PublicRoute } from '@/components/navigation/PublicRoute';
 import Login from '@/pages/auth/Login';
-import DroneBrandCreate from '@/pages/models/drone-branch/DroneBranchCreate';
-import DroneBrandList from '@/pages/models/drone-branch/DroneBrandList';
+import DroneBrandCreate from '@/pages/models/drone-brand/DroneBrandCreate';
+import DroneBrandEdit from '@/pages/models/drone-brand/DroneBrandEdit';
+import DroneBrandList from '@/pages/models/drone-brand/DroneBrandList';
 import DroneCategoryList from '@/pages/models/drone-category/DroneCategoryList';
+import DroneCategoryCreate from '@/pages/models/drone-category/DroneCategoryCreate';
+import DroneCategoryEdit from '@/pages/models/drone-category/DroneCategoryEdit';
+import DroneCreate from '@/pages/models/drone/DroneCreate';
+import DroneEdit from '@/pages/models/drone/DroneEdit';
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const DroneList = lazy(() => import('../pages/models/drone/DroneList'));
 const DroneControl = lazy(() => import('../pages/control/DroneControl'));
+const MavlinkDemo = lazy(() => import('../pages/demo/MavlinkDemo'));
 
 export const routes: RouteObject[] = [
     // Public route (no layout)
@@ -34,13 +40,17 @@ export const routes: RouteObject[] = [
         children: [
             { index: true, element: <Dashboard /> },
             { path: 'drones', element: <DroneList /> },
-            { path: 'drones/create', element: <DroneList /> },
-            { path: 'brands', element: <DroneBrandList /> },
-            { path: 'brands/create', element: <DroneBrandCreate /> },
-
-            { path: 'categories', element: <DroneCategoryList /> },
+            { path: 'drones/create', element: <DroneCreate /> },
+            { path: 'drones/edit/:id', element: <DroneEdit /> },
+            { path: 'drone-brand', element: <DroneBrandList /> },
+            { path: 'drone-brand/create', element: <DroneBrandCreate /> },
+            { path: 'drone-brand/edit/:id', element: <DroneBrandEdit /> },
+            { path: 'drone-category', element: <DroneCategoryList /> },
+            { path: 'drone-category/create', element: <DroneCategoryCreate /> },
+            { path: 'drone-category/edit/:id', element: <DroneCategoryEdit /> },
 
             { path: 'control', element: <DroneControl /> },
+            { path: 'demo/mavlink', element: <MavlinkDemo /> },
         ],
     },
 ];

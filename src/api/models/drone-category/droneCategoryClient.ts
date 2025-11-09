@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from '@/api/axios';
 
 export interface DroneCategory {
     id: number;
@@ -22,48 +22,30 @@ export interface UpdateDroneCategoryDto {
  * DroneCategoryClient
  * Centralized client defining all Drone Category API endpoints.
  */
-export const DroneCategoryClient = {
-    axios: axios.create({
-        baseURL: `${import.meta.env.VITE_API_PREFIX}/drone-categories`,
-        withCredentials: true,
-    }),
+export class DroneCategoryClient {
+    private static base = '/drone-categories';
 
-    /**
-     * Create a new drone category
-     */
-    async create(data: CreateDroneCategoryDto): Promise<DroneCategory> {
-        const res = await this.axios.post<DroneCategory>('/', data);
-        return res.data;
-    },
+    static async create(data: CreateDroneCategoryDto): Promise<DroneCategory> {
+        const res = await api.post<DroneCategory>(this.base, data);
+        return res as unknown as DroneCategory;
+    }
 
-    /**
-     * Get all drone categories
-     */
-    async findAll(): Promise<DroneCategory[]> {
-        const res = await this.axios.get<DroneCategory[]>('/');
-        return res.data;
-    },
+    static async findAll(): Promise<DroneCategory[]> {
+        const res = await api.get<DroneCategory[]>(this.base);
+        return res as unknown as DroneCategory[];
+    }
 
-    /**
-     * Get a drone category by ID
-     */
-    async findOne(id: number): Promise<DroneCategory> {
-        const res = await this.axios.get<DroneCategory>(`/${id}`);
-        return res.data;
-    },
+    static async findOne(id: number): Promise<DroneCategory> {
+        const res = await api.get<DroneCategory>(`${this.base}/${id}`);
+        return res as unknown as DroneCategory;
+    }
 
-    /**
-     * Update a drone category
-     */
-    async update(id: number, data: UpdateDroneCategoryDto): Promise<DroneCategory> {
-        const res = await this.axios.patch<DroneCategory>(`/${id}`, data);
-        return res.data;
-    },
+    static async update(id: number, data: UpdateDroneCategoryDto): Promise<DroneCategory> {
+        const res = await api.patch<DroneCategory>(`${this.base}/${id}`, data);
+        return res as unknown as DroneCategory;
+    }
 
-    /**
-     * Delete a drone category
-     */
-    async remove(id: number): Promise<void> {
-        await this.axios.delete(`/${id}`);
-    },
-};
+    static async remove(id: number): Promise<void> {
+        await api.delete(`${this.base}/${id}`);
+    }
+}
