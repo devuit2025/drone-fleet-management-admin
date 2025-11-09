@@ -2,16 +2,14 @@ import { MissionClient, type CreateMissionDto, type UpdateMissionDto, type Missi
 
 export const MissionMutation = {
     async create(data: CreateMissionDto): Promise<Mission> {
-        const res = await MissionClient.create(data);
-        return res as unknown as Mission;
+        return MissionClient.create(data);
     },
 
     async update(id: number, data: UpdateMissionDto): Promise<Mission> {
-        const res = await MissionClient.update(id, data);
-        return res as unknown as Mission;
+        return MissionClient.update(id, data);
     },
 
     async remove(id: number): Promise<void> {
-        // TODO: Implement if needed
+        return MissionClient.remove(id);
     },
 };

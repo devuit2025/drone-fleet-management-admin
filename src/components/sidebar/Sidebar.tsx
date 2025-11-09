@@ -92,8 +92,8 @@ export function Sidebar({ className }: SidebarProps) {
                     collapsed={collapsed}
                     items={[
                         { label: 'Danh sách Nhiệm vụ', href: '/missions' },
-                        { label: 'Tạo Nhiệm vụ mới', href: '/missions/create' },
-                        { label: 'Chi tiết Nhiệm vụ', href: '/missions/details' },
+                        // { label: 'Tạo Nhiệm vụ mới', href: '/missions/create' },
+                        // { label: 'Chi tiết Nhiệm vụ', href: '/missions/details' },
                     ]}
                 />
 

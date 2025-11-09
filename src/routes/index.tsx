@@ -13,6 +13,9 @@ import DroneEdit from '@/pages/models/drone/DroneEdit';
 import PilotList from '@/pages/models/pilot/PilotList';
 import PilotCreate from '@/pages/models/pilot/PilotCreate';
 import PilotEdit from '@/pages/models/pilot/PilotEdit';
+import MissionList from '@/pages/models/mission/MissionList';
+import MissionCreate from '@/pages/models/mission/MissionCreate';
+import MissionEdit from '@/pages/models/mission/MissionEdit';
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
@@ -54,6 +57,9 @@ export const routes: RouteObject[] = [
             { path: 'pilots', element: <PilotList /> },
             { path: 'pilots/create', element: <PilotCreate /> },
             { path: 'pilots/edit/:id', element: <PilotEdit /> },
+            { path: 'missions', element: <MissionList /> },
+            { path: 'missions/create', element: <MissionCreate /> },
+            { path: 'missions/edit/:id', element: <MissionEdit /> },
 
             { path: 'control', element: <DroneControl /> },
             { path: 'demo/mavlink', element: <MavlinkDemo /> },
