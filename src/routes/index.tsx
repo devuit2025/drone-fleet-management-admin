@@ -22,6 +22,9 @@ import DroneModelEdit from '@/pages/models/drone-model/DroneModelEdit';
 import DroneSensorList from '@/pages/models/drone-sensor/DroneSensorList';
 import DroneSensorCreate from '@/pages/models/drone-sensor/DroneSensorCreate';
 import DroneSensorEdit from '@/pages/models/drone-sensor/DroneSensorEdit';
+import NoFlyZoneList from '@/pages/models/no-fly-zone/NoFlyZoneList';
+import NoFlyZoneCreate from '@/pages/models/no-fly-zone/NoFlyZoneCreate';
+import NoFlyZoneEdit from '@/pages/models/no-fly-zone/NoFlyZoneEdit';
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
@@ -72,6 +75,10 @@ export const routes: RouteObject[] = [
             { path: 'drone-sensors', element: <DroneSensorList /> },
             { path: 'drone-sensors/create', element: <DroneSensorCreate /> },
             { path: 'drone-sensors/edit/:id', element: <DroneSensorEdit /> },
+
+            { path: 'no-fly-zones', element: <NoFlyZoneList /> },
+            { path: 'no-fly-zones/create', element: <NoFlyZoneCreate /> },
+            { path: 'no-fly-zones/:id/edit', element: <NoFlyZoneEdit /> },
 
             { path: 'control', element: <DroneControl /> },
             { path: 'demo/mavlink', element: <MavlinkDemo /> },

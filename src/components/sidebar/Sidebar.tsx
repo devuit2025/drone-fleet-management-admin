@@ -105,9 +105,9 @@ export function Sidebar({ className }: SidebarProps) {
                     label="Lập kế hoạch bay"
                     collapsed={collapsed}
                     items={[
-                        { label: 'Tạo tuyến bay', href: '/planning/create' },
-                        { label: 'Khu vực cấm bay', href: '/planning/zones' },
-                        { label: 'Kiểm tra hợp lệ', href: '/planning/validate' },
+                        // { label: 'Tạo tuyến bay', href: '/planning/create' },
+                        { label: 'Khu vực cấm bay', href: '/no-fly-zones' },
+                        // { label: 'Kiểm tra hợp lệ', href: '/planning/validate' },
                     ]}
                 />
 
