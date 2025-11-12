@@ -51,8 +51,10 @@ export function MapboxMap({
       if (!readOnly) {
         const draw = new MapboxDraw({
           displayControlsDefault: false,
-          controls: { polygon: true, trash: true },
-        //   defaultMode: 'draw_polygon'
+          controls: { 
+            trash: true,
+            polygon: true,
+            },
         });
         mapRef.current.addControl(draw);
         drawRef.current = draw;

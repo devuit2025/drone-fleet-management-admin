@@ -34,7 +34,8 @@ import { PilotClient, type Pilot } from '@/api/models/pilot/pilotClient';
 import { Plus, Trash2 } from 'lucide-react';
 import { MapboxMap } from '@/components/map/MapboxMap';
 import type { FeatureCollection, Polygon } from 'geojson';
-import { ringFromFeatureCollection } from '@/lib/geo';
+import { ringFromFeatureCollection, intersectsAnyPolygon } from '@/lib/geo';
+import { useNoFlyZoneStore } from '@/stores/useNoFlyZoneStore';
 
 const missionStatusValues = ['planned', 'in_progress', 'completed', 'failed'] as const;
 
@@ -80,8 +81,13 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
         type: 'FeatureCollection',
         features: [],
     });
+    const [noFlyZoneConflict, setNoFlyZoneConflict] = useState(false);
 
     const canEditWaypoints = !isEdit;
+
+    const disabledZones = useNoFlyZoneStore(state => state.zones);
+    const zonesLoaded = useNoFlyZoneStore(state => state.loaded);
+    const fetchNoFlyZones = useNoFlyZoneStore(state => state.fetchZones);
 
     useEffect(() => {
         PilotClient.findAll()
@@ -310,6 +316,33 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
         }
     }, [isEdit, id, form, navigate]);
 
+    useEffect(() => {
+        if (!zonesLoaded) {
+            fetchNoFlyZones().catch(err => {
+                console.error('Failed to load no-fly zones:', err);
+                toast.error('Không thể tải dữ liệu khu vực cấm bay');
+            });
+        }
+    }, [zonesLoaded, fetchNoFlyZones]);
+
+    useEffect(() => {
+        if (!disabledZones || !disabledZones.features?.length) {
+            setNoFlyZoneConflict(false);
+            return;
+        }
+        if (!featureCollection || !featureCollection.features?.length) {
+            setNoFlyZoneConflict(false);
+            return;
+        }
+        try {
+            const intersects = intersectsAnyPolygon(featureCollection, disabledZones);
+            setNoFlyZoneConflict(intersects);
+        } catch (err) {
+            console.error('Failed to evaluate no-fly zone intersection:', err);
+            setNoFlyZoneConflict(false);
+        }
+    }, [featureCollection, disabledZones]);
+
     const handleAddWaypoint = () => {
         setWaypoints(prev => {
             const lastSeq =
@@ -343,7 +376,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
             action: 'Survey',
         }));
         setWaypoints(drafts);
-        setFeatureCollection(fc);
+        setFeatureCollection({ type: 'FeatureCollection', features: [...fc.features] });
     };
 
     return (
@@ -364,6 +397,10 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                         id="mission-form"
                         onSubmit={e => {
                             e.preventDefault();
+                            if (noFlyZoneConflict) {
+                                toast.error('Waypoint đang trùng khu vực cấm bay, vui lòng chỉnh sửa trước khi lưu.');
+                                return;
+                            }
                             form.handleSubmit();
                         }}
                     >
@@ -598,10 +635,16 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                     <MapboxMap
                                         style={{ height: '500px', width: '100%' }}
                                         features={featureCollection}
+                                        disabledZones={disabledZones}
                                         onFeaturesChange={handleMapFeaturesChange}
                                     />
                                     <div className="mt-4">
                                         <div className="text-sm font-semibold mb-2">Toạ độ và thông số waypoint</div>
+                                        {noFlyZoneConflict && (
+                                            <div className="mb-3 rounded border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                                                Polygon nhiệm vụ đang chồng lấp với khu vực cấm bay. Vui lòng điều chỉnh lại waypoint.
+                                            </div>
+                                        )}
                                         {(() => {
                                             const ring = ringFromFeatureCollection(featureCollection);
                                             if (!ring || ring.length === 0) {
@@ -688,7 +731,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                     <Button type="button" variant="outline" onClick={() => form.reset()}>
                         Reset
                     </Button>
-                    <Button type="submit" form="mission-form" disabled={loadingData}>
+                    <Button type="submit" form="mission-form" disabled={loadingData || noFlyZoneConflict}>
                         {loadingData ? 'Đang tải...' : isEdit ? 'Cập nhật' : 'Tạo mission'}
                     </Button>
                 </Field>

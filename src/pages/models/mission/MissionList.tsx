@@ -6,6 +6,7 @@ import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
 import { toast } from 'sonner';
 import { MissionClient, type Mission } from '@/api/models/mission/missionClient';
 import { MissionMutation } from '@/api/models/mission/missionMutation';
+import { useNoFlyZoneStore } from '@/stores/useNoFlyZoneStore';
 
 export default function MissionList() {
     const navigate = useNavigate();
@@ -15,6 +16,9 @@ export default function MissionList() {
     const [loading, setLoading] = useState(false);
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [missions, setMissions] = useState<Mission[]>([]);
+
+    const zonesLoaded = useNoFlyZoneStore(state => state.loaded);
+    const fetchNoFlyZones = useNoFlyZoneStore(state => state.fetchZones);
 
     const data = useMemo(() => missions, [missions]);
 
@@ -70,6 +74,14 @@ export default function MissionList() {
             console.error(error);
         }
     };
+
+    useEffect(() => {
+        if (!zonesLoaded) {
+            fetchNoFlyZones().catch(err => {
+                console.error('Failed to preload no-fly zones:', err);
+            });
+        }
+    }, [zonesLoaded, fetchNoFlyZones]);
 
     useEffect(() => {
         const fetchData = async () => {
