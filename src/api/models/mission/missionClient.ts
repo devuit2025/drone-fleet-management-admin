@@ -2,15 +2,28 @@ import { api } from '@/api/axios';
 
 export type MissionStatus = 'planned' | 'in_progress' | 'completed' | 'failed';
 
+export type GeoJsonPoint = {
+    type: 'Point';
+    coordinates: [number, number];
+};
+
 export interface MissionWaypointInput {
     id?: number;
-    missionId?: number;
+    missionDroneId?: number;
     seqNumber: number;
-    geoPoint: string;
+    geoPoint: GeoJsonPoint | string;
     altitudeM: number;
     speedMps: number;
     action: string;
     createdAt?: string;
+}
+
+export interface MissionDroneInput {
+    id?: number;
+    droneId: number;
+    assignedAt?: string;
+    drone?: Record<string, any>;
+    waypoints?: MissionWaypointInput[];
 }
 
 export interface Mission {
@@ -24,9 +37,8 @@ export interface Mission {
     createdAt: string;
     updatedAt: string;
     pilot?: Record<string, any>;
-    drone?: Record<string, any>;
-    waypoints?: MissionWaypointInput[];
-    drones?: Record<string, any>[];
+    missionDrones?: MissionDroneInput[];
+    drones?: Record<string, any>[]; // legacy field
     telemetry?: Record<string, any>[];
     flightLogs?: Record<string, any>[];
     reports?: Record<string, any>[];
@@ -40,7 +52,7 @@ export interface CreateMissionDto {
     status?: MissionStatus;
     startTime?: string;
     endTime?: string;
-    waypoints?: MissionWaypointInput[];
+    drones?: MissionDroneInput[];
 }
 
 export interface UpdateMissionDto {
@@ -50,7 +62,7 @@ export interface UpdateMissionDto {
     status?: MissionStatus;
     startTime?: string;
     endTime?: string;
-    waypoints?: MissionWaypointInput[];
+    drones?: MissionDroneInput[];
 }
 
 export class MissionClient {

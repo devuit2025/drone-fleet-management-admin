@@ -9,6 +9,16 @@ export interface CreateMissionDto {
   status?: MissionStatus;
   startTime?: string;
   endTime?: string;
+  drones?: Array<{
+    droneId: number;
+    waypoints?: Array<{
+      seqNumber: number;
+      geoPoint: unknown;
+      altitudeM: number;
+      speedMps: number;
+      action: string;
+    }>;
+  }>;
 }
 
 export interface UpdateMissionDto {
@@ -18,6 +28,16 @@ export interface UpdateMissionDto {
   status?: MissionStatus;
   startTime?: string;
   endTime?: string;
+  drones?: Array<{
+    droneId: number;
+    waypoints?: Array<{
+      seqNumber: number;
+      geoPoint: unknown;
+      altitudeM: number;
+      speedMps: number;
+      action: string;
+    }>;
+  }>;
 }
 
 export const createMission = (data: CreateMissionDto) => api.post('/missions', data);

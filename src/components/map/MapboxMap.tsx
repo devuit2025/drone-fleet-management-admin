@@ -14,6 +14,7 @@ interface MapboxMapProps {
     onFeaturesChange?: (features: FeatureCollection<Polygon>) => void;
     disabledZones?: FeatureCollection<Polygon> | null;
     readOnly?: boolean;
+    markers?: Array<{ lon: number; lat: number; label?: string; altitude?: string; color?: string }>;
 }
 const baseClassName = 'relative h-72 w-full overflow-hidden rounded-md border bg-muted';
 const paragraphStyle: CSSProperties = {
@@ -28,6 +29,7 @@ export function MapboxMap({
     onFeaturesChange,
     disabledZones = null,
     readOnly = false,
+    markers = [],
 }: MapboxMapProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -37,8 +39,8 @@ export function MapboxMap({
     const token = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
     useEffect(() => {
       if (!containerRef.current) return;
-      if (!token) return;
-      if (mapRef.current) return;
+    if (!token) return;
+    if (mapRef.current) return;
       mapboxgl.accessToken = token;
   
       mapRef.current = new mapboxgl.Map({
@@ -51,17 +53,16 @@ export function MapboxMap({
       if (!readOnly) {
         const draw = new MapboxDraw({
           displayControlsDefault: false,
-          controls: { 
+          controls: {
             trash: true,
             polygon: true,
-            },
+          },
         });
         mapRef.current.addControl(draw);
         drawRef.current = draw;
 
         function updateArea() {
           const data = draw.getAll() as FeatureCollection<Polygon>;
-          console.log('data', data);
           if (data.features.length > 0) {
             const area = turf.area(data);
             setRoundedArea(Math.round(area * 100) / 100);
@@ -76,8 +77,73 @@ export function MapboxMap({
         mapRef.current.on('draw.update', updateArea);
       }
 
-      // Add disabled zones source/layer if provided
       mapRef.current.on('load', () => {
+        mapRef.current!.addSource('readonly-polygons', {
+          type: 'geojson',
+          data: features ?? { type: 'FeatureCollection', features: [] },
+        });
+        mapRef.current!.addLayer({
+          id: 'readonly-polygons-fill',
+          type: 'fill',
+          source: 'readonly-polygons',
+          paint: {
+            'fill-color': [
+              'coalesce',
+              ['get', 'color'],
+              '#0ea5e9',
+            ],
+            'fill-opacity': 0.25,
+          },
+        });
+        mapRef.current!.addLayer({
+          id: 'readonly-polygons-outline',
+          type: 'line',
+          source: 'readonly-polygons',
+          paint: {
+            'line-color': [
+              'coalesce',
+              ['get', 'color'],
+              '#0284c7',
+            ],
+            'line-width': 2,
+          },
+        });
+        mapRef.current!.addSource('readonly-markers', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] },
+        });
+        mapRef.current!.addLayer({
+          id: 'readonly-markers-circle',
+          type: 'circle',
+          source: 'readonly-markers',
+          paint: {
+            'circle-radius': 5,
+            'circle-color': ['coalesce', ['get', 'color'], '#1d4ed8'],
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#eff6ff',
+          },
+        });
+        mapRef.current!.addLayer({
+          id: 'readonly-markers-label',
+          type: 'symbol',
+          source: 'readonly-markers',
+          layout: {
+            'text-field': [
+              'format',
+              ['coalesce', ['get', 'label'], ''],
+              '\n',
+              ['coalesce', ['get', 'altitude'], ''],
+            ],
+            'text-size': 11,
+            'text-offset': [0, 1],
+            'text-anchor': 'top',
+            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          },
+          paint: {
+            'text-color': ['coalesce', ['get', 'color'], '#0f172a'],
+          },
+        });
+
         if (disabledZones) {
           if (!mapRef.current!.getSource('no-fly-zones')) {
             mapRef.current!.addSource('no-fly-zones', {
@@ -107,12 +173,21 @@ export function MapboxMap({
       });
     }, []);
 
-    // Hydrate the draw layer with incoming features from parent
+    // Hydrate the draw layer or readonly source with incoming features
     useEffect(() => {
+      if (readOnly) {
+        const map = mapRef.current;
+        if (!map) return;
+        const src = map.getSource('readonly-polygons') as mapboxgl.GeoJSONSource | undefined;
+        if (src) {
+          src.setData(features ?? { type: 'FeatureCollection', features: [] });
+        }
+        return;
+      }
+
       const draw = drawRef.current;
       if (!draw) return;
       try {
-        if (readOnly) return;
         draw.deleteAll();
         if (features && features.features && features.features.length > 0) {
           draw.add(features as any);
@@ -120,7 +195,7 @@ export function MapboxMap({
       } catch (_) {
         // ignore invalid payloads
       }
-    }, [features]);
+    }, [features, readOnly]);
 
     // Update disabled zones data when prop changes
     useEffect(() => {
@@ -131,6 +206,32 @@ export function MapboxMap({
         src.setData(disabledZones as any);
       }
     }, [disabledZones]);
+
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map) return;
+      const src = map.getSource('readonly-markers') as mapboxgl.GeoJSONSource | undefined;
+      if (!src) return;
+      if (!markers || markers.length === 0) {
+        src.setData({ type: 'FeatureCollection', features: [] });
+        return;
+      }
+      src.setData({
+        type: 'FeatureCollection',
+        features: markers.map(marker => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [marker.lon, marker.lat],
+          },
+          properties: {
+            label: marker.label ?? '',
+            altitude: marker.altitude ?? '',
+            color: marker.color ?? '#1d4ed8',
+          },
+        })),
+      });
+    }, [markers]);
 
     const combinedClassName = [baseClassName, className].filter(Boolean).join(' ');
 

@@ -1,7 +1,7 @@
 import { useForm } from '@tanstack/react-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -22,20 +22,27 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import type { FeatureCollection, Polygon } from 'geojson';
+
 import {
     type CreateMissionDto,
-    type UpdateMissionDto,
+    type MissionDroneInput,
     type MissionStatus,
-    type MissionWaypointInput,
+    type UpdateMissionDto,
     MissionClient,
 } from '@/api/models/mission/missionClient';
 import { MissionMutation } from '@/api/models/mission/missionMutation';
 import { PilotClient, type Pilot } from '@/api/models/pilot/pilotClient';
-import { Plus, Trash2 } from 'lucide-react';
-import { MapboxMap } from '@/components/map/MapboxMap';
-import type { FeatureCollection, Polygon } from 'geojson';
-import { ringFromFeatureCollection, intersectsAnyPolygon } from '@/lib/geo';
+import { DroneClient, type Drone } from '@/api/models/drone/droneClient';
+import {
+    MissionDroneSelector,
+    createEmptyMissionDroneDraft,
+    type MissionDroneDraft,
+} from './components/MissionDroneSelector';
 import { useNoFlyZoneStore } from '@/stores/useNoFlyZoneStore';
+import { featureCollectionFromRing, intersectsAnyPolygon, pointFromWkt, closeRingIfNeeded } from '@/lib/geo';
+import type { Feature } from 'geojson';
+import { MapboxMap } from '@/components/map/MapboxMap';
 
 const missionStatusValues = ['planned', 'in_progress', 'completed', 'failed'] as const;
 
@@ -52,54 +59,122 @@ interface MissionFormProps {
     isEdit?: boolean;
 }
 
-type WaypointDraft = {
-    seqNumber: string;
-    geoPoint: string;
-    altitudeM: string;
-    speedMps: string;
-    action: string;
+const DEFAULT_ALTITUDE = '100';
+const DEFAULT_SPEED = '10';
+const DEFAULT_ACTION = 'Survey';
+
+const EMPTY_FEATURE_COLLECTION: FeatureCollection<Polygon> = {
+    type: 'FeatureCollection',
+    features: [],
 };
 
-const createEmptyWaypoint = (seqNumber?: number): WaypointDraft => ({
-    seqNumber: seqNumber !== undefined ? String(seqNumber) : '',
-    geoPoint: '',
-    altitudeM: '100',
-    speedMps: '10',
-    action: 'Survey',
-});
+const parseGeoPoint = (value: unknown): [number, number] | null => {
+    if (!value) return null;
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!trimmed) return null;
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+            try {
+                return parseGeoPoint(JSON.parse(trimmed));
+            } catch {
+                return pointFromWkt(trimmed);
+            }
+        }
+        return pointFromWkt(trimmed);
+    }
+    if (typeof value === 'object' && value !== null) {
+        const maybePoint = value as { type?: string; coordinates?: any };
+        if (maybePoint.type === 'Point' && Array.isArray(maybePoint.coordinates)) {
+            const [lon, lat] = maybePoint.coordinates;
+            return [Number(lon), Number(lat)];
+        }
+    }
+    return null;
+};
 
 export default function MissionForm({ isEdit = false }: MissionFormProps) {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const [pilots, setPilots] = useState<Pilot[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loadingPilots, setLoadingPilots] = useState(true);
+    const [drones, setDrones] = useState<Drone[]>([]);
+    const [loadingDrones, setLoadingDrones] = useState(true);
     const [loadingData, setLoadingData] = useState(isEdit);
-    const [waypoints, setWaypoints] = useState<WaypointDraft[]>(() =>
-        isEdit ? [] : [createEmptyWaypoint(0)],
-    );
-    const [featureCollection, setFeatureCollection] = useState<FeatureCollection<Polygon>>({
-        type: 'FeatureCollection',
-        features: [],
-    });
-    const [noFlyZoneConflict, setNoFlyZoneConflict] = useState(false);
-
-    const canEditWaypoints = !isEdit;
+    const [missionDrones, setMissionDrones] = useState<MissionDroneDraft[]>([
+        createEmptyMissionDroneDraft(),
+    ]);
 
     const disabledZones = useNoFlyZoneStore(state => state.zones);
     const zonesLoaded = useNoFlyZoneStore(state => state.loaded);
     const fetchNoFlyZones = useNoFlyZoneStore(state => state.fetchZones);
 
+    const droneOptions = useMemo(
+        () =>
+            drones.map(drone => ({
+                id: drone.id,
+                label: `${drone.name} (#${drone.id})`,
+            })),
+        [drones],
+    );
+
+    const droneLabelMap = useMemo(() => {
+        const map = new Map<number, string>();
+        droneOptions.forEach(option => {
+            map.set(option.id, option.label);
+        });
+        return map;
+    }, [droneOptions]);
+
     useEffect(() => {
         PilotClient.findAll()
             .then(res => {
                 setPilots(res);
-                setLoading(false);
+                setLoadingPilots(false);
             })
             .catch(err => {
                 console.error('Failed to load pilots:', err);
-                setLoading(false);
+                setLoadingPilots(false);
             });
     }, []);
+
+    useEffect(() => {
+        DroneClient.findAll()
+            .then(res => {
+                setDrones(res);
+                setLoadingDrones(false);
+            })
+            .catch(err => {
+                console.error('Failed to load drones:', err);
+                setLoadingDrones(false);
+            });
+    }, []);
+
+    useEffect(() => {
+        if (loadingDrones) return;
+        setMissionDrones(prev => {
+            let changed = false;
+            const next = prev.map(item => {
+                if (item.droneId && !item.droneName) {
+                    const option = droneOptions.find(opt => opt.id === item.droneId);
+                    if (option) {
+                        changed = true;
+                        return { ...item, droneName: option.label };
+                    }
+                }
+                return item;
+            });
+            return changed ? next : prev;
+        });
+    }, [droneOptions, loadingDrones, missionDrones]);
+
+    useEffect(() => {
+        if (!zonesLoaded) {
+            fetchNoFlyZones().catch(err => {
+                console.error('Failed to load no-fly zones:', err);
+                toast.error('Không thể tải dữ liệu khu vực cấm bay');
+            });
+        }
+    }, [zonesLoaded, fetchNoFlyZones]);
 
     const form = useForm({
         defaultValues: {
@@ -115,51 +190,8 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
         },
         onSubmit: async ({ value }) => {
             try {
-                let preparedWaypoints: MissionWaypointInput[] | undefined;
-                // Always prepare waypoints from current state for both create and update
-                preparedWaypoints = [];
-                for (let index = 0; index < waypoints.length; index++) {
-                    const draft = waypoints[index];
-                    const hasAnyValue = Object.values(draft).some(v => v.trim() !== '');
-                    if (!hasAnyValue) {
-                        continue;
-                    }
-                    const missingField =
-                        draft.seqNumber.trim() === '' ||
-                        draft.geoPoint.trim() === '' ||
-                        draft.altitudeM.trim() === '' ||
-                        draft.speedMps.trim() === '' ||
-                        draft.action.trim() === '';
-                    if (missingField) {
-                        toast.error(`Waypoint #${index + 1} chưa đủ thông tin`);
-                        return;
-                    }
-
-                    const seqNumber = Number(draft.seqNumber);
-                    const altitudeM = Number(draft.altitudeM);
-                    const speedMps = Number(draft.speedMps);
-
-                    if (
-                        Number.isNaN(seqNumber) ||
-                        Number.isNaN(altitudeM) ||
-                        Number.isNaN(speedMps)
-                    ) {
-                        toast.error(`Waypoint #${index + 1} chứa giá trị không hợp lệ`);
-                        return;
-                    }
-
-                    preparedWaypoints.push({
-                        seqNumber,
-                        geoPoint: draft.geoPoint.trim(),
-                        altitudeM,
-                        speedMps,
-                        action: draft.action.trim(),
-                    });
-                }
-
-                if (preparedWaypoints.length === 0) {
-                    preparedWaypoints = undefined;
-                }
+                const dronesPayload = buildMissionDronesPayload();
+                if (dronesPayload === null) return;
 
                 if (isEdit && id) {
                     const payload: UpdateMissionDto = {
@@ -169,11 +201,15 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                         status: value.status,
                         startTime: value.startTime || undefined,
                         endTime: value.endTime || undefined,
-                        waypoints: preparedWaypoints,
+                        drones: dronesPayload,
                     };
                     await MissionMutation.update(Number(id), payload);
                     toast.success('Cập nhật mission thành công!');
                 } else {
+                    if (dronesPayload.length === 0) {
+                        toast.error('Vui lòng cấu hình ít nhất một drone với waypoint.');
+                        return;
+                    }
                     const payload: CreateMissionDto = {
                         pilotId: value.pilotId!,
                         licenseId: value.licenseId,
@@ -181,7 +217,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                         status: value.status,
                         startTime: value.startTime || undefined,
                         endTime: value.endTime || undefined,
-                        waypoints: preparedWaypoints,
+                        drones: dronesPayload,
                     };
                     await MissionMutation.create(payload);
                     toast.success('Tạo mission thành công!');
@@ -197,187 +233,263 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
         },
     });
 
-    const formatGeoPointToWkt = (value: unknown): string => {
-        if (
-            value &&
-            typeof value === 'object' &&
-            (value as any).type === 'Point' &&
-            Array.isArray((value as any).coordinates)
-        ) {
-            const [lon, lat] = (value as any).coordinates as [number, number];
-            return `POINT(${lon} ${lat})`;
-        }
-        return typeof value === 'string' ? value : '';
-    };
-
     useEffect(() => {
-        if (isEdit && id) {
-            setLoadingData(true);
-            MissionClient.findOne(Number(id))
-                .then(mission => {
-                    form.setFieldValue('pilotId', mission.pilotId);
-                    form.setFieldValue('licenseId', mission.licenseId || undefined);
-                    form.setFieldValue('missionName', mission.missionName);
-                    form.setFieldValue('status', mission.status);
-                    form.setFieldValue(
-                        'startTime',
-                        mission.startTime ? mission.startTime.split('T')[0] : '',
-                    );
-                    form.setFieldValue(
-                        'endTime',
-                        mission.endTime ? mission.endTime.split('T')[0] : '',
-                    );
+        if (!isEdit || !id) return;
+        setLoadingData(true);
+        MissionClient.findOne(Number(id))
+            .then(mission => {
+                form.setFieldValue('pilotId', mission.pilotId);
+                form.setFieldValue('licenseId', mission.licenseId || undefined);
+                form.setFieldValue('missionName', mission.missionName);
+                form.setFieldValue('status', mission.status);
+                form.setFieldValue(
+                    'startTime',
+                    mission.startTime ? mission.startTime.split('T')[0] : '',
+                );
+                form.setFieldValue(
+                    'endTime',
+                    mission.endTime ? mission.endTime.split('T')[0] : '',
+                );
 
-                    const missionWaypoints = Array.isArray(mission.waypoints)
-                        ? mission.waypoints
-                        : [];
-                    if (missionWaypoints.length > 0) {
-                        setWaypoints(
-                            missionWaypoints.map((wp, idx) => ({
-                                seqNumber:
-                                    wp.seqNumber !== undefined && wp.seqNumber !== null
-                                        ? String(wp.seqNumber)
-                                        : String(idx),
-                                geoPoint: formatGeoPointToWkt(wp.geoPoint),
-                                altitudeM:
-                                    wp.altitudeM !== undefined && wp.altitudeM !== null
-                                        ? String(wp.altitudeM)
-                                        : '',
-                                speedMps:
-                                    wp.speedMps !== undefined && wp.speedMps !== null
-                                        ? String(wp.speedMps)
-                                        : '',
-                                action: wp.action ?? '',
-                            })),
-                        );
+                const drafts = Array.isArray(mission.missionDrones)
+                    ? mission.missionDrones.map(md => {
+                          const coordinates: Array<[number, number]> = [];
+                          (md.waypoints ?? []).forEach(wp => {
+                              const coord = parseGeoPoint(wp.geoPoint);
+                              if (coord) coordinates.push(coord);
+                          });
+                          const featureCollection =
+                              coordinates.length > 0
+                                  ? featureCollectionFromRing(coordinates)
+                                  : EMPTY_FEATURE_COLLECTION;
+                          return {
+                              ...createEmptyMissionDroneDraft(),
+                              key: `mission-drone-${md.id ?? Math.random()}`,
+                              droneId: md.droneId,
+                              droneName: md.drone?.name,
+                              featureCollection,
+                              waypoints: coordinates.map(([lon, lat], idx) => {
+                                  const wp = md.waypoints?.[idx];
+                                  return {
+                                      seqNumber: idx,
+                                      lon,
+                                      lat,
+                                      altitudeM:
+                                          wp && wp.altitudeM !== undefined && wp.altitudeM !== null
+                                              ? String(wp.altitudeM)
+                                              : DEFAULT_ALTITUDE,
+                                      speedMps:
+                                          wp && wp.speedMps !== undefined && wp.speedMps !== null
+                                              ? String(wp.speedMps)
+                                              : DEFAULT_SPEED,
+                                      action: wp?.action ?? DEFAULT_ACTION,
+                                  };
+                              }),
+                              hasConflict: false,
+                          } as MissionDroneDraft;
+                      })
+                    : [];
 
-                        const polygonCoordinates: number[][][] = [
-                            missionWaypoints.map(wp => {
-                                if (
-                                    wp.geoPoint &&
-                                    typeof wp.geoPoint === 'object' &&
-                                    (wp.geoPoint as any).type === 'Point' &&
-                                    Array.isArray((wp.geoPoint as any).coordinates)
-                                ) {
-                                    const [lon, lat] = (wp.geoPoint as any).coordinates as [
-                                        number,
-                                        number,
-                                    ];
-                                    return [lon, lat];
-                                }
-
-                                const match =
-                                    typeof wp.geoPoint === 'string'
-                                        ? wp.geoPoint.match(
-                                              /POINT\s*\(\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\)/i,
-                                          )
-                                        : null;
-                                if (match) {
-                                    return [Number(match[1]), Number(match[2])];
-                                }
-                                return [0, 0];
-                            }),
-                        ];
-
-                        const firstRing = polygonCoordinates[0];
-                        if (
-                            firstRing.length > 0 &&
-                            (firstRing[0][0] !== firstRing[firstRing.length - 1][0] ||
-                                firstRing[0][1] !== firstRing[firstRing.length - 1][1])
-                        ) {
-                            firstRing.push([...firstRing[0]]);
-                        }
-
-                        setFeatureCollection({
-                            type: 'FeatureCollection',
-                            features: [
-                                {
-                                    type: 'Feature',
-                                    geometry: {
-                                        type: 'Polygon',
-                                        coordinates: polygonCoordinates,
-                                    },
-                                    properties: {},
-                                },
-                            ],
-                        });
-                    } else {
-                        setWaypoints([]);
-                        setFeatureCollection({ type: 'FeatureCollection', features: [] });
-                    }
-                    setLoadingData(false);
-                })
-                .catch(err => {
-                    console.error('Failed to load mission:', err);
-                    toast.error('Không thể tải thông tin mission');
-                    setLoadingData(false);
-                    navigate('/missions');
-                });
-        }
+                setMissionDrones(
+                    drafts.length > 0 ? drafts : [createEmptyMissionDroneDraft()],
+                );
+                setLoadingData(false);
+            })
+            .catch(err => {
+                console.error('Failed to load mission:', err);
+                toast.error('Không thể tải thông tin mission');
+                setLoadingData(false);
+                navigate('/missions');
+            });
     }, [isEdit, id, form, navigate]);
 
     useEffect(() => {
-        if (!zonesLoaded) {
-            fetchNoFlyZones().catch(err => {
-                console.error('Failed to load no-fly zones:', err);
-                toast.error('Không thể tải dữ liệu khu vực cấm bay');
+        if (!disabledZones) return;
+        setMissionDrones(prev => {
+            let changed = false;
+            const next = prev.map(item => {
+                if (!item.featureCollection.features.length) {
+                    if (item.hasConflict) {
+                        changed = true;
+                        return { ...item, hasConflict: false };
+                    }
+                    return item;
+                }
+                let conflict = false;
+                try {
+                    conflict = intersectsAnyPolygon(item.featureCollection, disabledZones);
+                } catch (err) {
+                    console.error('Failed to evaluate no-fly zone intersection:', err);
+                }
+                if (conflict !== (item.hasConflict ?? false)) {
+                    changed = true;
+                    return { ...item, hasConflict: conflict };
+                }
+                return item;
+            });
+            return changed ? next : prev;
+        });
+    }, [disabledZones]);
+
+    const buildMissionDronesPayload = (): MissionDroneInput[] | null => {
+        const meaningful = missionDrones.filter(
+            item => item.droneId && item.waypoints.length > 0,
+        );
+
+        if (missionDrones.some(item => item.hasConflict)) {
+            toast.error(
+                'Một hoặc nhiều drone có waypoint trùng khu vực cấm bay. Vui lòng điều chỉnh trước khi lưu.',
+            );
+            return null;
+        }
+
+        const droneMissingSelection = missionDrones.some(
+            item => !item.droneId && item.waypoints.length > 0,
+        );
+        if (droneMissingSelection) {
+            toast.error('Vui lòng chọn drone cho mọi waypoint đã cấu hình.');
+            return null;
+        }
+
+        const payload: MissionDroneInput[] = [];
+
+        for (const item of meaningful) {
+            if (!item.droneId) continue;
+            if (item.waypoints.length === 0) {
+                toast.error(
+                    `Drone ${item.droneName ?? item.droneId} chưa có waypoint. Vui lòng vẽ polygon.`,
+                );
+                return null;
+            }
+
+            const waypoints = [];
+            for (let idx = 0; idx < item.waypoints.length; idx++) {
+                const wp = item.waypoints[idx];
+                const altitude = Number(wp.altitudeM);
+                const speed = Number(wp.speedMps);
+                if (Number.isNaN(altitude) || Number.isNaN(speed)) {
+                    toast.error(
+                        `Waypoint #${idx} của drone ${item.droneName ?? item.droneId} chứa giá trị không hợp lệ`,
+                    );
+                    return null;
+                }
+                waypoints.push({
+                    seqNumber: idx,
+                    geoPoint: JSON.stringify({
+                        type: 'Point',
+                        coordinates: [wp.lon, wp.lat],
+                    }),
+                    altitudeM: altitude,
+                    speedMps: speed,
+                    action: wp.action?.trim() || DEFAULT_ACTION,
+                });
+            }
+
+            payload.push({
+                droneId: item.droneId,
+                waypoints,
             });
         }
-    }, [zonesLoaded, fetchNoFlyZones]);
 
-    useEffect(() => {
-        if (!disabledZones || !disabledZones.features?.length) {
-            setNoFlyZoneConflict(false);
-            return;
-        }
-        if (!featureCollection || !featureCollection.features?.length) {
-            setNoFlyZoneConflict(false);
-            return;
-        }
-        try {
-            const intersects = intersectsAnyPolygon(featureCollection, disabledZones);
-            setNoFlyZoneConflict(intersects);
-        } catch (err) {
-            console.error('Failed to evaluate no-fly zone intersection:', err);
-            setNoFlyZoneConflict(false);
-        }
-    }, [featureCollection, disabledZones]);
+        return payload;
+    };
 
-    const handleAddWaypoint = () => {
-        setWaypoints(prev => {
-            const lastSeq =
-                prev.length > 0 ? Number(prev[prev.length - 1].seqNumber || prev.length - 1) : -1;
-            const nextSeq = Number.isFinite(lastSeq) ? lastSeq + 1 : prev.length;
-            return [...prev, createEmptyWaypoint(nextSeq)];
+    const overviewFeatureCollection = useMemo<FeatureCollection<Polygon>>(() => {
+        const polygons: Feature<Polygon>[] = [];
+        const colors: Record<string, string> = {};
+        const palette = ['#f97316', '#2563eb', '#16a34a', '#a855f7', '#f59e0b', '#ec4899'];
+
+        missionDrones.forEach((item, idx) => {
+            if (!item.waypoints || item.waypoints.length === 0) return;
+            const baseRing = item.waypoints.map(wp => [wp.lon, wp.lat]);
+            const closed = closeRingIfNeeded(baseRing);
+            if (closed.length < 4) return;
+
+            const ring = [...closed];
+            const first = ring[0];
+            const last = ring[ring.length - 1];
+            if (first[0] === last[0] && first[1] === last[1]) {
+                ring.pop();
+            }
+
+            if (ring.length < 4) {
+                return;
+            }
+
+            const feature: Feature<Polygon> = {
+                type: 'Feature',
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [closeRingIfNeeded(ring)],
+                },
+                properties: {
+                    droneId: item.droneId ?? `draft-${idx}`,
+                    droneName:
+                        item.droneName ??
+                        (item.droneId ? droneLabelMap.get(item.droneId) : undefined) ??
+                        `Drone ${item.droneId ?? idx + 1}`,
+                    color: palette[idx % palette.length],
+                },
+            };
+            polygons.push(feature);
+            colors[feature.properties!.droneId as string] = feature.properties!.color as string;
         });
-    };
 
-    const handleWaypointChange = (index: number, key: keyof WaypointDraft, value: string) => {
-        setWaypoints(prev => prev.map((wp, i) => (i === index ? { ...wp, [key]: value } : wp)));
-    };
+        const overviewLines: Feature<Polygon>[] = missionDrones
+            .filter(item => item.waypoints.length > 1)
+            .flatMap(item => {
+                const segments: Feature<Polygon>[] = [];
+                const color = '#64748b';
+                for (let i = 0; i < item.waypoints.length - 1; i++) {
+                    segments.push({
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Polygon',
+                            coordinates: [
+                                closeRingIfNeeded([
+                                    [item.waypoints[i].lon, item.waypoints[i].lat],
+                                    [item.waypoints[i + 1].lon, item.waypoints[i + 1].lat],
+                                    [item.waypoints[i + 1].lon + 0.00001, item.waypoints[i + 1].lat + 0.00001],
+                                    [item.waypoints[i].lon + 0.00001, item.waypoints[i].lat + 0.00001],
+                                ]),
+                            ],
+                        },
+                        properties: {
+                            droneId: item.droneId,
+                            type: 'segment',
+                            color,
+                        },
+                    });
+                }
+                return segments;
+            });
 
-    const handleRemoveWaypoint = (index: number) => {
-        setWaypoints(prev => prev.filter((_, i) => i !== index));
-    };
+        return {
+            type: 'FeatureCollection',
+            features: [...polygons, ...overviewLines],
+        };
+    }, [missionDrones, droneLabelMap]);
 
-    const handleMapFeaturesChange = (fc: FeatureCollection<Polygon>) => {
-        if (!fc || !Array.isArray(fc.features) || fc.features.length === 0) {
-            setWaypoints([]);
-            setFeatureCollection({ type: 'FeatureCollection', features: [] });
-            return;
-        }
-        const first = fc.features[0];
-        const coords = first?.geometry?.coordinates?.[0] || [];
-        const drafts: WaypointDraft[] = coords.map(([lon, lat], idx) => ({
-            seqNumber: String(idx),
-            geoPoint: `POINT(${lon} ${lat})`,
-            altitudeM: '100',
-            speedMps: '10',
-            action: 'Survey',
-        }));
-        setWaypoints(drafts);
-        setFeatureCollection({ type: 'FeatureCollection', features: [...fc.features] });
-    };
+    const overviewMarkers = useMemo(
+        () =>
+            missionDrones.flatMap((item, idx) => {
+                const colorPalette = ['#f97316', '#2563eb', '#16a34a', '#a855f7', '#f59e0b', '#ec4899'];
+                const color = colorPalette[idx % colorPalette.length];
+                const label =
+                    item.droneName ??
+                    (item.droneId ? droneLabelMap.get(item.droneId) : undefined) ??
+                    `Drone ${item.droneId ?? idx + 1}`;
+                return item.waypoints.map(wp => ({
+                    lon: wp.lon,
+                    lat: wp.lat,
+                    label,
+                    altitude: `${wp.altitudeM} m`,
+                    color,
+                }));
+            }),
+        [missionDrones, droneLabelMap],
+    );
+    const hasOverviewPolygons = overviewFeatureCollection.features.length > 0;
 
     return (
         <Card className="w-full">
@@ -389,18 +501,12 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
             </CardHeader>
             <CardContent>
                 {loadingData ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                        Đang tải dữ liệu...
-                    </div>
+                    <div className="py-8 text-center text-muted-foreground">Đang tải dữ liệu...</div>
                 ) : (
                     <form
                         id="mission-form"
                         onSubmit={e => {
                             e.preventDefault();
-                            if (noFlyZoneConflict) {
-                                toast.error('Waypoint đang trùng khu vực cấm bay, vui lòng chỉnh sửa trước khi lưu.');
-                                return;
-                            }
                             form.handleSubmit();
                         }}
                     >
@@ -420,7 +526,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                                         val ? Number(val) : undefined,
                                                     )
                                                 }
-                                                disabled={loading}
+                                                disabled={loadingPilots}
                                             >
                                                 <SelectTrigger className="w-full" id={field.name}>
                                                     <SelectValue placeholder="Chọn pilot" />
@@ -437,7 +543,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                                 </SelectContent>
                                             </Select>
                                             <FieldDescription>
-                                                Chọn pilot từ danh sách
+                                                Chọn pilot chịu trách nhiệm cho mission
                                             </FieldDescription>
                                             {isInvalid && (
                                                 <FieldError errors={field.state.meta.errors} />
@@ -473,7 +579,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                                 autoComplete="off"
                                             />
                                             <FieldDescription>
-                                                License ID (tùy chọn)
+                                                License sử dụng cho mission (tùy chọn)
                                             </FieldDescription>
                                             {isInvalid && (
                                                 <FieldError errors={field.state.meta.errors} />
@@ -598,130 +704,51 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                             />
                         </FieldGroup>
 
-                        <div className="mt-6 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-sm font-semibold">Waypoints (tùy chọn)</h3>
-                                    {isEdit && (
+                        <div className="mt-8 space-y-4">
+                            <div>
+                                <h3 className="text-sm font-semibold">
+                                    Phân công drone & waypoint
+                                </h3>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Chọn drone và thiết lập waypoint riêng cho từng drone. Mỗi drone
+                                    có thể có nhiều waypoint, được vẽ bằng polygon trên bản đồ.
+                                </p>
+                            </div>
+                            <MissionDroneSelector
+                                value={missionDrones}
+                                onChange={setMissionDrones}
+                                droneOptions={droneOptions}
+                                disabledZones={disabledZones}
+                            />
+                            {loadingDrones && (
+                                <p className="text-xs text-muted-foreground">
+                                    Đang tải danh sách drone...
+                                </p>
+                            )}
+                            <div className="rounded-lg border p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <h4 className="text-sm font-semibold">Bản đồ tổng quan</h4>
                                         <p className="text-xs text-muted-foreground">
-                                            Waypoints hiện có được liệt kê bên dưới. Chỉnh sửa hoặc
-                                            thêm mới tại trang Waypoint.
+                                            Hiển thị tất cả waypoint của mọi drone trong mission để dễ quan sát vùng bay tổng thể.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="mt-3 overflow-hidden rounded border">
+                                    <MapboxMap
+                                        style={{ height: '70vh', width: '100%' }}
+                                        features={hasOverviewPolygons ? overviewFeatureCollection : EMPTY_FEATURE_COLLECTION}
+                                        disabledZones={disabledZones}
+                                        readOnly
+                                        markers={overviewMarkers}
+                                    />
+                                    {!hasOverviewPolygons && (
+                                        <p className="mt-2 text-xs text-muted-foreground">
+                                            Chưa có waypoint nào. Vui lòng mở từng drone để vẽ polygon.
                                         </p>
                                     )}
                                 </div>
-                                {canEditWaypoints && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleAddWaypoint}
-                                    >
-                                        <Plus className="mr-2 h-4 w-4" /> Thêm waypoint
-                                    </Button>
-                                )}
                             </div>
-
-                            {waypoints.length === 0 && (
-                                <p className="text-sm text-muted-foreground">
-                                    {canEditWaypoints
-                                        ? 'Chưa có waypoint nào, thêm mới nếu cần.'
-                                        : 'Mission chưa có waypoint.'}
-                                </p>
-                            )}
-
-                            <Field>
-                                <FieldLabel>Bản đồ nhiệm vụ *</FieldLabel>
-                                <div className="space-y-4">
-                                    <MapboxMap
-                                        style={{ height: '500px', width: '100%' }}
-                                        features={featureCollection}
-                                        disabledZones={disabledZones}
-                                        onFeaturesChange={handleMapFeaturesChange}
-                                    />
-                                    <div className="mt-4">
-                                        <div className="text-sm font-semibold mb-2">Toạ độ và thông số waypoint</div>
-                                        {noFlyZoneConflict && (
-                                            <div className="mb-3 rounded border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-                                                Polygon nhiệm vụ đang chồng lấp với khu vực cấm bay. Vui lòng điều chỉnh lại waypoint.
-                                            </div>
-                                        )}
-                                        {(() => {
-                                            const ring = ringFromFeatureCollection(featureCollection);
-                                            if (!ring || ring.length === 0) {
-                                                return (
-                                                    <div className="text-xs text-muted-foreground p-3 rounded border bg-muted/30">
-                                                        Chưa có polygon. Vẽ polygon trên bản đồ để hiển thị toạ độ.
-                                                    </div>
-                                                );
-                                            }
-                                            const gridColsHeader = canEditWaypoints ? 'grid-cols-7' : 'grid-cols-6';
-                                            return (
-                                                <div className="rounded border bg-muted/30 p-4">
-                                                    <div
-                                                        className={`grid ${gridColsHeader} gap-2 text-xs font-medium text-muted-foreground mb-2 pb-2 border-b`}
-                                                    >
-                                                        <div>#</div>
-                                                        <div>Longitude</div>
-                                                        <div>Latitude</div>
-                                                        <div>Altitude (m)</div>
-                                                        <div>Speed (m/s)</div>
-                                                        <div>Action</div>
-                                                        {canEditWaypoints && <div className="text-right pr-1">Xóa</div>}
-                                                    </div>
-                                                    <div className="max-h-64 overflow-auto">
-                                                        {ring.map(([lon, lat], idx) => {
-                                                            const wp = waypoints[idx] || createEmptyWaypoint(idx);
-                                                            return (
-                                                                <div
-                                                                    key={idx}
-                                                                    className={`grid ${gridColsHeader} gap-2 text-xs py-2 border-b last:border-b-0 items-center`}
-                                                                >
-                                                                    <div className="font-medium">{idx}</div>
-                                                                    <div className="font-mono">{Number(lon).toFixed(6)}</div>
-                                                                    <div className="font-mono">{Number(lat).toFixed(6)}</div>
-                                                                    <Input
-                                                                        type="number"
-                                                                        value={wp.altitudeM}
-                                                                        onChange={e => handleWaypointChange(idx, 'altitudeM', e.target.value)}
-                                                                        placeholder="100"
-                                                                        className="h-7 text-xs"
-                                                                    />
-                                                                    <Input
-                                                                        type="number"
-                                                                        value={wp.speedMps}
-                                                                        onChange={e => handleWaypointChange(idx, 'speedMps', e.target.value)}
-                                                                        placeholder="10"
-                                                                        className="h-7 text-xs"
-                                                                    />
-                                                                    <Input
-                                                                        value={wp.action}
-                                                                        onChange={e => handleWaypointChange(idx, 'action', e.target.value)}
-                                                                        placeholder="Survey"
-                                                                        className="h-7 text-xs"
-                                                                    />
-                                                                    {canEditWaypoints && (
-                                                                        <Button
-                                                                            type="button"
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-7 w-7 text-destructive"
-                                                                            onClick={() => handleRemoveWaypoint(idx)}
-                                                                            aria-label={`Xóa waypoint ${idx}`}
-                                                                        >
-                                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                                        </Button>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
-                                </div>
-                                <FieldDescription>Vẽ polygon trên bản đồ để định nghĩa vùng nhiệm vụ</FieldDescription>
-                            </Field>
                         </div>
                     </form>
                 )}
@@ -731,7 +758,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                     <Button type="button" variant="outline" onClick={() => form.reset()}>
                         Reset
                     </Button>
-                    <Button type="submit" form="mission-form" disabled={loadingData || noFlyZoneConflict}>
+                    <Button type="submit" form="mission-form" disabled={loadingData}>
                         {loadingData ? 'Đang tải...' : isEdit ? 'Cập nhật' : 'Tạo mission'}
                     </Button>
                 </Field>
