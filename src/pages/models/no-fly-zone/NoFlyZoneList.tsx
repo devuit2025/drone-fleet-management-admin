@@ -75,13 +75,6 @@ export default function NoFlyZoneList() {
     return (
         <div>
             <AutoBreadcrumb />
-            <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-semibold">No-Fly Zones</h2>
-                <Button onClick={() => navigate('/no-fly-zones/create')}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Tạo No-Fly Zone mới
-                </Button>
-            </div>
             <DataTable
                 prefix="no-fly-zones"
                 columns={columns}
