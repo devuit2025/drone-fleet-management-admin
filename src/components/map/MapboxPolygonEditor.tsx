@@ -10,6 +10,9 @@ export interface MapboxPolygonEditorProps {
     readOnly?: boolean;
     className?: string;
     style?: CSSProperties;
+    onDrawCreate?: (feature: Polygon) => void;
+    onDrawUpdate?: (id: string | number, feature: Polygon) => void;
+    onDrawDelete?: (id: string | number) => void;
 }
 
 function MapboxPolygonEditorImpl({
@@ -19,6 +22,9 @@ function MapboxPolygonEditorImpl({
     readOnly = false,
     className,
     style,
+    onDrawCreate,
+    onDrawUpdate,
+    onDrawDelete,
 }: MapboxPolygonEditorProps) {
     return (
         <MapboxMap
@@ -28,6 +34,9 @@ function MapboxPolygonEditorImpl({
             onFeaturesChange={onChange}
             disabledZones={disabledZones}
             readOnly={readOnly}
+            onDrawCreate={onDrawCreate}
+            onDrawUpdate={onDrawUpdate}
+            onDrawDelete={onDrawDelete}
         />
     );
 }

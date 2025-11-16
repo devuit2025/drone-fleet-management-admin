@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DataTable } from '@/components/table/DataTable';
 import type { ColumnDef } from '@/components/table/types';
@@ -19,6 +19,8 @@ export default function MissionList() {
 
     const zonesLoaded = useNoFlyZoneStore(state => state.loaded);
     const fetchNoFlyZones = useNoFlyZoneStore(state => state.fetchZones);
+    const loadingRef = useRef(false);
+    const zonesLoadingRef = useRef(false);
 
     const data = useMemo(() => missions, [missions]);
 
@@ -76,14 +78,21 @@ export default function MissionList() {
     };
 
     useEffect(() => {
-        if (!zonesLoaded) {
-            fetchNoFlyZones().catch(err => {
-                console.error('Failed to preload no-fly zones:', err);
-            });
+        if (!zonesLoaded && !zonesLoadingRef.current) {
+            zonesLoadingRef.current = true;
+            fetchNoFlyZones()
+                .catch(err => {
+                    console.error('Failed to preload no-fly zones:', err);
+                })
+                .finally(() => {
+                    zonesLoadingRef.current = false;
+                });
         }
-    }, [zonesLoaded, fetchNoFlyZones]);
+    }, [zonesLoaded]); // Loại bỏ fetchNoFlyZones khỏi dependencies
 
     useEffect(() => {
+        if (loadingRef.current) return; // Tránh duplicate calls
+        loadingRef.current = true;
         const fetchData = async () => {
             setLoading(true);
             try {
@@ -96,6 +105,7 @@ export default function MissionList() {
                 setTotal(0);
             } finally {
                 setLoading(false);
+                loadingRef.current = false;
             }
         };
 

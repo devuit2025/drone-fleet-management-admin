@@ -30,7 +30,6 @@ export function DataTable<T>({
     onEdit,
     onDelete,
 }: DataTableProps<T>) {
-    console.log('data', data);
     // Ensure data is always an array
     const safeData = Array.isArray(data) ? data : [];
     

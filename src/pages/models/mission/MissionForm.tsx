@@ -40,7 +40,7 @@ import {
     type MissionDroneDraft,
 } from './components/MissionDroneSelector';
 import { useNoFlyZoneStore } from '@/stores/useNoFlyZoneStore';
-import { featureCollectionFromRing, intersectsAnyPolygon, pointFromWkt, closeRingIfNeeded } from '@/lib/geo';
+import { featureCollectionFromRing, intersectsAnyPolygon, pointFromWkt, closeRingIfNeeded, isPointInAnyPolygon } from '@/lib/geo';
 import type { Feature } from 'geojson';
 import { MapboxMap } from '@/components/map/MapboxMap';
 
@@ -190,6 +190,24 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
         },
         onSubmit: async ({ value }) => {
             try {
+                // Kiểm tra waypoints có nằm trong vùng cấm bay không
+                if (disabledZones && disabledZones.features.length > 0) {
+                    for (const item of missionDrones) {
+                        if (!item.droneId || !item.waypoints || item.waypoints.length === 0) continue;
+                        
+                        for (let idx = 0; idx < item.waypoints.length; idx++) {
+                            const wp = item.waypoints[idx];
+                            if (isPointInAnyPolygon(wp.lon, wp.lat, disabledZones)) {
+                                const droneName = item.droneName ?? `Drone #${item.droneId}`;
+                                toast.error(
+                                    `Waypoint #${idx + 1} của ${droneName} nằm trong vùng cấm bay. Vui lòng điều chỉnh trước khi lưu.`
+                                );
+                                return;
+                            }
+                        }
+                    }
+                }
+                
                 const dronesPayload = buildMissionDronesPayload();
                 if (dronesPayload === null) return;
 

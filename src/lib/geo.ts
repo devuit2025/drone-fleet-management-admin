@@ -81,3 +81,27 @@ export function intersectsAnyPolygon(
   }
   return false;
 }
+
+export function isPointInAnyPolygon(
+  lon: number,
+  lat: number,
+  zones: FeatureCollection<Polygon> | Feature<Polygon>[] | null,
+): boolean {
+  if (!zones) return false;
+
+  const point = turf.point([lon, lat]);
+  const zoneList: Feature<Polygon>[] = Array.isArray(zones)
+    ? (zones as Feature<Polygon>[])
+    : (zones as FeatureCollection<Polygon>).features;
+
+  for (const zone of zoneList) {
+    try {
+      if (turf.booleanPointInPolygon(point, zone as any)) {
+        return true;
+      }
+    } catch {
+      // ignore bogus geometries
+    }
+  }
+  return false;
+}

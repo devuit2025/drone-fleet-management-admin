@@ -9,6 +9,7 @@ interface NoFlyZoneState {
   loaded: boolean;
   error?: string;
   fetchZones: () => Promise<FeatureCollection<Polygon> | null>;
+  refreshZones: () => Promise<FeatureCollection<Polygon> | null>;
   setZones: (zones: FeatureCollection<Polygon> | null, raw: NoFlyZone[]) => void;
   reset: () => void;
 }
@@ -24,6 +25,7 @@ function toPolygonFeature(zone: NoFlyZone): Feature<Polygon> | null {
     }
     return {
       type: 'Feature',
+      id: zone.id,
       geometry: geometry as Polygon,
       properties: {
         id: zone.id,
@@ -53,6 +55,30 @@ export const useNoFlyZoneStore = create<NoFlyZoneState>((set, get) => ({
       return get().zones;
     }
     set({ loading: true, error: undefined });
+    try {
+      const response = await NoFlyZoneClient.findAll();
+      const features = response
+        .map(toPolygonFeature)
+        .filter((feature): feature is Feature<Polygon> => !!feature);
+      const featureCollection: FeatureCollection<Polygon> = {
+        type: 'FeatureCollection',
+        features,
+      };
+      set({
+        rawZones: response,
+        zones: featureCollection,
+        loading: false,
+        loaded: true,
+        error: undefined,
+      });
+      return featureCollection;
+    } catch (error: any) {
+      set({ loading: false, error: error?.message ?? 'Failed to load no-fly zones' });
+      throw error;
+    }
+  },
+  async refreshZones() {
+    set({ loading: true, error: undefined, loaded: false });
     try {
       const response = await NoFlyZoneClient.findAll();
       const features = response

@@ -14,7 +14,10 @@ interface MapboxMapProps {
     onFeaturesChange?: (features: FeatureCollection<Polygon>) => void;
     disabledZones?: FeatureCollection<Polygon> | null;
     readOnly?: boolean;
-    markers?: Array<{ lon: number; lat: number; label?: string; altitude?: string; color?: string }>;
+    markers?: Array<{ id?: string | number; lon: number; lat: number; label?: string; altitude?: string; color?: string }>;
+    onDrawCreate?: (feature: Polygon) => void;
+    onDrawUpdate?: (id: string | number, feature: Polygon) => void;
+    onDrawDelete?: (id: string | number) => void;
 }
 const baseClassName = 'relative h-72 w-full overflow-hidden rounded-md border bg-muted';
 const paragraphStyle: CSSProperties = {
@@ -30,6 +33,9 @@ export function MapboxMap({
     disabledZones = null,
     readOnly = false,
     markers = [],
+    onDrawCreate,
+    onDrawUpdate,
+    onDrawDelete,
 }: MapboxMapProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -46,8 +52,8 @@ export function MapboxMap({
       mapRef.current = new mapboxgl.Map({
         container: containerRef.current as HTMLElement,
         style: 'mapbox://styles/mapbox/standard-satellite',
-        center: [-91.874, 42.76],
-        zoom: 12
+        center: [106.6927, 10.7769], // Quận 1, TP.HCM
+        zoom: 14
       });
   
       if (!readOnly) {
@@ -72,9 +78,46 @@ export function MapboxMap({
           if (onFeaturesChange) onFeaturesChange(data);
         }
 
-        mapRef.current.on('draw.create', updateArea);
-        mapRef.current.on('draw.delete', updateArea);
-        mapRef.current.on('draw.update', updateArea);
+        mapRef.current.on('draw.create', (e: any) => {
+          // Xóa tất cả feature cũ, chỉ giữ lại feature mới vừa tạo
+          const allFeatures = draw.getAll();
+          const newFeatureId = e.features[0].id;
+          const newFeature = e.features[0];
+          allFeatures.features.forEach((feature: any) => {
+            if (feature.id !== newFeatureId) {
+              draw.delete(feature.id);
+            }
+          });
+          // Gọi callback nếu có
+          if (onDrawCreate && newFeature.geometry && newFeature.geometry.type === 'Polygon') {
+            onDrawCreate(newFeature.geometry as Polygon);
+          }
+          updateArea();
+        });
+        mapRef.current.on('draw.delete', (e: any) => {
+          // Lấy id từ feature bị xóa
+          if (e.features && e.features.length > 0) {
+            const deletedFeature = e.features[0];
+            const featureId = deletedFeature.id;
+            // Gọi callback nếu có
+            if (onDrawDelete && featureId) {
+              onDrawDelete(featureId);
+            }
+          }
+          updateArea();
+        });
+        mapRef.current.on('draw.update', (e: any) => {
+          // Lấy id và geometry từ feature được update
+          if (e.features && e.features.length > 0) {
+            const updatedFeature = e.features[0];
+            const featureId = updatedFeature.id;
+            // Gọi callback nếu có
+            if (onDrawUpdate && featureId && updatedFeature.geometry && updatedFeature.geometry.type === 'Polygon') {
+              onDrawUpdate(featureId, updatedFeature.geometry as Polygon);
+            }
+          }
+          updateArea();
+        });
       }
 
       mapRef.current.on('load', () => {
@@ -106,6 +149,24 @@ export function MapboxMap({
               '#0284c7',
             ],
             'line-width': 2,
+          },
+        });
+        mapRef.current!.addLayer({
+          id: 'readonly-polygons-label',
+          type: 'symbol',
+          source: 'readonly-polygons',
+          layout: {
+            'text-field': ['coalesce', ['get', 'name'], ''],
+            'text-size': 12,
+            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+            'text-anchor': 'center',
+            'text-allow-overlap': false,
+            'text-ignore-placement': false,
+          },
+          paint: {
+            'text-color': '#0f172a',
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 2,
           },
         });
         mapRef.current!.addSource('readonly-markers', {
@@ -168,6 +229,24 @@ export function MapboxMap({
                 'line-width': 2,
               },
             });
+            mapRef.current!.addLayer({
+              id: 'no-fly-zones-label',
+              type: 'symbol',
+              source: 'no-fly-zones',
+              layout: {
+                'text-field': ['coalesce', ['get', 'name'], ''],
+                'text-size': 12,
+                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                'text-anchor': 'center',
+                'text-allow-overlap': false,
+                'text-ignore-placement': false,
+              },
+              paint: {
+                'text-color': '#0f172a',
+                'text-halo-color': '#ffffff',
+                'text-halo-width': 2,
+              },
+            });
           }
         }
       });
@@ -201,9 +280,80 @@ export function MapboxMap({
     useEffect(() => {
       const map = mapRef.current;
       if (!map) return;
-      const src = map.getSource('no-fly-zones') as mapboxgl.GeoJSONSource | undefined;
-      if (src && disabledZones) {
-        src.setData(disabledZones as any);
+      if (!disabledZones) return;
+      
+      const updateDisabledZones = () => {
+        try {
+          let src = map.getSource('no-fly-zones') as mapboxgl.GeoJSONSource | undefined;
+          if (!src) {
+            // Tạo source nếu chưa có
+            map.addSource('no-fly-zones', {
+              type: 'geojson',
+              data: disabledZones as any,
+            });
+            src = map.getSource('no-fly-zones') as mapboxgl.GeoJSONSource;
+            
+            // Tạo layers nếu chưa có
+            if (!map.getLayer('no-fly-zones-fill')) {
+              map.addLayer({
+                id: 'no-fly-zones-fill',
+                type: 'fill',
+                source: 'no-fly-zones',
+                paint: {
+                  'fill-color': '#ef4444',
+                  'fill-opacity': 0.35,
+                },
+              });
+            }
+            if (!map.getLayer('no-fly-zones-outline')) {
+              map.addLayer({
+                id: 'no-fly-zones-outline',
+                type: 'line',
+                source: 'no-fly-zones',
+                paint: {
+                  'line-color': '#b91c1c',
+                  'line-width': 2,
+                },
+              });
+            }
+            if (!map.getLayer('no-fly-zones-label')) {
+              map.addLayer({
+                id: 'no-fly-zones-label',
+                type: 'symbol',
+                source: 'no-fly-zones',
+                layout: {
+                  'text-field': ['coalesce', ['get', 'name'], ''],
+                  'text-size': 12,
+                  'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                  'text-anchor': 'center',
+                  'text-allow-overlap': false,
+                  'text-ignore-placement': false,
+                },
+                paint: {
+                  'text-color': '#0f172a',
+                  'text-halo-color': '#ffffff',
+                  'text-halo-width': 2,
+                },
+              });
+            }
+          } else {
+            src.setData(disabledZones as any);
+          }
+        } catch (error) {
+          console.warn('Failed to update disabled zones:', error);
+        }
+      };
+
+      // Kiểm tra map đã load xong chưa
+      if (!map.loaded()) {
+        // Đợi map load xong
+        const handler = () => updateDisabledZones();
+        map.once('load', handler);
+        return () => {
+          map.off('load', handler);
+        };
+      } else {
+        updateDisabledZones();
       }
     }, [disabledZones]);
 
@@ -218,8 +368,9 @@ export function MapboxMap({
       }
       src.setData({
         type: 'FeatureCollection',
-        features: markers.map(marker => ({
+        features: markers.map((marker, index) => ({
           type: 'Feature',
+          id: marker.id ?? `marker-${index}`,
           geometry: {
             type: 'Point',
             coordinates: [marker.lon, marker.lat],
