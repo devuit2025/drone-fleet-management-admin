@@ -69,13 +69,14 @@ export function MapboxMap({
 
         function updateArea() {
           const data = draw.getAll() as FeatureCollection<Polygon>;
+          const clonedData = JSON.parse(JSON.stringify(data)) as FeatureCollection<Polygon>;
           if (data.features.length > 0) {
             const area = turf.area(data);
             setRoundedArea(Math.round(area * 100) / 100);
           } else {
             setRoundedArea(0);
           }
-          if (onFeaturesChange) onFeaturesChange(data);
+          if (onFeaturesChange) onFeaturesChange(clonedData);
         }
 
         mapRef.current.on('draw.create', (e: any) => {
@@ -121,54 +122,56 @@ export function MapboxMap({
       }
 
       mapRef.current.on('load', () => {
-        mapRef.current!.addSource('readonly-polygons', {
-          type: 'geojson',
-          data: features ?? { type: 'FeatureCollection', features: [] },
-        });
-        mapRef.current!.addLayer({
-          id: 'readonly-polygons-fill',
-          type: 'fill',
-          source: 'readonly-polygons',
-          paint: {
-            'fill-color': [
-              'coalesce',
-              ['get', 'color'],
-              '#0ea5e9',
-            ],
-            'fill-opacity': 0.25,
-          },
-        });
-        mapRef.current!.addLayer({
-          id: 'readonly-polygons-outline',
-          type: 'line',
-          source: 'readonly-polygons',
-          paint: {
-            'line-color': [
-              'coalesce',
-              ['get', 'color'],
-              '#0284c7',
-            ],
-            'line-width': 2,
-          },
-        });
-        mapRef.current!.addLayer({
-          id: 'readonly-polygons-label',
-          type: 'symbol',
-          source: 'readonly-polygons',
-          layout: {
-            'text-field': ['coalesce', ['get', 'name'], ''],
-            'text-size': 12,
-            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-            'text-anchor': 'center',
-            'text-allow-overlap': false,
-            'text-ignore-placement': false,
-          },
-          paint: {
-            'text-color': '#0f172a',
-            'text-halo-color': '#ffffff',
-            'text-halo-width': 2,
-          },
-        });
+        if (readOnly) {
+          mapRef.current!.addSource('readonly-polygons', {
+            type: 'geojson',
+            data: features ?? { type: 'FeatureCollection', features: [] },
+          });
+          mapRef.current!.addLayer({
+            id: 'readonly-polygons-fill',
+            type: 'fill',
+            source: 'readonly-polygons',
+            paint: {
+              'fill-color': [
+                'coalesce',
+                ['get', 'color'],
+                '#0ea5e9',
+              ],
+              'fill-opacity': 0.25,
+            },
+          });
+          mapRef.current!.addLayer({
+            id: 'readonly-polygons-outline',
+            type: 'line',
+            source: 'readonly-polygons',
+            paint: {
+              'line-color': [
+                'coalesce',
+                ['get', 'color'],
+                '#0284c7',
+              ],
+              'line-width': 2,
+            },
+          });
+          mapRef.current!.addLayer({
+            id: 'readonly-polygons-label',
+            type: 'symbol',
+            source: 'readonly-polygons',
+            layout: {
+              'text-field': ['coalesce', ['get', 'name'], ''],
+              'text-size': 12,
+              'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+              'text-anchor': 'center',
+              'text-allow-overlap': false,
+              'text-ignore-placement': false,
+            },
+            paint: {
+              'text-color': '#0f172a',
+              'text-halo-color': '#ffffff',
+              'text-halo-width': 2,
+            },
+          });
+        }
         mapRef.current!.addSource('readonly-markers', {
           type: 'geojson',
           data: { type: 'FeatureCollection', features: [] },
@@ -358,6 +361,7 @@ export function MapboxMap({
     }, [disabledZones]);
 
     useEffect(() => {
+      console.log('markers', markers);
       const map = mapRef.current;
       if (!map) return;
       const src = map.getSource('readonly-markers') as mapboxgl.GeoJSONSource | undefined;
