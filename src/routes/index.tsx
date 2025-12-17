@@ -25,6 +25,9 @@ import DroneSensorEdit from '@/pages/models/drone-sensor/DroneSensorEdit';
 import NoFlyZoneList from '@/pages/models/no-fly-zone/NoFlyZoneList';
 import NoFlyZoneCreate from '@/pages/models/no-fly-zone/NoFlyZoneCreate';
 import NoFlyZoneEdit from '@/pages/models/no-fly-zone/NoFlyZoneEdit';
+import LicenseList from '@/pages/models/license/LicenseList';
+import LicenseCreate from '@/pages/models/license/LicenseCreate';
+import LicenseEdit from '@/pages/models/license/LicenseEdit';
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
@@ -32,6 +35,10 @@ const Dashboard = lazy(() => import('../pages/Dashboard'));
 const DroneList = lazy(() => import('../pages/models/drone/DroneList'));
 const DroneControl = lazy(() => import('../pages/control/DroneControl'));
 const MavlinkDemo = lazy(() => import('../pages/demo/MavlinkDemo'));
+const EnhancedMonitoringMap = lazy(() => import('../pages/monitoring/EnhancedMonitoringMap'));
+const FlightsAnalytics = lazy(() => import('../pages/analytics/FlightsAnalytics'));
+const Reports = lazy(() => import('../pages/analytics/Reports'));
+const Trends = lazy(() => import('../pages/analytics/Trends'));
 
 export const routes: RouteObject[] = [
     // Public route (no layout)
@@ -79,9 +86,18 @@ export const routes: RouteObject[] = [
             { path: 'no-fly-zones', element: <NoFlyZoneList /> },
             { path: 'no-fly-zones/create', element: <NoFlyZoneCreate /> },
             { path: 'no-fly-zones/:id/edit', element: <NoFlyZoneEdit /> },
+            { path: 'licenses', element: <LicenseList /> },
+            { path: 'licenses/create', element: <LicenseCreate /> },
+            { path: 'licenses/edit/:id', element: <LicenseEdit /> },
 
             { path: 'control', element: <DroneControl /> },
             { path: 'demo/mavlink', element: <MavlinkDemo /> },
+            { path: 'monitoring', element: <EnhancedMonitoringMap /> },
+            
+            // Analytics routes
+            { path: 'analytics/flights', element: <FlightsAnalytics /> },
+            { path: 'analytics/reports', element: <Reports /> },
+            { path: 'analytics/trends', element: <Trends /> },
         ],
     },
 ];

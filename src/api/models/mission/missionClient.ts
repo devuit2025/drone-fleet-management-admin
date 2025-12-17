@@ -73,6 +73,11 @@ export class MissionClient {
         return res as unknown as Mission[];
     }
 
+    static async findAllForMonitoring(): Promise<Mission[]> {
+        const res = await api.get<Mission[]>(`${this.base}/monitoring`);
+        return res as unknown as Mission[];
+    }
+
     static async findOne(id: number): Promise<Mission> {
         const res = await api.get<Mission>(`${this.base}/${id}`);
         return res as unknown as Mission;

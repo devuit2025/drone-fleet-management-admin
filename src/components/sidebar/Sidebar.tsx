@@ -54,9 +54,9 @@ export function Sidebar({ className }: SidebarProps) {
                     label="Giám sát Thời gian thực"
                     collapsed={collapsed}
                     items={[
-                        { label: 'Bản đồ trực tiếp', href: '/monitoring/map' },
-                        { label: 'Bảng Telemetry', href: '/monitoring/telemetry' },
-                        { label: 'Bảng Cảnh báo', href: '/monitoring/alerts' },
+                        { label: 'Bản đồ trực tiếp', href: '/monitoring' },
+                        // { label: 'Bảng Telemetry', href: '/monitoring/telemetry' },
+                        // { label: 'Bảng Cảnh báo', href: '/monitoring/alerts' },
                     ]}
                 />
 
@@ -117,9 +117,9 @@ export function Sidebar({ className }: SidebarProps) {
                     label="Giấy phép bay"
                     collapsed={collapsed}
                     items={[
-                        { label: 'Đăng ký Giấy phép', href: '/permits/apply' },
-                        { label: 'Kiểm tra hợp lệ', href: '/permits/check' },
-                        { label: 'Lịch sử phê duyệt', href: '/permits/logs' },
+                        { label: 'Đăng ký Giấy phép', href: '/licenses' },
+                        // { label: 'Kiểm tra hợp lệ', href: '/permits/check' },
+                        // { label: 'Lịch sử phê duyệt', href: '/permits/logs' },
                     ]}
                 />
 
@@ -136,7 +136,7 @@ export function Sidebar({ className }: SidebarProps) {
                 />
 
                 {/* Simulation & Testing */}
-                <SidebarGroup
+                {/* <SidebarGroup
                     icon={<Terminal className="h-5 w-5" />}
                     label="Mô phỏng & Kiểm thử"
                     collapsed={collapsed}
@@ -146,7 +146,7 @@ export function Sidebar({ className }: SidebarProps) {
                         { label: 'Nhiệm vụ mô phỏng', href: '/simulation/missions' },
                         { label: 'So sánh dữ liệu', href: '/simulation/compare' },
                     ]}
-                />
+                /> */}
 
                 {/* Error & Alert Center */}
                 <SidebarGroup

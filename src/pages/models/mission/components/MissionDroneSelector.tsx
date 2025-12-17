@@ -173,14 +173,18 @@ export function MissionDroneSelector({
     const updateEditorFeatures = useCallback(
         (fc: FeatureCollection<Polygon>) => {
             const ring = ringFromFeatureCollection(fc);
+            console.log('ring', ring);
             const closed = ensureClosedRing(ring);
+            console.log('closed', closed);
             const normalizedFc =
                 closed.length > 0 ? featureCollectionFromRing(closed) : EMPTY_FEATURE_COLLECTION;
+            console.log('normalizedFc', normalizedFc);
             const nextWaypoints = buildWaypoints(closed, editorState?.waypoints);
-
+            console.log('nextWaypoints', nextWaypoints);
             let conflict = false;
             if (disabledZones && normalizedFc.features.length > 0) {
                 conflict = intersectsAnyPolygon(normalizedFc, disabledZones);
+                console.log('conflict', conflict);
             }
 
             setEditorState({

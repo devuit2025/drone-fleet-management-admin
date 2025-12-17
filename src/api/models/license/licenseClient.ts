@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from '@/api/axios';
 
 export type LicenseType = 'commercial' | 'recreational';
 export type QualificationLevel = 'basic' | 'advanced' | 'expert';
@@ -13,8 +13,8 @@ export interface License {
     issuedDate: string;
     expiryDate: string;
     active: boolean;
-    created_at: string;
-    updated_at: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface CreateLicenseDto {
@@ -28,7 +28,41 @@ export interface CreateLicenseDto {
     active?: boolean;
 }
 
-export const LicenseClient = axios.create({
-    baseURL: `${import.meta.env.VITE_API_PREFIX}/licenses`,
-    withCredentials: true,
-});
+export interface UpdateLicenseDto {
+    pilotId?: number;
+    licenseNumber?: string;
+    licenseType?: LicenseType;
+    qualificationLevel?: QualificationLevel;
+    issuingAuthority?: string;
+    issuedDate?: string;
+    expiryDate?: string;
+    active?: boolean;
+}
+
+export class LicenseClient {
+    private static base = '/licenses';
+
+    static async findAll(): Promise<License[]> {
+        const res = await api.get<License[]>(this.base);
+        return res as unknown as License[];
+    }
+
+    static async findOne(id: number): Promise<License> {
+        const res = await api.get<License>(`${this.base}/${id}`);
+        return res as unknown as License;
+    }
+
+    static async create(data: CreateLicenseDto): Promise<License> {
+        const res = await api.post<License>(this.base, data);
+        return res as unknown as License;
+    }
+
+    static async update(id: number, data: UpdateLicenseDto): Promise<License> {
+        const res = await api.patch<License>(`${this.base}/${id}`, data);
+        return res as unknown as License;
+    }
+
+    static async remove(id: number): Promise<void> {
+        await api.delete(`${this.base}/${id}`);
+    }
+}
