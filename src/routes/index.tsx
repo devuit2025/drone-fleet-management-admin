@@ -39,6 +39,9 @@ const EnhancedMonitoringMap = lazy(() => import('../pages/monitoring/EnhancedMon
 const FlightsAnalytics = lazy(() => import('../pages/analytics/FlightsAnalytics'));
 const Reports = lazy(() => import('../pages/analytics/Reports'));
 const Trends = lazy(() => import('../pages/analytics/Trends'));
+const UserList = lazy(() => import('../pages/admin/users/UserList'));
+const UserCreate = lazy(() => import('../pages/admin/users/UserCreate'));
+const UserEdit = lazy(() => import('../pages/admin/users/UserEdit'));
 
 export const routes: RouteObject[] = [
     // Public route (no layout)
@@ -98,6 +101,11 @@ export const routes: RouteObject[] = [
             { path: 'analytics/flights', element: <FlightsAnalytics /> },
             { path: 'analytics/reports', element: <Reports /> },
             { path: 'analytics/trends', element: <Trends /> },
+            
+            // Admin routes
+            { path: 'admin/users', element: <UserList /> },
+            { path: 'admin/users/create', element: <UserCreate /> },
+            { path: 'admin/users/edit/:id', element: <UserEdit /> },
         ],
     },
 ];

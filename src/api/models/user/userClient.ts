@@ -5,12 +5,16 @@ import { api } from '@/api/axios';
 // ------------------------------------------
 
 export type UserRole = 'admin' | 'operator' | 'viewer';
+export type UserStatus = 'active' | 'inactive';
 
 export interface User {
     id: number;
     name: string;
     email: string;
     role: UserRole;
+    status?: UserStatus;
+    avatar?: string;
+    lastLogin?: string; // ISO date
     createdAt: string; // ISO date
     updatedAt: string; // ISO date
     pilots?: any[]; // Associated pilots (structure not defined in schema)
@@ -21,6 +25,8 @@ export interface CreateUserDto {
     email: string;
     password: string;
     role?: UserRole;
+    status?: UserStatus;
+    avatar?: string;
 }
 
 export interface UpdateUserDto {
@@ -28,6 +34,8 @@ export interface UpdateUserDto {
     email?: string;
     password?: string;
     role?: UserRole;
+    status?: UserStatus;
+    avatar?: string;
 }
 
 // ------------------------------------------
