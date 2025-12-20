@@ -42,6 +42,8 @@ const Trends = lazy(() => import('../pages/analytics/Trends'));
 const UserList = lazy(() => import('../pages/admin/users/UserList'));
 const UserCreate = lazy(() => import('../pages/admin/users/UserCreate'));
 const UserEdit = lazy(() => import('../pages/admin/users/UserEdit'));
+const Logs = lazy(() => import('../pages/admin/logs/Logs'));
+const AlertsLogs = lazy(() => import('../pages/alerts/AlertsLogs'));
 
 export const routes: RouteObject[] = [
     // Public route (no layout)
@@ -106,6 +108,10 @@ export const routes: RouteObject[] = [
             { path: 'admin/users', element: <UserList /> },
             { path: 'admin/users/create', element: <UserCreate /> },
             { path: 'admin/users/edit/:id', element: <UserEdit /> },
+            { path: 'admin/logs', element: <Logs /> },
+            
+            // Alerts routes
+            { path: 'alerts/logs', element: <AlertsLogs /> },
         ],
     },
 ];

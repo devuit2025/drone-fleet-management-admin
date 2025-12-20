@@ -154,8 +154,8 @@ export function Sidebar({ className }: SidebarProps) {
                     label="Trung tâm Cảnh báo"
                     collapsed={collapsed}
                     items={[
-                        { label: 'Cảnh báo hệ thống', href: '/alerts/system' },
-                        { label: 'Cảnh báo an toàn', href: '/alerts/safety' },
+                        // { label: 'Cảnh báo hệ thống', href: '/alerts/system' },
+                        // { label: 'Cảnh báo an toàn', href: '/alerts/safety' },
                         { label: 'Nhật ký cảnh báo', href: '/alerts/logs' },
                     ]}
                 />
@@ -167,7 +167,7 @@ export function Sidebar({ className }: SidebarProps) {
                     collapsed={collapsed}
                     items={[
                         { label: 'Người dùng & Quyền', href: '/admin/users' },
-                        { label: 'Cấu hình hệ thống', href: '/admin/settings' },
+                        // { label: 'Cấu hình hệ thống', href: '/admin/settings' },
                         { label: 'Nhật ký truy cập', href: '/admin/logs' },
                     ]}
                 />
