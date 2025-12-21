@@ -2,7 +2,13 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
 import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/table/DataTable';
@@ -64,15 +70,15 @@ export default function NoFlyZoneList() {
     const columns: ColumnDef<NoFlyZone>[] = [
         { key: 'id', header: 'ID', sortable: true },
         { key: 'name', header: 'Tên', filterable: true },
-        { 
-            key: 'description', 
+        {
+            key: 'description',
             header: 'Mô tả',
-            render: (row) => row.description || '-',
+            render: row => row.description || '-',
         },
-        { 
-            key: 'zoneType', 
+        {
+            key: 'zoneType',
             header: 'Loại',
-            render: (row) => row.zoneType === 'polygon' ? 'Polygon' : 'Circle',
+            render: row => (row.zoneType === 'polygon' ? 'Polygon' : 'Circle'),
         },
     ];
 
@@ -152,8 +158,16 @@ export default function NoFlyZoneList() {
                 return;
             }
             const geometry = JSON.stringify(modalPolygon);
-            const desc = modalDescription !== undefined && modalDescription !== null ? String(modalDescription) : undefined;
-            await NoFlyZoneClient.create({ name: modalName.trim(), description: desc, zoneType: 'polygon', geometry });
+            const desc =
+                modalDescription !== undefined && modalDescription !== null
+                    ? String(modalDescription)
+                    : undefined;
+            await NoFlyZoneClient.create({
+                name: modalName.trim(),
+                description: desc,
+                zoneType: 'polygon',
+                geometry,
+            });
             toast.success('Tạo No-Fly Zone thành công');
             setModalOpen(false);
             setModalPolygon(null);
@@ -195,7 +209,7 @@ export default function NoFlyZoneList() {
                         page={page}
                         pageSize={pageSize}
                         loading={loading}
-                        getId={(row) => row.id}
+                        getId={row => row.id}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
                         onPageChange={handlePageChange}
@@ -216,7 +230,10 @@ export default function NoFlyZoneList() {
                                 onDrawDelete={handleDrawDelete}
                                 style={{ height: '600px', width: '100%' }}
                             />
-                            <FieldDescription>Vẽ polygon trên bản đồ để tạo No-Fly Zone mới. Tất cả các zone hiện có sẽ được hiển thị.</FieldDescription>
+                            <FieldDescription>
+                                Vẽ polygon trên bản đồ để tạo No-Fly Zone mới. Tất cả các zone hiện
+                                có sẽ được hiển thị.
+                            </FieldDescription>
                         </Field>
                     </div>
                 </TabsContent>
@@ -230,19 +247,19 @@ export default function NoFlyZoneList() {
                     <div className="space-y-4 py-4">
                         <Field>
                             <FieldLabel>Tên *</FieldLabel>
-                            <Input 
-                                value={modalName} 
-                                onChange={e => setModalName(e.target.value)} 
-                                placeholder="VD: Khu quân sự A" 
+                            <Input
+                                value={modalName}
+                                onChange={e => setModalName(e.target.value)}
+                                placeholder="VD: Khu quân sự A"
                             />
                             <FieldDescription>Nhập tên cho No-Fly Zone</FieldDescription>
                         </Field>
                         <Field>
                             <FieldLabel>Mô tả</FieldLabel>
-                            <Input 
-                                value={modalDescription} 
-                                onChange={e => setModalDescription(e.target.value)} 
-                                placeholder="Mô tả về vùng cấm bay (tùy chọn)" 
+                            <Input
+                                value={modalDescription}
+                                onChange={e => setModalDescription(e.target.value)}
+                                placeholder="Mô tả về vùng cấm bay (tùy chọn)"
                             />
                             <FieldDescription>Thông tin bổ sung về No-Fly Zone</FieldDescription>
                         </Field>
@@ -251,9 +268,7 @@ export default function NoFlyZoneList() {
                         <Button variant="outline" onClick={() => setModalOpen(false)}>
                             Hủy
                         </Button>
-                        <Button onClick={handleModalSubmit}>
-                            Tạo mới
-                        </Button>
+                        <Button onClick={handleModalSubmit}>Tạo mới</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

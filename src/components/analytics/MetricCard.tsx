@@ -107,7 +107,9 @@ export function MetricCard({
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                             {trend && (
-                                <div className={`flex items-center gap-1 text-xs ${getTrendColor()}`}>
+                                <div
+                                    className={`flex items-center gap-1 text-xs ${getTrendColor()}`}
+                                >
                                     {getTrendIcon()}
                                     <span className="font-medium">
                                         {Math.abs(trend.value).toFixed(1)}%
@@ -127,5 +129,3 @@ export function MetricCard({
         </Card>
     );
 }
-
-

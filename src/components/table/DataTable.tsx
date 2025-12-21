@@ -32,7 +32,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
     // Ensure data is always an array
     const safeData = Array.isArray(data) ? data : [];
-    
+
     // Add operation column if onEdit or onDelete is provided
     const columnsWithOperation = useMemo<ColumnDef<T>[]>(() => {
         if (!onEdit && !onDelete) {
@@ -46,20 +46,12 @@ export function DataTable<T>({
                 render: (row: T) => (
                     <div className="flex gap-2">
                         {onEdit && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onEdit(row)}
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => onEdit(row)}>
                                 <Edit className="h-4 w-4" />
                             </Button>
                         )}
                         {onDelete && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onDelete(row)}
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => onDelete(row)}>
                                 <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                         )}
@@ -68,19 +60,25 @@ export function DataTable<T>({
             },
         ];
     }, [columns, onEdit, onDelete]);
-    
+
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [selectedRows, setSelectedRows] = useState<number[]>([]);
-    const [visibleColumns, setVisibleColumns] = useState<string[]>(columnsWithOperation.map(c => c.key));
+    const [visibleColumns, setVisibleColumns] = useState<string[]>(
+        columnsWithOperation.map(c => c.key),
+    );
     const debouncedSearch = useDebounce(
         (newFilters: Record<string, string>) => handleSearch(newFilters),
         500,
     );
 
     // ---- Filter handling ----
-    const handleFilterChange = (key: string | Record<string, string>, value: string, debounce: boolean = false) => {
-        let newFilters = null
-        if (typeof key ==='object') {
+    const handleFilterChange = (
+        key: string | Record<string, string>,
+        value: string,
+        debounce: boolean = false,
+    ) => {
+        let newFilters = null;
+        if (typeof key === 'object') {
             newFilters = { ...filters, ...key };
         } else {
             newFilters = { ...filters, [key]: value };
@@ -155,9 +153,11 @@ export function DataTable<T>({
                             <TableHead className="w-10 px-4">
                                 <Checkbox
                                     checked={
-                                        selectedRows.length === safeData.length && safeData.length > 0
+                                        selectedRows.length === safeData.length &&
+                                        safeData.length > 0
                                             ? true
-                                            : selectedRows.length > 0 && selectedRows.length < safeData.length
+                                            : selectedRows.length > 0 &&
+                                                selectedRows.length < safeData.length
                                               ? 'indeterminate'
                                               : false
                                     }

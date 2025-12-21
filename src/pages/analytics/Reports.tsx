@@ -287,7 +287,9 @@ export default function Reports() {
                                             {drone.daysSinceLastMaintenance} days
                                         </td>
                                         <td className="px-6 py-4">
-                                            <Badge className={getMaintenanceStatusColor(drone.status)}>
+                                            <Badge
+                                                className={getMaintenanceStatusColor(drone.status)}
+                                            >
                                                 {drone.status}
                                             </Badge>
                                         </td>
@@ -306,9 +308,7 @@ export default function Reports() {
                     <CardHeader>
                         <div className="flex items-center gap-2">
                             <Shield className="h-5 w-5 text-muted-foreground" />
-                            <CardTitle className="text-base font-medium">
-                                Tổng hợp sự cố
-                            </CardTitle>
+                            <CardTitle className="text-base font-medium">Tổng hợp sự cố</CardTitle>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -372,7 +372,8 @@ export default function Reports() {
                                             {license.licenseNumber}
                                         </p>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            Expires: {format(new Date(license.expiryDate), 'dd/MM/yyyy')}
+                                            Expires:{' '}
+                                            {format(new Date(license.expiryDate), 'dd/MM/yyyy')}
                                         </p>
                                     </div>
                                     <div className="text-right">
@@ -441,9 +442,7 @@ export default function Reports() {
             {/* Battery Consumption Scatter Chart */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-base font-medium">
-                        Hiệu suất tiêu thụ pin
-                    </CardTitle>
+                    <CardTitle className="text-base font-medium">Hiệu suất tiêu thụ pin</CardTitle>
                     <p className="text-sm text-muted-foreground">
                         Mối quan hệ giữa thời gian bay và mức tiêu thụ pin
                     </p>
@@ -501,7 +500,9 @@ export default function Reports() {
                                         <td className="px-6 py-4 text-right">
                                             {(pilot.totalDistance / 1000).toFixed(2)} km
                                         </td>
-                                        <td className="px-6 py-4 text-right">{pilot.flightCount}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            {pilot.flightCount}
+                                        </td>
                                         <td className="px-6 py-4 text-right">
                                             {(pilot.avgDistance / 1000).toFixed(2)} km
                                         </td>

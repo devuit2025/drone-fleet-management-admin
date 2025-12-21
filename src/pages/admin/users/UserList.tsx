@@ -80,8 +80,7 @@ export default function UserList() {
             render: r => {
                 const roleColors = {
                     admin: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-400',
-                    operator:
-                        'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400',
+                    operator: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400',
                     viewer: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
                 };
                 return (
@@ -150,7 +149,13 @@ export default function UserList() {
             const usersWithMockData = (response as unknown as User[]).map(user => ({
                 ...user,
                 status: user.status || (Math.random() > 0.1 ? 'active' : 'inactive'),
-                lastLogin: user.lastLogin || (Math.random() > 0.2 ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString() : undefined),
+                lastLogin:
+                    user.lastLogin ||
+                    (Math.random() > 0.2
+                        ? new Date(
+                              Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
+                          ).toISOString()
+                        : undefined),
             }));
             setUsers(usersWithMockData);
             setTotal(usersWithMockData.length);
@@ -308,5 +313,3 @@ export default function UserList() {
         </div>
     );
 }
-
-

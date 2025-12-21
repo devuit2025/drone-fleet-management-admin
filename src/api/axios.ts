@@ -3,7 +3,7 @@ import { toastError } from '@/lib/toast';
 import axios from 'axios';
 
 export const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -26,20 +26,19 @@ api.interceptors.response.use(
 );
 
 api.interceptors.response.use(
-    (response) => response,
+    response => response,
     error => {
-      console.error("[API Error]", error);
-  
-      const message = error.response?.data?.message || error.message || "Something went wrong";
-  
-      toastError(message);
-  
-      // Return a structured object instead of throwing raw error
-      return Promise.reject({
-        message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-    }
-  );
-  
+        console.error('[API Error]', error);
+
+        const message = error.response?.data?.message || error.message || 'Something went wrong';
+
+        toastError(message);
+
+        // Return a structured object instead of throwing raw error
+        return Promise.reject({
+            message,
+            status: error.response?.status,
+            data: error.response?.data,
+        });
+    },
+);

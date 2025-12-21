@@ -4,7 +4,10 @@ import { DataTable } from '@/components/table/DataTable';
 import type { ColumnDef } from '@/components/table/types';
 import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
 import { toast } from 'sonner';
-import { DroneCategoryClient, type DroneCategory } from '@/api/models/drone-category/droneCategoryClient';
+import {
+    DroneCategoryClient,
+    type DroneCategory,
+} from '@/api/models/drone-category/droneCategoryClient';
 import { DroneCategoryMutation } from '@/api/models/drone-category/droneCategoryMutation';
 
 export default function DroneCategoryList() {

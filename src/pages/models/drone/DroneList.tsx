@@ -33,7 +33,12 @@ export default function DroneList() {
             name: d.name,
             status: d.status,
             batteryHealth: d.batteryHealth ?? 0,
-            lastMission: (d.lastMaintenance || d.updatedAt || d.createdAt || new Date().toISOString()).slice(0, 10),
+            lastMission: (
+                d.lastMaintenance ||
+                d.updatedAt ||
+                d.createdAt ||
+                new Date().toISOString()
+            ).slice(0, 10),
         }));
     }, [apiDrones]);
 
@@ -56,7 +61,9 @@ export default function DroneList() {
                 >
                     <option value="">All</option>
                     {statuses.map(status => (
-                        <option key={status} value={status}>{status}</option>
+                        <option key={status} value={status}>
+                            {status}
+                        </option>
                     ))}
                 </select>
             ),
@@ -107,11 +114,8 @@ export default function DroneList() {
                 const response = await getDrones(params);
                 const drones = Array.isArray(response) ? response : [];
                 // Get total from X-Total header
-                const totalHeader = response.headers?.['x-total'] || 
-                                    response.headers?.['X-Total'];
-                const totalCount = totalHeader 
-                    ? parseInt(String(totalHeader), 10) 
-                    : drones.length;
+                const totalHeader = response.headers?.['x-total'] || response.headers?.['X-Total'];
+                const totalCount = totalHeader ? parseInt(String(totalHeader), 10) : drones.length;
 
                 setApiDrones(drones);
                 setTotal(totalCount);

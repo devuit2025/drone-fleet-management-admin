@@ -1,4 +1,9 @@
-import { LicenseClient, type License, type CreateLicenseDto, type UpdateLicenseDto } from './licenseClient';
+import {
+    LicenseClient,
+    type License,
+    type CreateLicenseDto,
+    type UpdateLicenseDto,
+} from './licenseClient';
 
 export const LicenseMutation = {
     async create(data: CreateLicenseDto): Promise<License> {

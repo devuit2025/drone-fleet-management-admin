@@ -82,13 +82,10 @@ export default function UserEdit() {
 
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Edit User</h1>
-                <p className="text-muted-foreground">
-                    Update user information and permissions
-                </p>
+                <p className="text-muted-foreground">Update user information and permissions</p>
             </div>
 
             <UserForm user={user} onSubmit={handleSubmit} loading={loading} isEdit />
         </div>
     );
 }
-

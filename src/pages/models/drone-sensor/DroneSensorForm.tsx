@@ -22,7 +22,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { type CreateDroneSensorDto, type UpdateDroneSensorDto, type SensorStatus, DroneSensorClient, type DroneSensor } from '@/api/models/drone-sensor/droneSensorClient';
+import {
+    type CreateDroneSensorDto,
+    type UpdateDroneSensorDto,
+    type SensorStatus,
+    DroneSensorClient,
+    type DroneSensor,
+} from '@/api/models/drone-sensor/droneSensorClient';
 import { DroneSensorMutation } from '@/api/models/drone-sensor/droneSensorMutation';
 import { DroneClient, type Drone } from '@/api/models/drone/droneClient';
 
@@ -99,7 +105,10 @@ export default function DroneSensorForm({ isEdit = false }: DroneSensorFormProps
                 }
                 navigate('/drone-sensors');
             } catch (err: any) {
-                toast.error(err?.response?.data?.message || (isEdit ? 'Cập nhật drone sensor thất bại' : 'Tạo drone sensor thất bại'));
+                toast.error(
+                    err?.response?.data?.message ||
+                        (isEdit ? 'Cập nhật drone sensor thất bại' : 'Tạo drone sensor thất bại'),
+                );
                 console.error(err);
             }
         },
@@ -133,7 +142,9 @@ export default function DroneSensorForm({ isEdit = false }: DroneSensorFormProps
             <CardHeader>
                 <CardTitle>{isEdit ? 'Chỉnh sửa drone sensor' : 'Thêm drone sensor mới'}</CardTitle>
                 <CardDescription>
-                    {isEdit ? 'Cập nhật thông tin drone sensor' : 'Nhập thông tin drone sensor để quản lý'}
+                    {isEdit
+                        ? 'Cập nhật thông tin drone sensor'
+                        : 'Nhập thông tin drone sensor để quản lý'}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -161,7 +172,9 @@ export default function DroneSensorForm({ isEdit = false }: DroneSensorFormProps
                                             <Select
                                                 value={field.state.value?.toString() || ''}
                                                 onValueChange={val =>
-                                                    field.handleChange(val ? Number(val) : undefined)
+                                                    field.handleChange(
+                                                        val ? Number(val) : undefined,
+                                                    )
                                                 }
                                                 disabled={loading}
                                             >
@@ -197,7 +210,9 @@ export default function DroneSensorForm({ isEdit = false }: DroneSensorFormProps
                                         field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>Sensor Type *</FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Sensor Type *
+                                            </FieldLabel>
                                             <Input
                                                 id={field.name}
                                                 name={field.name}
@@ -275,14 +290,22 @@ export default function DroneSensorForm({ isEdit = false }: DroneSensorFormProps
                                         field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>Field of View (°)</FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Field of View (°)
+                                            </FieldLabel>
                                             <Input
                                                 id={field.name}
                                                 name={field.name}
                                                 type="number"
                                                 value={field.state.value || ''}
                                                 onBlur={field.handleBlur}
-                                                onChange={e => field.handleChange(e.target.value ? Number(e.target.value) : undefined)}
+                                                onChange={e =>
+                                                    field.handleChange(
+                                                        e.target.value
+                                                            ? Number(e.target.value)
+                                                            : undefined,
+                                                    )
+                                                }
                                                 aria-invalid={isInvalid}
                                                 placeholder="Nhập field of view"
                                             />
@@ -313,7 +336,9 @@ export default function DroneSensorForm({ isEdit = false }: DroneSensorFormProps
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="active">Active</SelectItem>
-                                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                                    <SelectItem value="inactive">
+                                                        Inactive
+                                                    </SelectItem>
                                                     <SelectItem value="faulty">Faulty</SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -341,4 +366,3 @@ export default function DroneSensorForm({ isEdit = false }: DroneSensorFormProps
         </Card>
     );
 }
-

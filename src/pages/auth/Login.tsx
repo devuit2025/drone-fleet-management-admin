@@ -26,7 +26,7 @@ const loginFields = [
 export default function LoginPage() {
     const { login } = useLogin();
     const navigate = useNavigate();
-    
+
     const handleSubmit = async (values: z.infer<typeof loginSchema>) => {
         await login(values.email, values.password);
         navigate('/');

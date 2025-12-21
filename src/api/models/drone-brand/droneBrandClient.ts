@@ -28,7 +28,6 @@ export interface UpdateDroneBrandDto {
 export class DroneBrandClient {
     private static base = '/drone-brands';
 
-
     static async create(data: CreateDroneBrandDto): Promise<DroneBrand> {
         const res = await api.post<DroneBrand>(this.base, data);
         console.log(res);
@@ -53,4 +52,4 @@ export class DroneBrandClient {
     static async remove(id: number): Promise<void> {
         await api.delete(`${this.base}/${id}`);
     }
-};
+}

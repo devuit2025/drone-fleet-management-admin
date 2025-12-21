@@ -1,4 +1,9 @@
-import { MissionClient, type CreateMissionDto, type UpdateMissionDto, type Mission } from './missionClient';
+import {
+    MissionClient,
+    type CreateMissionDto,
+    type UpdateMissionDto,
+    type Mission,
+} from './missionClient';
 
 export const MissionMutation = {
     async create(data: CreateMissionDto): Promise<Mission> {

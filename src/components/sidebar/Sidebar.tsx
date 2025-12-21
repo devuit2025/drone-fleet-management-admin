@@ -25,7 +25,7 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
     const { collapsed } = useAdminLayout();
-    const { logout } = useLogout()
+    const { logout } = useLogout();
 
     return (
         <aside

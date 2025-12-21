@@ -36,23 +36,24 @@ export default function LicenseList() {
             key: 'qualificationLevel',
             header: 'Qualification Level',
             filterable: true,
-            render: r => r.qualificationLevel.charAt(0).toUpperCase() + r.qualificationLevel.slice(1),
+            render: r =>
+                r.qualificationLevel.charAt(0).toUpperCase() + r.qualificationLevel.slice(1),
         },
         { key: 'issuingAuthority', header: 'Issuing Authority', filterable: true },
         {
             key: 'issuedDate',
             header: 'Issued Date',
-            render: r => r.issuedDate ? new Date(r.issuedDate).toLocaleDateString() : '-',
+            render: r => (r.issuedDate ? new Date(r.issuedDate).toLocaleDateString() : '-'),
         },
         {
             key: 'expiryDate',
             header: 'Expiry Date',
-            render: r => r.expiryDate ? new Date(r.expiryDate).toLocaleDateString() : '-',
+            render: r => (r.expiryDate ? new Date(r.expiryDate).toLocaleDateString() : '-'),
         },
         {
             key: 'active',
             header: 'Active',
-            render: r => r.active ? 'Yes' : 'No',
+            render: r => (r.active ? 'Yes' : 'No'),
         },
         // { key: 'createdAt', header: 'Created At', render: r => r.createdAt ? r.createdAt.slice(0, 10) : '-' },
         // { key: 'updatedAt', header: 'Updated At', render: r => r.updatedAt ? r.updatedAt.slice(0, 10) : '-' },
@@ -127,5 +128,3 @@ export default function LicenseList() {
         </div>
     );
 }
-
-

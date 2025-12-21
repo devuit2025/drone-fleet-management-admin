@@ -22,7 +22,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { type CreatePilotDto, type UpdatePilotDto, type PilotStatus, PilotClient } from '@/api/models/pilot/pilotClient';
+import {
+    type CreatePilotDto,
+    type UpdatePilotDto,
+    type PilotStatus,
+    PilotClient,
+} from '@/api/models/pilot/pilotClient';
 import { PilotMutation } from '@/api/models/pilot/pilotMutation';
 import { UserClient, type User } from '@/api/models/user/userClient';
 
@@ -88,7 +93,10 @@ export default function PilotForm({ isEdit = false }: PilotFormProps) {
                 }
                 navigate('/pilots');
             } catch (err: any) {
-                toast.error(err?.response?.data?.message || (isEdit ? 'Cập nhật pilot thất bại' : 'Tạo pilot thất bại'));
+                toast.error(
+                    err?.response?.data?.message ||
+                        (isEdit ? 'Cập nhật pilot thất bại' : 'Tạo pilot thất bại'),
+                );
                 console.error(err);
             }
         },
@@ -147,7 +155,9 @@ export default function PilotForm({ isEdit = false }: PilotFormProps) {
                                             <Select
                                                 value={field.state.value?.toString() || ''}
                                                 onValueChange={val =>
-                                                    field.handleChange(val ? Number(val) : undefined)
+                                                    field.handleChange(
+                                                        val ? Number(val) : undefined,
+                                                    )
                                                 }
                                                 disabled={loading}
                                             >
@@ -183,7 +193,9 @@ export default function PilotForm({ isEdit = false }: PilotFormProps) {
                                         field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>Tên pilot *</FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Tên pilot *
+                                            </FieldLabel>
                                             <Input
                                                 id={field.name}
                                                 name={field.name}
@@ -221,7 +233,9 @@ export default function PilotForm({ isEdit = false }: PilotFormProps) {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="active">Active</SelectItem>
-                                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                                    <SelectItem value="inactive">
+                                                        Inactive
+                                                    </SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             {isInvalid && (
@@ -248,4 +262,3 @@ export default function PilotForm({ isEdit = false }: PilotFormProps) {
         </Card>
     );
 }
-

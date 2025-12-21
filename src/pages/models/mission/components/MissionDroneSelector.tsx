@@ -246,7 +246,9 @@ export function MissionDroneSelector({
             item.droneId !== undefined
                 ? droneOptions.find(opt => opt.id === item.droneId)?.label
                 : undefined;
-        const label = item.droneId ? item.droneName ?? optionLabel ?? `Drone ${item.droneId}` : null;
+        const label = item.droneId
+            ? (item.droneName ?? optionLabel ?? `Drone ${item.droneId}`)
+            : null;
 
         if (!item.droneId) {
             return <span className="text-xs text-muted-foreground">Chưa chọn drone</span>;
@@ -279,7 +281,9 @@ export function MissionDroneSelector({
                         key={item.key}
                         className={cn(
                             'rounded border p-4 transition-colors',
-                            item.hasConflict ? 'border-destructive/60 bg-destructive/5' : 'border-muted',
+                            item.hasConflict
+                                ? 'border-destructive/60 bg-destructive/5'
+                                : 'border-muted',
                         )}
                     >
                         <div className="flex flex-wrap items-start gap-3">
@@ -298,7 +302,10 @@ export function MissionDroneSelector({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableOptions(item.droneId).map(option => (
-                                            <SelectItem key={option.id} value={option.id.toString()}>
+                                            <SelectItem
+                                                key={option.id}
+                                                value={option.id.toString()}
+                                            >
                                                 {option.label}
                                             </SelectItem>
                                         ))}
@@ -335,7 +342,10 @@ export function MissionDroneSelector({
                 <Plus className="mr-2 h-4 w-4" /> Thêm drone
             </Button>
 
-            <Dialog open={editorIndex !== null} onOpenChange={open => (open ? null : closeEditor())}>
+            <Dialog
+                open={editorIndex !== null}
+                onOpenChange={open => (open ? null : closeEditor())}
+            >
                 <DialogContent
                     style={{
                         display: 'flex',
@@ -349,7 +359,8 @@ export function MissionDroneSelector({
                     <DialogHeader>
                         <DialogTitle>Thiết lập waypoint cho drone</DialogTitle>
                         <DialogDescription>
-                            Vẽ polygon trên bản đồ để sinh waypoint, rồi điều chỉnh thông số chi tiết.
+                            Vẽ polygon trên bản đồ để sinh waypoint, rồi điều chỉnh thông số chi
+                            tiết.
                         </DialogDescription>
                     </DialogHeader>
                     {editorState && (
@@ -364,7 +375,8 @@ export function MissionDroneSelector({
                             </div>
                             {editorState.hasConflict && (
                                 <p className="rounded border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-                                    Polygon đang chồng lấp với khu vực cấm bay. Điều chỉnh lại trước khi lưu.
+                                    Polygon đang chồng lấp với khu vực cấm bay. Điều chỉnh lại trước
+                                    khi lưu.
                                 </p>
                             )}
                             <div className="max-h-52 overflow-auto rounded border bg-muted/30 p-4">
@@ -378,7 +390,10 @@ export function MissionDroneSelector({
                                 </div>
                                 <div className="divide-y">
                                     {editorState.waypoints.map((wp, idx) => (
-                                        <div key={idx} className="grid grid-cols-6 gap-3 py-2 text-xs">
+                                        <div
+                                            key={idx}
+                                            className="grid grid-cols-6 gap-3 py-2 text-xs"
+                                        >
                                             <div className="font-medium">{idx}</div>
                                             <div className="font-mono">{wp.lon.toFixed(6)}</div>
                                             <div className="font-mono">{wp.lat.toFixed(6)}</div>
@@ -387,7 +402,11 @@ export function MissionDroneSelector({
                                                 type="number"
                                                 value={wp.altitudeM}
                                                 onChange={e =>
-                                                    handleWaypointFieldChange(idx, 'altitudeM', e.target.value)
+                                                    handleWaypointFieldChange(
+                                                        idx,
+                                                        'altitudeM',
+                                                        e.target.value,
+                                                    )
                                                 }
                                             />
                                             <Input
@@ -395,14 +414,22 @@ export function MissionDroneSelector({
                                                 type="number"
                                                 value={wp.speedMps}
                                                 onChange={e =>
-                                                    handleWaypointFieldChange(idx, 'speedMps', e.target.value)
+                                                    handleWaypointFieldChange(
+                                                        idx,
+                                                        'speedMps',
+                                                        e.target.value,
+                                                    )
                                                 }
                                             />
                                             <Input
                                                 className="h-7 text-xs"
                                                 value={wp.action}
                                                 onChange={e =>
-                                                    handleWaypointFieldChange(idx, 'action', e.target.value)
+                                                    handleWaypointFieldChange(
+                                                        idx,
+                                                        'action',
+                                                        e.target.value,
+                                                    )
                                                 }
                                             />
                                         </div>
@@ -433,4 +460,3 @@ export function MissionDroneSelector({
         </div>
     );
 }
-

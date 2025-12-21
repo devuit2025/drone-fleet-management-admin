@@ -39,7 +39,7 @@ export default function DroneSensorList() {
         {
             key: 'fieldOfView',
             header: 'Field of View',
-            render: r => r.fieldOfView ? `${r.fieldOfView}°` : '-',
+            render: r => (r.fieldOfView ? `${r.fieldOfView}°` : '-'),
         },
         {
             key: 'status',
@@ -119,4 +119,3 @@ export default function DroneSensorList() {
         </div>
     );
 }
-

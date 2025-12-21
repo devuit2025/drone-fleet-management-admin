@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { FeatureCollection, Polygon } from 'geojson';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+} from '@/components/ui/card';
 import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,7 +27,10 @@ export default function NoFlyZoneForm({ isEdit = false }: NoFlyZoneFormProps) {
     const { id } = useParams<{ id: string }>();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [polygon, setPolygon] = useState<FeatureCollection<Polygon>>({ type: 'FeatureCollection', features: [] });
+    const [polygon, setPolygon] = useState<FeatureCollection<Polygon>>({
+        type: 'FeatureCollection',
+        features: [],
+    });
     const [zoneType] = useState<'polygon' | 'circle'>('polygon');
     const [loading, setLoading] = useState(isEdit);
     const { refreshZones } = useNoFlyZoneStore();
@@ -35,12 +45,22 @@ export default function NoFlyZoneForm({ isEdit = false }: NoFlyZoneFormProps) {
                     const geomStr = (z as any).geometry as string | undefined;
                     if (geomStr) {
                         let geom: any = null;
-                        try { geom = JSON.parse(geomStr); } catch { geom = null; }
-                        const fc: FeatureCollection<Polygon> = geom && geom.type === 'FeatureCollection'
-                            ? geom
-                            : geom && geom.type === 'Polygon'
-                                ? { type: 'FeatureCollection', features: [{ type: 'Feature', geometry: geom, properties: {} }] }
-                                : { type: 'FeatureCollection', features: [] };
+                        try {
+                            geom = JSON.parse(geomStr);
+                        } catch {
+                            geom = null;
+                        }
+                        const fc: FeatureCollection<Polygon> =
+                            geom && geom.type === 'FeatureCollection'
+                                ? geom
+                                : geom && geom.type === 'Polygon'
+                                  ? {
+                                        type: 'FeatureCollection',
+                                        features: [
+                                            { type: 'Feature', geometry: geom, properties: {} },
+                                        ],
+                                    }
+                                  : { type: 'FeatureCollection', features: [] };
                         setPolygon(fc);
                     }
                 })
@@ -65,14 +85,25 @@ export default function NoFlyZoneForm({ isEdit = false }: NoFlyZoneFormProps) {
                 return;
             }
             const geometry = JSON.stringify(polyGeom);
-            const desc = description !== undefined && description !== null ? String(description) : undefined;
+            const desc =
+                description !== undefined && description !== null ? String(description) : undefined;
             if (isEdit && id) {
-                await NoFlyZoneClient.update(Number(id), { name: name.trim(), description: desc, zoneType, geometry });
+                await NoFlyZoneClient.update(Number(id), {
+                    name: name.trim(),
+                    description: desc,
+                    zoneType,
+                    geometry,
+                });
                 toast.success('Cập nhật No-Fly Zone thành công');
                 // Refresh store để cập nhật list
                 await refreshZones();
             } else {
-                await NoFlyZoneClient.create({ name: name.trim(), description: desc, zoneType, geometry });
+                await NoFlyZoneClient.create({
+                    name: name.trim(),
+                    description: desc,
+                    zoneType,
+                    geometry,
+                });
                 toast.success('Tạo No-Fly Zone thành công');
                 // Refresh store để cập nhật list
                 await refreshZones();
@@ -95,43 +126,50 @@ export default function NoFlyZoneForm({ isEdit = false }: NoFlyZoneFormProps) {
                     </CardHeader>
                     <CardContent>
                         {loading ? (
-                            <div className="text-center py-8 text-muted-foreground">Đang tải...</div>
+                            <div className="text-center py-8 text-muted-foreground">
+                                Đang tải...
+                            </div>
                         ) : (
                             <div className="space-y-6">
                                 <Field>
                                     <FieldLabel>Tên *</FieldLabel>
-                                    <Input 
-                                        value={name} 
-                                        onChange={e => setName(e.target.value)} 
-                                        placeholder="VD: Khu quân sự A" 
+                                    <Input
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        placeholder="VD: Khu quân sự A"
                                     />
                                     <FieldDescription>Nhập tên cho No-Fly Zone</FieldDescription>
                                 </Field>
                                 <Field>
                                     <FieldLabel>Mô tả</FieldLabel>
-                                    <Input 
-                                        value={description} 
-                                        onChange={e => setDescription(e.target.value)} 
-                                        placeholder="Mô tả về vùng cấm bay (tùy chọn)" 
+                                    <Input
+                                        value={description}
+                                        onChange={e => setDescription(e.target.value)}
+                                        placeholder="Mô tả về vùng cấm bay (tùy chọn)"
                                     />
-                                    <FieldDescription>Thông tin bổ sung về No-Fly Zone</FieldDescription>
+                                    <FieldDescription>
+                                        Thông tin bổ sung về No-Fly Zone
+                                    </FieldDescription>
                                 </Field>
                                 <Field>
                                     <FieldLabel>Bản đồ *</FieldLabel>
                                     <div className="space-y-4">
-                                        <MapboxPolygonEditor 
-                                            value={polygon} 
-                                            onChange={setPolygon} 
-                                            style={{ height: '500px', width: '100%' }} 
+                                        <MapboxPolygonEditor
+                                            value={polygon}
+                                            onChange={setPolygon}
+                                            style={{ height: '500px', width: '100%' }}
                                         />
                                         <div className="mt-4">
-                                            <div className="text-sm font-semibold mb-2">Toạ độ (lon, lat)</div>
+                                            <div className="text-sm font-semibold mb-2">
+                                                Toạ độ (lon, lat)
+                                            </div>
                                             {(() => {
                                                 const ring = ringFromFeatureCollection(polygon);
                                                 if (!ring || ring.length === 0) {
                                                     return (
                                                         <div className="text-xs text-muted-foreground p-3 rounded border bg-muted/30">
-                                                            Chưa có polygon. Vẽ polygon trên bản đồ để hiển thị toạ độ.
+                                                            Chưa có polygon. Vẽ polygon trên bản đồ
+                                                            để hiển thị toạ độ.
                                                         </div>
                                                     );
                                                 }
@@ -144,10 +182,19 @@ export default function NoFlyZoneForm({ isEdit = false }: NoFlyZoneFormProps) {
                                                         </div>
                                                         <div className="max-h-64 overflow-auto">
                                                             {ring.map(([lon, lat], idx) => (
-                                                                <div key={idx} className="grid grid-cols-3 gap-2 text-xs py-2 border-b last:border-b-0">
-                                                                    <div className="font-medium">{idx}</div>
-                                                                    <div className="font-mono">{Number(lon).toFixed(6)}</div>
-                                                                    <div className="font-mono">{Number(lat).toFixed(6)}</div>
+                                                                <div
+                                                                    key={idx}
+                                                                    className="grid grid-cols-3 gap-2 text-xs py-2 border-b last:border-b-0"
+                                                                >
+                                                                    <div className="font-medium">
+                                                                        {idx}
+                                                                    </div>
+                                                                    <div className="font-mono">
+                                                                        {Number(lon).toFixed(6)}
+                                                                    </div>
+                                                                    <div className="font-mono">
+                                                                        {Number(lat).toFixed(6)}
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -156,14 +203,20 @@ export default function NoFlyZoneForm({ isEdit = false }: NoFlyZoneFormProps) {
                                             })()}
                                         </div>
                                     </div>
-                                    <FieldDescription>Vẽ polygon trên bản đồ để định nghĩa vùng cấm bay</FieldDescription>
+                                    <FieldDescription>
+                                        Vẽ polygon trên bản đồ để định nghĩa vùng cấm bay
+                                    </FieldDescription>
                                 </Field>
                             </div>
                         )}
                     </CardContent>
                     <CardFooter>
                         <Field orientation="horizontal">
-                            <Button variant="outline" type="button" onClick={() => navigate('/no-fly-zones')}>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() => navigate('/no-fly-zones')}
+                            >
                                 Hủy
                             </Button>
                             <Button type="button" onClick={handleSubmit} disabled={loading}>
@@ -190,38 +243,41 @@ export default function NoFlyZoneForm({ isEdit = false }: NoFlyZoneFormProps) {
                     <div className="space-y-6">
                         <Field>
                             <FieldLabel>Tên *</FieldLabel>
-                            <Input 
-                                value={name} 
-                                onChange={e => setName(e.target.value)} 
-                                placeholder="VD: Khu quân sự A" 
+                            <Input
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                placeholder="VD: Khu quân sự A"
                             />
                             <FieldDescription>Nhập tên cho No-Fly Zone</FieldDescription>
                         </Field>
                         <Field>
                             <FieldLabel>Mô tả</FieldLabel>
-                            <Input 
-                                value={description} 
-                                onChange={e => setDescription(e.target.value)} 
-                                placeholder="Mô tả về vùng cấm bay (tùy chọn)" 
+                            <Input
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                placeholder="Mô tả về vùng cấm bay (tùy chọn)"
                             />
                             <FieldDescription>Thông tin bổ sung về No-Fly Zone</FieldDescription>
                         </Field>
                         <Field>
                             <FieldLabel>Bản đồ *</FieldLabel>
                             <div className="space-y-4">
-                                <MapboxPolygonEditor 
-                                    value={polygon} 
-                                    onChange={setPolygon} 
-                                    style={{ height: '500px', width: '100%' }} 
+                                <MapboxPolygonEditor
+                                    value={polygon}
+                                    onChange={setPolygon}
+                                    style={{ height: '500px', width: '100%' }}
                                 />
                                 <div className="mt-4">
-                                    <div className="text-sm font-semibold mb-2">Toạ độ (lon, lat)</div>
+                                    <div className="text-sm font-semibold mb-2">
+                                        Toạ độ (lon, lat)
+                                    </div>
                                     {(() => {
                                         const ring = ringFromFeatureCollection(polygon);
                                         if (!ring || ring.length === 0) {
                                             return (
                                                 <div className="text-xs text-muted-foreground p-3 rounded border bg-muted/30">
-                                                    Chưa có polygon. Vẽ polygon trên bản đồ để hiển thị toạ độ.
+                                                    Chưa có polygon. Vẽ polygon trên bản đồ để hiển
+                                                    thị toạ độ.
                                                 </div>
                                             );
                                         }
@@ -234,10 +290,17 @@ export default function NoFlyZoneForm({ isEdit = false }: NoFlyZoneFormProps) {
                                                 </div>
                                                 <div className="max-h-64 overflow-auto">
                                                     {ring.map(([lon, lat], idx) => (
-                                                        <div key={idx} className="grid grid-cols-3 gap-2 text-xs py-2 border-b last:border-b-0">
+                                                        <div
+                                                            key={idx}
+                                                            className="grid grid-cols-3 gap-2 text-xs py-2 border-b last:border-b-0"
+                                                        >
                                                             <div className="font-medium">{idx}</div>
-                                                            <div className="font-mono">{Number(lon).toFixed(6)}</div>
-                                                            <div className="font-mono">{Number(lat).toFixed(6)}</div>
+                                                            <div className="font-mono">
+                                                                {Number(lon).toFixed(6)}
+                                                            </div>
+                                                            <div className="font-mono">
+                                                                {Number(lat).toFixed(6)}
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -246,14 +309,20 @@ export default function NoFlyZoneForm({ isEdit = false }: NoFlyZoneFormProps) {
                                     })()}
                                 </div>
                             </div>
-                            <FieldDescription>Vẽ polygon trên bản đồ để định nghĩa vùng cấm bay</FieldDescription>
+                            <FieldDescription>
+                                Vẽ polygon trên bản đồ để định nghĩa vùng cấm bay
+                            </FieldDescription>
                         </Field>
                     </div>
                 )}
             </CardContent>
             <CardFooter>
                 <Field orientation="horizontal">
-                    <Button variant="outline" type="button" onClick={() => navigate('/no-fly-zones')}>
+                    <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() => navigate('/no-fly-zones')}
+                    >
                         Hủy
                     </Button>
                     <Button type="button" onClick={handleSubmit} disabled={loading}>

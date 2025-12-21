@@ -4,7 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { searchAll, getSearchCounts, type GlobalSearchResult, type SearchCounts } from '@/api/search/searchEndpoint';
+import {
+    searchAll,
+    getSearchCounts,
+    type GlobalSearchResult,
+    type SearchCounts,
+} from '@/api/search/searchEndpoint';
 
 const ENTITY_ROUTES: Record<string, string> = {
     drone: '/drones',
@@ -100,13 +105,16 @@ export function GlobalSearch() {
         }
     };
 
-    const groupedResults = results.reduce((acc, result) => {
-        if (!acc[result.type]) {
-            acc[result.type] = [];
-        }
-        acc[result.type].push(result);
-        return acc;
-    }, {} as Record<string, GlobalSearchResult[]>);
+    const groupedResults = results.reduce(
+        (acc, result) => {
+            if (!acc[result.type]) {
+                acc[result.type] = [];
+            }
+            acc[result.type].push(result);
+            return acc;
+        },
+        {} as Record<string, GlobalSearchResult[]>,
+    );
 
     const totalResults = Object.values(counts).reduce((sum, count) => sum + count, 0);
 
@@ -173,7 +181,8 @@ export function GlobalSearch() {
                         {/* Summary */}
                         <div className="px-4 py-2 border-b bg-muted/50">
                             <p className="text-xs text-muted-foreground">
-                                Found <span className="font-medium text-foreground">{totalResults}</span>{' '}
+                                Found{' '}
+                                <span className="font-medium text-foreground">{totalResults}</span>{' '}
                                 {totalResults === 1 ? 'result' : 'results'} across{' '}
                                 {Object.keys(counts).filter(k => counts[k] > 0).length} {''}
                                 {Object.keys(counts).filter(k => counts[k] > 0).length === 1
@@ -188,7 +197,9 @@ export function GlobalSearch() {
                                 <div className="px-4 py-2 bg-muted/30">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm">{ENTITY_ICONS[type] || '📄'}</span>
+                                            <span className="text-sm">
+                                                {ENTITY_ICONS[type] || '📄'}
+                                            </span>
                                             <span className="text-sm font-medium">
                                                 {ENTITY_LABELS[type] || type}
                                             </span>
@@ -201,7 +212,9 @@ export function GlobalSearch() {
                                             <button
                                                 onClick={e => {
                                                     e.stopPropagation();
-                                                    navigate(`${ENTITY_ROUTES[type]}?global=${encodeURIComponent(query)}`);
+                                                    navigate(
+                                                        `${ENTITY_ROUTES[type]}?global=${encodeURIComponent(query)}`,
+                                                    );
                                                     setOpen(false);
                                                 }}
                                                 className="text-xs text-primary hover:underline flex items-center gap-1"
@@ -269,4 +282,3 @@ export function GlobalSearch() {
         </Popover>
     );
 }
-

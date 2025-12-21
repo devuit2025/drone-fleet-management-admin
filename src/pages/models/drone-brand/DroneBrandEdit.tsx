@@ -2,7 +2,11 @@ import { z } from 'zod';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { FormGenerator } from '@/components/form/FormGenerator';
-import { type CreateDroneBrandDto, type UpdateDroneBrandDto, DroneBrandClient } from '@/api/models/drone-brand/droneBrandClient';
+import {
+    type CreateDroneBrandDto,
+    type UpdateDroneBrandDto,
+    DroneBrandClient,
+} from '@/api/models/drone-brand/droneBrandClient';
 import { DroneBrandMutation } from '@/api/models/drone-brand/droneBrandMutation';
 import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
 import { toast } from 'sonner';
@@ -100,4 +104,3 @@ export default function DroneBrandEdit() {
         </div>
     );
 }
-

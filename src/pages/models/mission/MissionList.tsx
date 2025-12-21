@@ -45,12 +45,12 @@ export default function MissionList() {
         {
             key: 'startTime',
             header: 'Start Time',
-            render: r => r.startTime ? r.startTime.slice(0, 10) : '-',
+            render: r => (r.startTime ? r.startTime.slice(0, 10) : '-'),
         },
         {
             key: 'endTime',
             header: 'End Time',
-            render: r => r.endTime ? r.endTime.slice(0, 10) : '-',
+            render: r => (r.endTime ? r.endTime.slice(0, 10) : '-'),
         },
         { key: 'createdAt', header: 'Created At', render: r => r.createdAt.slice(0, 10) },
         { key: 'updatedAt', header: 'Updated At', render: r => r.updatedAt.slice(0, 10) },
@@ -141,4 +141,3 @@ export default function MissionList() {
         </div>
     );
 }
-

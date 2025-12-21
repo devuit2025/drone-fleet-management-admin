@@ -40,7 +40,13 @@ import {
     type MissionDroneDraft,
 } from './components/MissionDroneSelector';
 import { useNoFlyZoneStore } from '@/stores/useNoFlyZoneStore';
-import { featureCollectionFromRing, intersectsAnyPolygon, pointFromWkt, closeRingIfNeeded, isPointInAnyPolygon } from '@/lib/geo';
+import {
+    featureCollectionFromRing,
+    intersectsAnyPolygon,
+    pointFromWkt,
+    closeRingIfNeeded,
+    isPointInAnyPolygon,
+} from '@/lib/geo';
 import type { Feature } from 'geojson';
 import { MapboxMap } from '@/components/map/MapboxMap';
 
@@ -193,21 +199,22 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                 // Kiểm tra waypoints có nằm trong vùng cấm bay không
                 if (disabledZones && disabledZones.features.length > 0) {
                     for (const item of missionDrones) {
-                        if (!item.droneId || !item.waypoints || item.waypoints.length === 0) continue;
-                        
+                        if (!item.droneId || !item.waypoints || item.waypoints.length === 0)
+                            continue;
+
                         for (let idx = 0; idx < item.waypoints.length; idx++) {
                             const wp = item.waypoints[idx];
                             if (isPointInAnyPolygon(wp.lon, wp.lat, disabledZones)) {
                                 const droneName = item.droneName ?? `Drone #${item.droneId}`;
                                 toast.error(
-                                    `Waypoint #${idx + 1} của ${droneName} nằm trong vùng cấm bay. Vui lòng điều chỉnh trước khi lưu.`
+                                    `Waypoint #${idx + 1} của ${droneName} nằm trong vùng cấm bay. Vui lòng điều chỉnh trước khi lưu.`,
                                 );
                                 return;
                             }
                         }
                     }
                 }
-                
+
                 const dronesPayload = buildMissionDronesPayload();
                 if (dronesPayload === null) return;
 
@@ -264,10 +271,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                     'startTime',
                     mission.startTime ? mission.startTime.split('T')[0] : '',
                 );
-                form.setFieldValue(
-                    'endTime',
-                    mission.endTime ? mission.endTime.split('T')[0] : '',
-                );
+                form.setFieldValue('endTime', mission.endTime ? mission.endTime.split('T')[0] : '');
 
                 const drafts = Array.isArray(mission.missionDrones)
                     ? mission.missionDrones.map(md => {
@@ -308,9 +312,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                       })
                     : [];
 
-                setMissionDrones(
-                    drafts.length > 0 ? drafts : [createEmptyMissionDroneDraft()],
-                );
+                setMissionDrones(drafts.length > 0 ? drafts : [createEmptyMissionDroneDraft()]);
                 setLoadingData(false);
             })
             .catch(err => {
@@ -350,9 +352,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
     }, [disabledZones]);
 
     const buildMissionDronesPayload = (): MissionDroneInput[] | null => {
-        const meaningful = missionDrones.filter(
-            item => item.droneId && item.waypoints.length > 0,
-        );
+        const meaningful = missionDrones.filter(item => item.droneId && item.waypoints.length > 0);
 
         if (missionDrones.some(item => item.hasConflict)) {
             toast.error(
@@ -467,8 +467,14 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                 closeRingIfNeeded([
                                     [item.waypoints[i].lon, item.waypoints[i].lat],
                                     [item.waypoints[i + 1].lon, item.waypoints[i + 1].lat],
-                                    [item.waypoints[i + 1].lon + 0.00001, item.waypoints[i + 1].lat + 0.00001],
-                                    [item.waypoints[i].lon + 0.00001, item.waypoints[i].lat + 0.00001],
+                                    [
+                                        item.waypoints[i + 1].lon + 0.00001,
+                                        item.waypoints[i + 1].lat + 0.00001,
+                                    ],
+                                    [
+                                        item.waypoints[i].lon + 0.00001,
+                                        item.waypoints[i].lat + 0.00001,
+                                    ],
                                 ]),
                             ],
                         },
@@ -491,7 +497,14 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
     const overviewMarkers = useMemo(
         () =>
             missionDrones.flatMap((item, idx) => {
-                const colorPalette = ['#f97316', '#2563eb', '#16a34a', '#a855f7', '#f59e0b', '#ec4899'];
+                const colorPalette = [
+                    '#f97316',
+                    '#2563eb',
+                    '#16a34a',
+                    '#a855f7',
+                    '#f59e0b',
+                    '#ec4899',
+                ];
                 const color = colorPalette[idx % colorPalette.length];
                 const label =
                     item.droneName ??
@@ -519,7 +532,9 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
             </CardHeader>
             <CardContent>
                 {loadingData ? (
-                    <div className="py-8 text-center text-muted-foreground">Đang tải dữ liệu...</div>
+                    <div className="py-8 text-center text-muted-foreground">
+                        Đang tải dữ liệu...
+                    </div>
                 ) : (
                     <form
                         id="mission-form"
@@ -748,21 +763,27 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                     <div>
                                         <h4 className="text-sm font-semibold">Bản đồ tổng quan</h4>
                                         <p className="text-xs text-muted-foreground">
-                                            Hiển thị tất cả waypoint của mọi drone trong mission để dễ quan sát vùng bay tổng thể.
+                                            Hiển thị tất cả waypoint của mọi drone trong mission để
+                                            dễ quan sát vùng bay tổng thể.
                                         </p>
                                     </div>
                                 </div>
                                 <div className="mt-3 overflow-hidden rounded border">
                                     <MapboxMap
                                         style={{ height: '70vh', width: '100%' }}
-                                        features={hasOverviewPolygons ? overviewFeatureCollection : EMPTY_FEATURE_COLLECTION}
+                                        features={
+                                            hasOverviewPolygons
+                                                ? overviewFeatureCollection
+                                                : EMPTY_FEATURE_COLLECTION
+                                        }
                                         disabledZones={disabledZones}
                                         readOnly
                                         markers={overviewMarkers}
                                     />
                                     {!hasOverviewPolygons && (
                                         <p className="mt-2 text-xs text-muted-foreground">
-                                            Chưa có waypoint nào. Vui lòng mở từng drone để vẽ polygon.
+                                            Chưa có waypoint nào. Vui lòng mở từng drone để vẽ
+                                            polygon.
                                         </p>
                                     )}
                                 </div>

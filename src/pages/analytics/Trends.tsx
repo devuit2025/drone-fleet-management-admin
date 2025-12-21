@@ -27,7 +27,7 @@ ChartJS.register(
     Title,
     Tooltip,
     Legend,
-    Filler
+    Filler,
 );
 
 type DateRange = '7D' | '1M' | '3M' | '6M' | '1Y';
@@ -163,7 +163,7 @@ export default function Trends() {
                 ? format(d.date, 'EEE')
                 : dateRange === '1M'
                   ? format(d.date, 'dd/MM')
-                  : format(d.date, 'dd/MM')
+                  : format(d.date, 'dd/MM'),
         ),
         datasets: [
             {
@@ -204,7 +204,7 @@ export default function Trends() {
                 label: 'Flight Hours',
                 data: monthlyData.map(d => d.hours),
                 backgroundColor: monthlyData.map(d =>
-                    d.change >= 0 ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)'
+                    d.change >= 0 ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)',
                 ),
             },
         ],
@@ -303,9 +303,7 @@ export default function Trends() {
                 {/* Month-over-month */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base font-medium">
-                            So sánh theo tháng
-                        </CardTitle>
+                        <CardTitle className="text-base font-medium">So sánh theo tháng</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[300px]">
@@ -313,7 +311,10 @@ export default function Trends() {
                                 data={monthlyComparisonChart}
                                 options={{
                                     ...chartOptions,
-                                    plugins: { ...chartOptions.plugins, legend: { display: false } },
+                                    plugins: {
+                                        ...chartOptions.plugins,
+                                        legend: { display: false },
+                                    },
                                 }}
                             />
                         </div>
@@ -348,9 +349,7 @@ export default function Trends() {
                 {/* Seasonal Patterns */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base font-medium">
-                            Patterns theo mùa
-                        </CardTitle>
+                        <CardTitle className="text-base font-medium">Patterns theo mùa</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[300px]">
@@ -475,7 +474,9 @@ export default function Trends() {
                                     <th className="px-6 py-3 text-left">Pilot</th>
                                     <th className="px-6 py-3 text-right">Total Hours</th>
                                     <th className="px-6 py-3 text-right">Avg/Flight</th>
-                                    <th className="px-6 py-3 text-center">Trend (Last 10 periods)</th>
+                                    <th className="px-6 py-3 text-center">
+                                        Trend (Last 10 periods)
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>

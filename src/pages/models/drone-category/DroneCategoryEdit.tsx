@@ -2,7 +2,11 @@ import { z } from 'zod';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { FormGenerator } from '@/components/form/FormGenerator';
-import { type CreateDroneCategoryDto, type UpdateDroneCategoryDto, DroneCategoryClient } from '@/api/models/drone-category/droneCategoryClient';
+import {
+    type CreateDroneCategoryDto,
+    type UpdateDroneCategoryDto,
+    DroneCategoryClient,
+} from '@/api/models/drone-category/droneCategoryClient';
 import { DroneCategoryMutation } from '@/api/models/drone-category/droneCategoryMutation';
 import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
 import { toast } from 'sonner';
@@ -93,4 +97,3 @@ export default function DroneCategoryEdit() {
         </div>
     );
 }
-

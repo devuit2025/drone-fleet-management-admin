@@ -22,10 +22,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { type CreateDroneModelDto, type UpdateDroneModelDto, DroneModelClient } from '@/api/models/drone-model/droneModelClient';
+import {
+    type CreateDroneModelDto,
+    type UpdateDroneModelDto,
+    DroneModelClient,
+} from '@/api/models/drone-model/droneModelClient';
 import { DroneModelMutation } from '@/api/models/drone-model/droneModelMutation';
 import { DroneBrandClient, type DroneBrand } from '@/api/models/drone-brand/droneBrandClient';
-import { DroneCategoryClient, type DroneCategory } from '@/api/models/drone-category/droneCategoryClient';
+import {
+    DroneCategoryClient,
+    type DroneCategory,
+} from '@/api/models/drone-category/droneCategoryClient';
 
 const droneModelSchema = z.object({
     brandId: z.number().min(1, 'Brand is required'),
@@ -36,12 +43,14 @@ const droneModelSchema = z.object({
     maxFlightTime: z.number().optional(),
     maxPayload: z.number().optional(),
     batteryCapacity: z.number().optional(),
-    dimensions: z.object({
-        length: z.number().optional(),
-        width: z.number().optional(),
-        height: z.number().optional(),
-        weight: z.number().optional(),
-    }).optional(),
+    dimensions: z
+        .object({
+            length: z.number().optional(),
+            width: z.number().optional(),
+            height: z.number().optional(),
+            weight: z.number().optional(),
+        })
+        .optional(),
 });
 
 interface DroneModelFormProps {
@@ -57,10 +66,7 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
     const [loadingData, setLoadingData] = useState(isEdit);
 
     useEffect(() => {
-        Promise.all([
-            DroneBrandClient.findAll(),
-            DroneCategoryClient.findAll(),
-        ])
+        Promise.all([DroneBrandClient.findAll(), DroneCategoryClient.findAll()])
             .then(([brandsRes, categoriesRes]) => {
                 setBrands(brandsRes);
                 setCategories(categoriesRes);
@@ -125,7 +131,10 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                 }
                 navigate('/drone-models');
             } catch (err: any) {
-                toast.error(err?.response?.data?.message || (isEdit ? 'Cập nhật drone model thất bại' : 'Tạo drone model thất bại'));
+                toast.error(
+                    err?.response?.data?.message ||
+                        (isEdit ? 'Cập nhật drone model thất bại' : 'Tạo drone model thất bại'),
+                );
                 console.error(err);
             }
         },
@@ -168,7 +177,9 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
             <CardHeader>
                 <CardTitle>{isEdit ? 'Chỉnh sửa drone model' : 'Thêm drone model mới'}</CardTitle>
                 <CardDescription>
-                    {isEdit ? 'Cập nhật thông tin drone model' : 'Nhập thông tin drone model để quản lý'}
+                    {isEdit
+                        ? 'Cập nhật thông tin drone model'
+                        : 'Nhập thông tin drone model để quản lý'}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -196,7 +207,9 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                             <Select
                                                 value={field.state.value?.toString() || ''}
                                                 onValueChange={val =>
-                                                    field.handleChange(val ? Number(val) : undefined)
+                                                    field.handleChange(
+                                                        val ? Number(val) : undefined,
+                                                    )
                                                 }
                                                 disabled={loading}
                                             >
@@ -233,7 +246,9 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                             <Select
                                                 value={field.state.value?.toString() || ''}
                                                 onValueChange={val =>
-                                                    field.handleChange(val ? Number(val) : undefined)
+                                                    field.handleChange(
+                                                        val ? Number(val) : undefined,
+                                                    )
                                                 }
                                                 disabled={loading}
                                             >
@@ -266,7 +281,9 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                         field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>Model Name *</FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Model Name *
+                                            </FieldLabel>
                                             <Input
                                                 id={field.name}
                                                 name={field.name}
@@ -293,14 +310,22 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                             field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
-                                                <FieldLabel htmlFor={field.name}>Max Speed (km/h)</FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Max Speed (km/h)
+                                                </FieldLabel>
                                                 <Input
                                                     id={field.name}
                                                     name={field.name}
                                                     type="number"
                                                     value={field.state.value || ''}
                                                     onBlur={field.handleBlur}
-                                                    onChange={e => field.handleChange(e.target.value ? Number(e.target.value) : undefined)}
+                                                    onChange={e =>
+                                                        field.handleChange(
+                                                            e.target.value
+                                                                ? Number(e.target.value)
+                                                                : undefined,
+                                                        )
+                                                    }
                                                     aria-invalid={isInvalid}
                                                     placeholder="Nhập max speed"
                                                 />
@@ -319,14 +344,22 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                             field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
-                                                <FieldLabel htmlFor={field.name}>Max Altitude (m)</FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Max Altitude (m)
+                                                </FieldLabel>
                                                 <Input
                                                     id={field.name}
                                                     name={field.name}
                                                     type="number"
                                                     value={field.state.value || ''}
                                                     onBlur={field.handleBlur}
-                                                    onChange={e => field.handleChange(e.target.value ? Number(e.target.value) : undefined)}
+                                                    onChange={e =>
+                                                        field.handleChange(
+                                                            e.target.value
+                                                                ? Number(e.target.value)
+                                                                : undefined,
+                                                        )
+                                                    }
                                                     aria-invalid={isInvalid}
                                                     placeholder="Nhập max altitude"
                                                 />
@@ -345,14 +378,22 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                             field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
-                                                <FieldLabel htmlFor={field.name}>Max Flight Time (min)</FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Max Flight Time (min)
+                                                </FieldLabel>
                                                 <Input
                                                     id={field.name}
                                                     name={field.name}
                                                     type="number"
                                                     value={field.state.value || ''}
                                                     onBlur={field.handleBlur}
-                                                    onChange={e => field.handleChange(e.target.value ? Number(e.target.value) : undefined)}
+                                                    onChange={e =>
+                                                        field.handleChange(
+                                                            e.target.value
+                                                                ? Number(e.target.value)
+                                                                : undefined,
+                                                        )
+                                                    }
                                                     aria-invalid={isInvalid}
                                                     placeholder="Nhập max flight time"
                                                 />
@@ -371,14 +412,22 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                             field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
-                                                <FieldLabel htmlFor={field.name}>Max Payload (g)</FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Max Payload (g)
+                                                </FieldLabel>
                                                 <Input
                                                     id={field.name}
                                                     name={field.name}
                                                     type="number"
                                                     value={field.state.value || ''}
                                                     onBlur={field.handleBlur}
-                                                    onChange={e => field.handleChange(e.target.value ? Number(e.target.value) : undefined)}
+                                                    onChange={e =>
+                                                        field.handleChange(
+                                                            e.target.value
+                                                                ? Number(e.target.value)
+                                                                : undefined,
+                                                        )
+                                                    }
                                                     aria-invalid={isInvalid}
                                                     placeholder="Nhập max payload"
                                                 />
@@ -397,14 +446,22 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                             field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
-                                                <FieldLabel htmlFor={field.name}>Battery Capacity (mAh)</FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Battery Capacity (mAh)
+                                                </FieldLabel>
                                                 <Input
                                                     id={field.name}
                                                     name={field.name}
                                                     type="number"
                                                     value={field.state.value || ''}
                                                     onBlur={field.handleBlur}
-                                                    onChange={e => field.handleChange(e.target.value ? Number(e.target.value) : undefined)}
+                                                    onChange={e =>
+                                                        field.handleChange(
+                                                            e.target.value
+                                                                ? Number(e.target.value)
+                                                                : undefined,
+                                                        )
+                                                    }
                                                     aria-invalid={isInvalid}
                                                     placeholder="Nhập battery capacity"
                                                 />
@@ -431,14 +488,18 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                             <FieldLabel>Dimensions (tùy chọn)</FieldLabel>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <Field>
-                                                    <FieldLabel htmlFor="dim-length">Length (cm)</FieldLabel>
+                                                    <FieldLabel htmlFor="dim-length">
+                                                        Length (cm)
+                                                    </FieldLabel>
                                                     <Input
                                                         id="dim-length"
                                                         type="number"
                                                         value={dims.length || ''}
                                                         onChange={e => {
                                                             field.handleChange({
-                                                                length: e.target.value ? Number(e.target.value) : undefined,
+                                                                length: e.target.value
+                                                                    ? Number(e.target.value)
+                                                                    : undefined,
                                                                 width: dims.width,
                                                                 height: dims.height,
                                                                 weight: dims.weight,
@@ -449,7 +510,9 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                                 </Field>
 
                                                 <Field>
-                                                    <FieldLabel htmlFor="dim-width">Width (cm)</FieldLabel>
+                                                    <FieldLabel htmlFor="dim-width">
+                                                        Width (cm)
+                                                    </FieldLabel>
                                                     <Input
                                                         id="dim-width"
                                                         type="number"
@@ -457,7 +520,9 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                                         onChange={e => {
                                                             field.handleChange({
                                                                 length: dims.length,
-                                                                width: e.target.value ? Number(e.target.value) : undefined,
+                                                                width: e.target.value
+                                                                    ? Number(e.target.value)
+                                                                    : undefined,
                                                                 height: dims.height,
                                                                 weight: dims.weight,
                                                             });
@@ -467,7 +532,9 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                                 </Field>
 
                                                 <Field>
-                                                    <FieldLabel htmlFor="dim-height">Height (cm)</FieldLabel>
+                                                    <FieldLabel htmlFor="dim-height">
+                                                        Height (cm)
+                                                    </FieldLabel>
                                                     <Input
                                                         id="dim-height"
                                                         type="number"
@@ -476,7 +543,9 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                                             field.handleChange({
                                                                 length: dims.length,
                                                                 width: dims.width,
-                                                                height: e.target.value ? Number(e.target.value) : undefined,
+                                                                height: e.target.value
+                                                                    ? Number(e.target.value)
+                                                                    : undefined,
                                                                 weight: dims.weight,
                                                             });
                                                         }}
@@ -485,7 +554,9 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                                 </Field>
 
                                                 <Field>
-                                                    <FieldLabel htmlFor="dim-weight">Weight (g)</FieldLabel>
+                                                    <FieldLabel htmlFor="dim-weight">
+                                                        Weight (g)
+                                                    </FieldLabel>
                                                     <Input
                                                         id="dim-weight"
                                                         type="number"
@@ -495,7 +566,9 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
                                                                 length: dims.length,
                                                                 width: dims.width,
                                                                 height: dims.height,
-                                                                weight: e.target.value ? Number(e.target.value) : undefined,
+                                                                weight: e.target.value
+                                                                    ? Number(e.target.value)
+                                                                    : undefined,
                                                             });
                                                         }}
                                                         placeholder="Nhập weight"
@@ -523,4 +596,3 @@ export default function DroneModelForm({ isEdit = false }: DroneModelFormProps) 
         </Card>
     );
 }
-

@@ -117,5 +117,3 @@ export class ReportsAnalyticsClient {
         return res as unknown as DistanceLeaderboard[];
     }
 }
-
-

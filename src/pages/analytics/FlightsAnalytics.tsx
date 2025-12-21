@@ -16,7 +16,10 @@ import {
 import { MetricCard } from '@/components/analytics/MetricCard';
 import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FlightAnalyticsClient, type FlightAnalyticsResponse } from '@/api/analytics/flightAnalyticsClient';
+import {
+    FlightAnalyticsClient,
+    type FlightAnalyticsResponse,
+} from '@/api/analytics/flightAnalyticsClient';
 import { Activity, Clock, TrendingUp, CheckCircle, Plane } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -32,7 +35,7 @@ ChartJS.register(
     Title,
     Tooltip,
     Legend,
-    Filler
+    Filler,
 );
 
 export default function FlightsAnalytics() {
@@ -130,15 +133,16 @@ export default function FlightsAnalytics() {
     };
 
     const statusDistributionChart = {
-        labels: data?.statusDistribution.map(s => {
-            const statusMap: Record<string, string> = {
-                completed: 'Hoàn thành',
-                failed: 'Thất bại',
-                in_progress: 'Đang bay',
-                planned: 'Đã lên kế hoạch',
-            };
-            return statusMap[s.status] || s.status;
-        }) || [],
+        labels:
+            data?.statusDistribution.map(s => {
+                const statusMap: Record<string, string> = {
+                    completed: 'Hoàn thành',
+                    failed: 'Thất bại',
+                    in_progress: 'Đang bay',
+                    planned: 'Đã lên kế hoạch',
+                };
+                return statusMap[s.status] || s.status;
+            }) || [],
         datasets: [
             {
                 data: data?.statusDistribution.map(s => s.count) || [],
@@ -175,9 +179,7 @@ export default function FlightsAnalytics() {
                 </div>
 
                 {/* Date range selector - to be implemented */}
-                <div className="flex gap-2">
-                    {/* Add date picker here */}
-                </div>
+                <div className="flex gap-2">{/* Add date picker here */}</div>
             </div>
 
             {/* Metric Cards */}
@@ -252,9 +254,7 @@ export default function FlightsAnalytics() {
                 {/* Status Distribution */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base font-medium">
-                            Phân bố trạng thái
-                        </CardTitle>
+                        <CardTitle className="text-base font-medium">Phân bố trạng thái</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[300px] flex items-center justify-center">
@@ -263,7 +263,10 @@ export default function FlightsAnalytics() {
                                     data={statusDistributionChart}
                                     options={{
                                         ...chartOptions,
-                                        plugins: { ...chartOptions.plugins, legend: { display: true, position: 'bottom' } },
+                                        plugins: {
+                                            ...chartOptions.plugins,
+                                            legend: { display: true, position: 'bottom' },
+                                        },
                                     }}
                                 />
                             )}
@@ -275,9 +278,7 @@ export default function FlightsAnalytics() {
             {/* Top Pilots Chart */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-base font-medium">
-                        Top Pilots theo giờ bay
-                    </CardTitle>
+                    <CardTitle className="text-base font-medium">Top Pilots theo giờ bay</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="h-[300px]">
@@ -324,7 +325,9 @@ export default function FlightsAnalytics() {
                             <tbody>
                                 {data?.recentFlights.map(flight => (
                                     <tr key={flight.id} className="border-b hover:bg-muted/50">
-                                        <td className="px-6 py-4 font-medium">{flight.missionName}</td>
+                                        <td className="px-6 py-4 font-medium">
+                                            {flight.missionName}
+                                        </td>
                                         <td className="px-6 py-4">{flight.pilotName}</td>
                                         <td className="px-6 py-4">{flight.drones.join(', ')}</td>
                                         <td className="px-6 py-4">
@@ -355,5 +358,3 @@ export default function FlightsAnalytics() {
         </div>
     );
 }
-
-

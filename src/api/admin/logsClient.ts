@@ -1,6 +1,6 @@
 import { api } from '@/api/axios';
 
-export type LogEventType = 
+export type LogEventType =
     | 'login.success'
     | 'login.failed'
     | 'logout'
@@ -100,4 +100,3 @@ export class LogsClient {
         return res as unknown as LogsStats;
     }
 }
-

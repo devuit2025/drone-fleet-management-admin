@@ -97,5 +97,3 @@ export class FlightAnalyticsClient {
         return res as unknown as RecentFlight[];
     }
 }
-
-

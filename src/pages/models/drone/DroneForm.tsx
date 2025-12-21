@@ -22,7 +22,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { type CreateDroneDto, type UpdateDroneDto, type DroneStatus, DroneClient } from '@/api/models/drone/droneClient';
+import {
+    type CreateDroneDto,
+    type UpdateDroneDto,
+    type DroneStatus,
+    DroneClient,
+} from '@/api/models/drone/droneClient';
 import { droneMutation } from '@/api/models/drone/droneMutation';
 import { DroneModelClient, type DroneModel } from '@/api/models/drone-model/droneModelClient';
 
@@ -70,12 +75,11 @@ export default function DroneForm({ isEdit = false }: DroneFormProps) {
             });
     }, []);
 
-
     const form = useForm({
         defaultValues: {
             modelId: undefined as number | undefined,
             serialNumber: '',
-    name: '',
+            name: '',
             status: 'available' as DroneStatus | undefined,
             firmwareVersion: '',
             batteryHealth: undefined as number | undefined,
@@ -116,7 +120,10 @@ export default function DroneForm({ isEdit = false }: DroneFormProps) {
                 }
                 navigate('/drones');
             } catch (err: any) {
-                toast.error(err?.response?.data?.message || (isEdit ? 'Cập nhật drone thất bại' : 'Tạo drone thất bại'));
+                toast.error(
+                    err?.response?.data?.message ||
+                        (isEdit ? 'Cập nhật drone thất bại' : 'Tạo drone thất bại'),
+                );
                 console.error(err);
             }
         },
@@ -135,7 +142,10 @@ export default function DroneForm({ isEdit = false }: DroneFormProps) {
                     form.setFieldValue('firmwareVersion', drone.firmwareVersion || '');
                     form.setFieldValue('batteryHealth', drone.batteryHealth || undefined);
                     form.setFieldValue('totalFlightHours', drone.totalFlightHours);
-                    form.setFieldValue('lastMaintenance', drone.lastMaintenance ? drone.lastMaintenance.split('T')[0] : '');
+                    form.setFieldValue(
+                        'lastMaintenance',
+                        drone.lastMaintenance ? drone.lastMaintenance.split('T')[0] : '',
+                    );
                     setLoadingData(false);
                 })
                 .catch(err => {
@@ -169,255 +179,269 @@ export default function DroneForm({ isEdit = false }: DroneFormProps) {
                         }}
                     >
                         <FieldGroup>
-                        <form.Field
-                            name="modelId"
-                            children={field => {
-                                const isInvalid =
-                                    field.state.meta.isTouched && !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>Model *</FieldLabel>
-                                        <Select
-                                            value={field.state.value?.toString() || ''}
-                                            onValueChange={val =>
-                                                field.handleChange(val ? Number(val) : undefined)
-                                            }
-                                            disabled={loading}
-                                        >
-                                            <SelectTrigger className="w-full" id={field.name}>
-                                                <SelectValue placeholder="Chọn model" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {droneModels.map(model => (
-                                                    <SelectItem
-                                                        key={model.id}
-                                                        value={model.id.toString()}
-                                                    >
-                                                        {model.name}
+                            <form.Field
+                                name="modelId"
+                                children={field => {
+                                    const isInvalid =
+                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    return (
+                                        <Field data-invalid={isInvalid}>
+                                            <FieldLabel htmlFor={field.name}>Model *</FieldLabel>
+                                            <Select
+                                                value={field.state.value?.toString() || ''}
+                                                onValueChange={val =>
+                                                    field.handleChange(
+                                                        val ? Number(val) : undefined,
+                                                    )
+                                                }
+                                                disabled={loading}
+                                            >
+                                                <SelectTrigger className="w-full" id={field.name}>
+                                                    <SelectValue placeholder="Chọn model" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {droneModels.map(model => (
+                                                        <SelectItem
+                                                            key={model.id}
+                                                            value={model.id.toString()}
+                                                        >
+                                                            {model.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FieldDescription>
+                                                Chọn model drone từ danh sách
+                                            </FieldDescription>
+                                            {isInvalid && (
+                                                <FieldError errors={field.state.meta.errors} />
+                                            )}
+                                        </Field>
+                                    );
+                                }}
+                            />
+
+                            <form.Field
+                                name="serialNumber"
+                                children={field => {
+                                    const isInvalid =
+                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    return (
+                                        <Field data-invalid={isInvalid}>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Serial Number *
+                                            </FieldLabel>
+                                            <Input
+                                                id={field.name}
+                                                name={field.name}
+                                                value={field.state.value}
+                                                onBlur={field.handleBlur}
+                                                onChange={e => field.handleChange(e.target.value)}
+                                                aria-invalid={isInvalid}
+                                                placeholder="Nhập serial number"
+                                                autoComplete="off"
+                                            />
+                                            <FieldDescription>
+                                                Serial number duy nhất của drone
+                                            </FieldDescription>
+                                            {isInvalid && (
+                                                <FieldError errors={field.state.meta.errors} />
+                                            )}
+                                        </Field>
+                                    );
+                                }}
+                            />
+
+                            <form.Field
+                                name="name"
+                                children={field => {
+                                    const isInvalid =
+                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    return (
+                                        <Field data-invalid={isInvalid}>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Tên drone *
+                                            </FieldLabel>
+                                            <Input
+                                                id={field.name}
+                                                name={field.name}
+                                                value={field.state.value}
+                                                onBlur={field.handleBlur}
+                                                onChange={e => field.handleChange(e.target.value)}
+                                                aria-invalid={isInvalid}
+                                                placeholder="Nhập tên drone"
+                                                autoComplete="off"
+                                            />
+                                            {isInvalid && (
+                                                <FieldError errors={field.state.meta.errors} />
+                                            )}
+                                        </Field>
+                                    );
+                                }}
+                            />
+
+                            <form.Field
+                                name="status"
+                                children={field => {
+                                    const isInvalid =
+                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    return (
+                                        <Field data-invalid={isInvalid}>
+                                            <FieldLabel htmlFor={field.name}>Trạng thái</FieldLabel>
+                                            <Select
+                                                value={field.state.value || 'available'}
+                                                onValueChange={val =>
+                                                    field.handleChange(val as DroneStatus)
+                                                }
+                                            >
+                                                <SelectTrigger className="w-full" id={field.name}>
+                                                    <SelectValue placeholder="Chọn trạng thái" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="available">
+                                                        Available
                                                     </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FieldDescription>
-                                            Chọn model drone từ danh sách
-                                        </FieldDescription>
-                                        {isInvalid && (
-                                            <FieldError errors={field.state.meta.errors} />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
+                                                    <SelectItem value="in_mission">
+                                                        In Mission
+                                                    </SelectItem>
+                                                    <SelectItem value="flying">Flying</SelectItem>
+                                                    <SelectItem value="hovering">
+                                                        Hovering
+                                                    </SelectItem>
+                                                    <SelectItem value="landing">Landing</SelectItem>
+                                                    <SelectItem value="maintenance">
+                                                        Maintenance
+                                                    </SelectItem>
+                                                    <SelectItem value="decommissioned">
+                                                        Decommissioned
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            {isInvalid && (
+                                                <FieldError errors={field.state.meta.errors} />
+                                            )}
+                                        </Field>
+                                    );
+                                }}
+                            />
 
-                        <form.Field
-                            name="serialNumber"
-                            children={field => {
-                                const isInvalid =
-                                    field.state.meta.isTouched && !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Serial Number *
-                                        </FieldLabel>
-                                        <Input
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onBlur={field.handleBlur}
-                                            onChange={e => field.handleChange(e.target.value)}
-                                            aria-invalid={isInvalid}
-                                            placeholder="Nhập serial number"
-                                            autoComplete="off"
-                                        />
-                                        <FieldDescription>
-                                            Serial number duy nhất của drone
-                                        </FieldDescription>
-                                        {isInvalid && (
-                                            <FieldError errors={field.state.meta.errors} />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
+                            <form.Field
+                                name="firmwareVersion"
+                                children={field => {
+                                    return (
+                                        <Field>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Firmware Version
+                                            </FieldLabel>
+                                            <Input
+                                                id={field.name}
+                                                name={field.name}
+                                                value={field.state.value || ''}
+                                                onBlur={field.handleBlur}
+                                                onChange={e => field.handleChange(e.target.value)}
+                                                placeholder="Nhập phiên bản firmware"
+                                                autoComplete="off"
+                                            />
+                                        </Field>
+                                    );
+                                }}
+                            />
 
-                        <form.Field
-                            name="name"
-                            children={field => {
-                                const isInvalid =
-                                    field.state.meta.isTouched && !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>Tên drone *</FieldLabel>
-                                        <Input
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onBlur={field.handleBlur}
-                                            onChange={e => field.handleChange(e.target.value)}
-                                            aria-invalid={isInvalid}
-                                            placeholder="Nhập tên drone"
-                                            autoComplete="off"
-                                        />
-                                        {isInvalid && (
-                                            <FieldError errors={field.state.meta.errors} />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
+                            <form.Field
+                                name="batteryHealth"
+                                children={field => {
+                                    const isInvalid =
+                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    return (
+                                        <Field data-invalid={isInvalid}>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Battery Health (%)
+                                            </FieldLabel>
+                                            <Input
+                                                id={field.name}
+                                                name={field.name}
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={field.state.value}
+                                                onBlur={field.handleBlur}
+                                                onChange={e =>
+                                                    field.handleChange(
+                                                        e.target.value
+                                                            ? Number(e.target.value)
+                                                            : undefined,
+                                                    )
+                                                }
+                                                aria-invalid={isInvalid}
+                                                placeholder="0-100"
+                                                autoComplete="off"
+                                            />
+                                            {isInvalid && (
+                                                <FieldError errors={field.state.meta.errors} />
+                                            )}
+                                        </Field>
+                                    );
+                                }}
+                            />
 
-                        <form.Field
-                            name="status"
-                            children={field => {
-                                const isInvalid =
-                                    field.state.meta.isTouched && !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>Trạng thái</FieldLabel>
-                                        <Select
-                                            value={field.state.value || 'available'}
-                                            onValueChange={val =>
-                                                field.handleChange(val as DroneStatus)
-                                            }
-                                        >
-                                            <SelectTrigger className="w-full" id={field.name}>
-                                                <SelectValue placeholder="Chọn trạng thái" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="available">Available</SelectItem>
-                                                <SelectItem value="in_mission">In Mission</SelectItem>
-                                                <SelectItem value="flying">Flying</SelectItem>
-                                                <SelectItem value="hovering">Hovering</SelectItem>
-                                                <SelectItem value="landing">Landing</SelectItem>
-                                                <SelectItem value="maintenance">Maintenance</SelectItem>
-                                                <SelectItem value="decommissioned">
-                                                    Decommissioned
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {isInvalid && (
-                                            <FieldError errors={field.state.meta.errors} />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
+                            <form.Field
+                                name="totalFlightHours"
+                                children={field => {
+                                    const isInvalid =
+                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    return (
+                                        <Field data-invalid={isInvalid}>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Total Flight Hours
+                                            </FieldLabel>
+                                            <Input
+                                                id={field.name}
+                                                name={field.name}
+                                                type="number"
+                                                min="0"
+                                                value={field.state.value?.toString() || '0'}
+                                                onBlur={field.handleBlur}
+                                                onChange={e =>
+                                                    field.handleChange(
+                                                        e.target.value ? Number(e.target.value) : 0,
+                                                    )
+                                                }
+                                                aria-invalid={isInvalid}
+                                                placeholder="0"
+                                                autoComplete="off"
+                                            />
+                                            {isInvalid && (
+                                                <FieldError errors={field.state.meta.errors} />
+                                            )}
+                                        </Field>
+                                    );
+                                }}
+                            />
 
-                        <form.Field
-                            name="firmwareVersion"
-                            children={field => {
-                                return (
-                                    <Field>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Firmware Version
-                                        </FieldLabel>
-                                        <Input
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value || ''}
-                                            onBlur={field.handleBlur}
-                                            onChange={e => field.handleChange(e.target.value)}
-                                            placeholder="Nhập phiên bản firmware"
-                                            autoComplete="off"
-                                        />
-                                    </Field>
-                                );
-                            }}
-                        />
-
-                        <form.Field
-                            name="batteryHealth"
-                            children={field => {
-                                const isInvalid =
-                                    field.state.meta.isTouched && !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Battery Health (%)
-                                        </FieldLabel>
-                                        <Input
-                                            id={field.name}
-                                            name={field.name}
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            value={field.state.value}
-                                            onBlur={field.handleBlur}
-                                            onChange={e =>
-                                                field.handleChange(
-                                                    e.target.value ? Number(e.target.value) : undefined,
-                                                )
-                                            }
-                                            aria-invalid={isInvalid}
-                                            placeholder="0-100"
-                                            autoComplete="off"
-                                        />
-                                        {isInvalid && (
-                                            <FieldError errors={field.state.meta.errors} />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
-
-                        <form.Field
-                            name="totalFlightHours"
-                            children={field => {
-                                const isInvalid =
-                                    field.state.meta.isTouched && !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Total Flight Hours
-                                        </FieldLabel>
-                                        <Input
-                                            id={field.name}
-                                            name={field.name}
-                                            type="number"
-                                            min="0"
-                                            value={field.state.value?.toString() || '0'}
-                                            onBlur={field.handleBlur}
-                                            onChange={e =>
-                                                field.handleChange(
-                                                    e.target.value ? Number(e.target.value) : 0,
-                                                )
-                                            }
-                                            aria-invalid={isInvalid}
-                                            placeholder="0"
-                                            autoComplete="off"
-                                        />
-                                        {isInvalid && (
-                                            <FieldError errors={field.state.meta.errors} />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
-
-                        <form.Field
-                            name="lastMaintenance"
-                            children={field => {
-                                return (
-                                    <Field>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Last Maintenance Date
-                                        </FieldLabel>
-                                        <Input
-                                            id={field.name}
-                                            name={field.name}
-                                            type="date"
-                                            value={field.state.value || ''}
-                                            onBlur={field.handleBlur}
-                                            onChange={e => field.handleChange(e.target.value)}
-                                            placeholder="Chọn ngày"
-                                            autoComplete="off"
-                                        />
-                                    </Field>
-                                );
-                            }}
-                        />
-                    </FieldGroup>
-                </form>
+                            <form.Field
+                                name="lastMaintenance"
+                                children={field => {
+                                    return (
+                                        <Field>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Last Maintenance Date
+                                            </FieldLabel>
+                                            <Input
+                                                id={field.name}
+                                                name={field.name}
+                                                type="date"
+                                                value={field.state.value || ''}
+                                                onBlur={field.handleBlur}
+                                                onChange={e => field.handleChange(e.target.value)}
+                                                placeholder="Chọn ngày"
+                                                autoComplete="off"
+                                            />
+                                        </Field>
+                                    );
+                                }}
+                            />
+                        </FieldGroup>
+                    </form>
                 )}
             </CardContent>
             <CardFooter>

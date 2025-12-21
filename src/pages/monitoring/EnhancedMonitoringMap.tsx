@@ -4,7 +4,13 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -24,11 +30,30 @@ import {
     Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { Activity, Battery, Gauge, MapPin, AlertTriangle, Plane, Layers, Play, Square } from 'lucide-react';
+import {
+    Activity,
+    Battery,
+    Gauge,
+    MapPin,
+    AlertTriangle,
+    Plane,
+    Layers,
+    Play,
+    Square,
+} from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { pointFromWkt } from '@/lib/geo';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler,
+);
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
@@ -86,9 +111,10 @@ export default function EnhancedMonitoringMap() {
 
     function createDroneMarkerEl(id: string, heading = 0, status?: DroneStatus) {
         const el = document.createElement('div');
-        el.className = 'drone-marker w-10 h-10 rounded-full flex items-center justify-center cursor-pointer';
+        el.className =
+            'drone-marker w-10 h-10 rounded-full flex items-center justify-center cursor-pointer';
         el.style.transform = `rotate(${heading}deg)`;
-        
+
         const statusColor = getStatusColor(status);
         el.innerHTML = `
       <svg width="36" height="36" viewBox="0 0 24 24">
@@ -121,22 +147,20 @@ export default function EnhancedMonitoringMap() {
     function upsertMarker(drone: DroneState) {
         const { id, lon, lat, heading, status } = drone;
         const markerId = `marker-${id}`;
-        
+
         if (!mapRef.current) return;
 
         let marker = markersRef.current[id];
         if (!marker) {
             const el = createDroneMarkerEl(id, heading ?? 0, status);
             el.setAttribute('data-marker-id', markerId);
-            marker = new mapboxgl.Marker(el)
-                .setLngLat([lon, lat])
-                .addTo(mapRef.current);
-            
+            marker = new mapboxgl.Marker(el).setLngLat([lon, lat]).addTo(mapRef.current);
+
             el.addEventListener('click', () => {
                 setSelectedDroneId(id);
                 showDronePopup(drone);
             });
-            
+
             markersRef.current[id] = marker;
         } else {
             marker.setLngLat([lon, lat]);
@@ -153,22 +177,21 @@ export default function EnhancedMonitoringMap() {
 
     function showDronePopup(drone: DroneState) {
         if (!mapRef.current) return;
-        
-        const popup = new Popup({ offset: 25, closeButton: true })
-            .setLngLat([drone.lon, drone.lat])
+
+        const popup = new Popup({ offset: 25, closeButton: true }).setLngLat([drone.lon, drone.lat])
             .setHTML(`
                 <div class="p-2 min-w-[200px]">
                     <h3 class="font-semibold text-sm mb-2">${drone.name || drone.id}</h3>
                     <div class="space-y-1 text-xs">
                         <div><strong>Status:</strong> ${drone.status || 'unknown'}</div>
-                        <div><strong>Altitude:</strong> ${typeof drone.altitude === 'number' ? drone.altitude.toFixed(1) : drone.altitude ?? '-'} m</div>
-                        <div><strong>Speed:</strong> ${typeof drone.speed === 'number' ? drone.speed.toFixed(1) : drone.speed ?? '-'} m/s</div>
+                        <div><strong>Altitude:</strong> ${typeof drone.altitude === 'number' ? drone.altitude.toFixed(1) : (drone.altitude ?? '-')} m</div>
+                        <div><strong>Speed:</strong> ${typeof drone.speed === 'number' ? drone.speed.toFixed(1) : (drone.speed ?? '-')} m/s</div>
                         <div><strong>Battery:</strong> ${drone.battery ?? '-'}%</div>
-                        <div><strong>Heading:</strong> ${typeof drone.heading === 'number' ? drone.heading.toFixed(0) : drone.heading ?? '-'}°</div>
+                        <div><strong>Heading:</strong> ${typeof drone.heading === 'number' ? drone.heading.toFixed(0) : (drone.heading ?? '-')}°</div>
                     </div>
                 </div>
             `);
-        
+
         const marker = markersRef.current[drone.id];
         if (marker) {
             marker.setPopup(popup);
@@ -204,14 +227,14 @@ export default function EnhancedMonitoringMap() {
             console.warn('Map not ready, cannot add no-fly zones');
             return;
         }
-        
+
         console.log('Adding no-fly zones to map:', zones.length);
-        
+
         const features: GeoJSON.Feature[] = zones
             .map(zone => {
                 try {
                     let geom: GeoJSON.Geometry;
-                    
+
                     if (typeof zone.geometry === 'string') {
                         const trimmed = zone.geometry.trim();
                         // Try JSON parse first
@@ -219,29 +242,38 @@ export default function EnhancedMonitoringMap() {
                             try {
                                 geom = JSON.parse(trimmed);
                             } catch (e) {
-                                console.error(`Failed to parse zone ${zone.id} geometry as JSON:`, trimmed.substring(0, 100));
+                                console.error(
+                                    `Failed to parse zone ${zone.id} geometry as JSON:`,
+                                    trimmed.substring(0, 100),
+                                );
                                 return null;
                             }
                         } else {
-                            console.error(`Zone ${zone.id} geometry is not JSON format:`, trimmed.substring(0, 100));
+                            console.error(
+                                `Zone ${zone.id} geometry is not JSON format:`,
+                                trimmed.substring(0, 100),
+                            );
                             return null;
                         }
                     } else {
                         geom = zone.geometry;
                     }
-                    
+
                     // Validate geometry
                     if (!geom || !geom.type) {
                         console.error(`Zone ${zone.id} has invalid geometry structure:`, geom);
                         return null;
                     }
-                    
+
                     // Check if geometry has coordinates (Polygon, LineString, Point, etc.)
                     if ('coordinates' in geom && !Array.isArray((geom as any).coordinates)) {
-                        console.error(`Zone ${zone.id} geometry coordinates is not an array:`, geom);
+                        console.error(
+                            `Zone ${zone.id} geometry coordinates is not an array:`,
+                            geom,
+                        );
                         return null;
                     }
-                    
+
                     return {
                         type: 'Feature' as const,
                         geometry: geom,
@@ -255,7 +287,7 @@ export default function EnhancedMonitoringMap() {
             .filter((f): f is GeoJSON.Feature => f !== null);
 
         console.log('Parsed no-fly zone features:', features.length);
-        
+
         const data: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features };
         const source = mapRef.current.getSource('no-fly-zones') as mapboxgl.GeoJSONSource;
         if (source) {
@@ -306,42 +338,45 @@ export default function EnhancedMonitoringMap() {
             console.warn('Map not ready, cannot add missions');
             return;
         }
-        
+
         console.log('Adding missions to map:', activeMissions.length);
-        
+
         const routeColors = ['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444'];
-        
+
         const routeFeatures: GeoJSON.Feature[] = [];
         const waypointFeatures: GeoJSON.Feature[] = [];
-        
+
         activeMissions.forEach((mission, missionIdx) => {
             console.log(`Mission ${mission.id} (${mission.missionName}):`, {
                 missionDrones: mission.missionDrones?.length || 0,
                 missionDronesData: mission.missionDrones,
             });
-            
+
             if (!mission.missionDrones || mission.missionDrones.length === 0) {
                 console.warn(`Mission ${mission.id} has no missionDrones`);
                 return;
             }
-            
+
             mission.missionDrones.forEach((md, droneIdx) => {
                 console.log(`  MissionDrone ${md.id}:`, {
                     waypoints: md.waypoints?.length || 0,
                     waypointsData: md.waypoints,
                 });
-                
+
                 if (!md.waypoints || md.waypoints.length < 2) {
                     console.warn(`  MissionDrone ${md.id} has less than 2 waypoints`);
                     return;
                 }
-                
+
                 const sortedWaypoints = [...md.waypoints].sort((a, b) => a.seqNumber - b.seqNumber);
                 const coords = sortedWaypoints.map(wp => {
                     let geo: GeoJSON.Point;
                     if (typeof wp.geoPoint === 'string') {
                         // Try JSON first
-                        if (wp.geoPoint.trim().startsWith('{') || wp.geoPoint.trim().startsWith('[')) {
+                        if (
+                            wp.geoPoint.trim().startsWith('{') ||
+                            wp.geoPoint.trim().startsWith('[')
+                        ) {
                             try {
                                 geo = JSON.parse(wp.geoPoint);
                             } catch {
@@ -367,29 +402,32 @@ export default function EnhancedMonitoringMap() {
                     }
                     return geo.coordinates;
                 });
-                
+
                 const color = routeColors[(missionIdx + droneIdx) % routeColors.length];
                 const droneName = md.drone?.name || `Drone ${md.droneId}`;
-                
+
                 // Route line
                 routeFeatures.push({
                     type: 'Feature' as const,
                     geometry: { type: 'LineString' as const, coordinates: coords },
-                    properties: { 
-                        missionId: mission.id, 
+                    properties: {
+                        missionId: mission.id,
                         missionName: mission.missionName,
                         droneId: md.droneId,
                         droneName,
                         color,
                     },
                 });
-                
+
                 // Waypoint markers
                 sortedWaypoints.forEach((wp, wpIdx) => {
                     let geo: GeoJSON.Point;
                     if (typeof wp.geoPoint === 'string') {
                         // Try JSON first
-                        if (wp.geoPoint.trim().startsWith('{') || wp.geoPoint.trim().startsWith('[')) {
+                        if (
+                            wp.geoPoint.trim().startsWith('{') ||
+                            wp.geoPoint.trim().startsWith('[')
+                        ) {
                             try {
                                 geo = JSON.parse(wp.geoPoint);
                             } catch {
@@ -435,10 +473,18 @@ export default function EnhancedMonitoringMap() {
             });
         });
 
-        console.log('Route features:', routeFeatures.length, 'Waypoint features:', waypointFeatures.length);
-        
+        console.log(
+            'Route features:',
+            routeFeatures.length,
+            'Waypoint features:',
+            waypointFeatures.length,
+        );
+
         // Update routes
-        const routesData: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: routeFeatures };
+        const routesData: GeoJSON.FeatureCollection = {
+            type: 'FeatureCollection',
+            features: routeFeatures,
+        };
         const routesSource = mapRef.current.getSource('mission-routes') as mapboxgl.GeoJSONSource;
         if (routesSource) {
             routesSource.setData(routesData);
@@ -460,14 +506,15 @@ export default function EnhancedMonitoringMap() {
                     'line-dasharray': [2, 2],
                 },
             });
-            
+
             // Add click handler for routes
-            mapRef.current.on('click', 'mission-routes-layer', (e) => {
+            mapRef.current.on('click', 'mission-routes-layer', e => {
                 if (!e.features || e.features.length === 0 || !e.features[0].properties) return;
                 const props = e.features[0].properties as any;
                 new Popup({ offset: 25 })
                     .setLngLat(e.lngLat)
-                    .setHTML(`
+                    .setHTML(
+                        `
                         <div class="p-2 min-w-[200px]">
                             <h3 class="font-semibold text-sm mb-2">${props.missionName || 'Unknown'}</h3>
                             <div class="space-y-1 text-xs">
@@ -475,14 +522,20 @@ export default function EnhancedMonitoringMap() {
                                 <div><strong>Mission ID:</strong> ${props.missionId || 'N/A'}</div>
                             </div>
                         </div>
-                    `)
+                    `,
+                    )
                     .addTo(mapRef.current!);
             });
         }
-        
+
         // Update waypoints
-        const waypointsData: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: waypointFeatures };
-        const waypointsSource = mapRef.current.getSource('mission-waypoints') as mapboxgl.GeoJSONSource;
+        const waypointsData: GeoJSON.FeatureCollection = {
+            type: 'FeatureCollection',
+            features: waypointFeatures,
+        };
+        const waypointsSource = mapRef.current.getSource(
+            'mission-waypoints',
+        ) as mapboxgl.GeoJSONSource;
         if (waypointsSource) {
             waypointsSource.setData(waypointsData);
         } else {
@@ -490,7 +543,7 @@ export default function EnhancedMonitoringMap() {
                 type: 'geojson',
                 data: waypointsData,
             });
-            
+
             // Start waypoint (green)
             mapRef.current.addLayer({
                 id: 'waypoints-start',
@@ -504,7 +557,7 @@ export default function EnhancedMonitoringMap() {
                     'circle-stroke-color': '#fff',
                 },
             });
-            
+
             // End waypoint (red)
             mapRef.current.addLayer({
                 id: 'waypoints-end',
@@ -518,7 +571,7 @@ export default function EnhancedMonitoringMap() {
                     'circle-stroke-color': '#fff',
                 },
             });
-            
+
             // Intermediate waypoints
             mapRef.current.addLayer({
                 id: 'waypoints-intermediate',
@@ -532,7 +585,7 @@ export default function EnhancedMonitoringMap() {
                     'circle-stroke-color': '#fff',
                 },
             });
-            
+
             // Waypoint labels
             mapRef.current.addLayer({
                 id: 'waypoints-labels',
@@ -550,14 +603,18 @@ export default function EnhancedMonitoringMap() {
                     'text-halo-width': 1,
                 },
             });
-            
+
             // Click handler for waypoints
-            mapRef.current.on('click', ['waypoints-start', 'waypoints-end', 'waypoints-intermediate'], (e) => {
-                if (!e.features || e.features.length === 0 || !e.features[0].properties) return;
-                const props = e.features[0].properties as any;
-                new Popup({ offset: 25 })
-                    .setLngLat(e.lngLat)
-                    .setHTML(`
+            mapRef.current.on(
+                'click',
+                ['waypoints-start', 'waypoints-end', 'waypoints-intermediate'],
+                e => {
+                    if (!e.features || e.features.length === 0 || !e.features[0].properties) return;
+                    const props = e.features[0].properties as any;
+                    new Popup({ offset: 25 })
+                        .setLngLat(e.lngLat)
+                        .setHTML(
+                            `
                         <div class="p-2 min-w-[200px]">
                             <h3 class="font-semibold text-sm mb-2">Waypoint #${props.seqNumber || 'N/A'}</h3>
                             <div class="space-y-1 text-xs">
@@ -568,15 +625,17 @@ export default function EnhancedMonitoringMap() {
                                 <div><strong>Action:</strong> ${props.action || 'N/A'}</div>
                             </div>
                         </div>
-                    `)
-                    .addTo(mapRef.current!);
-            });
+                    `,
+                        )
+                        .addTo(mapRef.current!);
+                },
+            );
         }
     }
 
     function checkNoFlyZoneViolations(_drone: DroneState) {
         if (!mapRef.current || noFlyZones.length === 0) return false;
-        
+
         // Simple point-in-polygon check (you might want to use turf.js for more accurate)
         return noFlyZones.some(() => {
             // Placeholder - implement actual point-in-polygon check if needed
@@ -586,23 +645,26 @@ export default function EnhancedMonitoringMap() {
 
     function calculateDroneProgress(droneId: string, mission: Mission | null): number {
         if (!mission || !mission.missionDrones) return 0;
-        
+
         const missionDrone = mission.missionDrones.find(md => md.droneId?.toString() === droneId);
-        if (!missionDrone || !missionDrone.waypoints || missionDrone.waypoints.length === 0) return 0;
-        
+        if (!missionDrone || !missionDrone.waypoints || missionDrone.waypoints.length === 0)
+            return 0;
+
         const drone = dronesRef.current[droneId];
         if (!drone) return 0;
-        
-        const sortedWaypoints = [...missionDrone.waypoints].sort((a, b) => a.seqNumber - b.seqNumber);
-        
+
+        const sortedWaypoints = [...missionDrone.waypoints].sort(
+            (a, b) => a.seqNumber - b.seqNumber,
+        );
+
         // Find current waypoint index based on drone position
         let currentWpIndex = 0;
         let minDistance = Infinity;
-        
+
         for (let i = 0; i < sortedWaypoints.length; i++) {
             const wp = sortedWaypoints[i];
             let wpCoords: [number, number];
-            
+
             try {
                 if (typeof wp.geoPoint === 'string') {
                     if (wp.geoPoint.trim().startsWith('{')) {
@@ -616,12 +678,12 @@ export default function EnhancedMonitoringMap() {
                 } else {
                     wpCoords = wp.geoPoint.coordinates;
                 }
-                
+
                 // Calculate distance
                 const dx = drone.lon - wpCoords[0];
                 const dy = drone.lat - wpCoords[1];
                 const distance = Math.sqrt(dx * dx + dy * dy);
-                
+
                 if (distance < minDistance) {
                     minDistance = distance;
                     currentWpIndex = i;
@@ -630,24 +692,24 @@ export default function EnhancedMonitoringMap() {
                 continue;
             }
         }
-        
+
         // Calculate progress: (completed waypoints + progress to next) / total
         const completedWaypoints = currentWpIndex;
         const totalWaypoints = sortedWaypoints.length;
-        
+
         // If at last waypoint, check if close enough to consider complete
         if (currentWpIndex === totalWaypoints - 1 && minDistance < 0.0001) {
             return 100;
         }
-        
+
         // Estimate progress between current and next waypoint
         if (currentWpIndex < totalWaypoints - 1) {
             const currentWp = sortedWaypoints[currentWpIndex];
             const nextWp = sortedWaypoints[currentWpIndex + 1];
-            
+
             let currentCoords: [number, number];
             let nextCoords: [number, number];
-            
+
             try {
                 if (typeof currentWp.geoPoint === 'string') {
                     if (currentWp.geoPoint.trim().startsWith('{')) {
@@ -660,7 +722,7 @@ export default function EnhancedMonitoringMap() {
                 } else {
                     currentCoords = currentWp.geoPoint.coordinates;
                 }
-                
+
                 if (typeof nextWp.geoPoint === 'string') {
                     if (nextWp.geoPoint.trim().startsWith('{')) {
                         nextCoords = JSON.parse(nextWp.geoPoint).coordinates;
@@ -672,24 +734,25 @@ export default function EnhancedMonitoringMap() {
                 } else {
                     nextCoords = nextWp.geoPoint.coordinates;
                 }
-                
+
                 // Calculate progress between waypoints
                 const segmentLength = Math.sqrt(
-                    Math.pow(nextCoords[0] - currentCoords[0], 2) + 
-                    Math.pow(nextCoords[1] - currentCoords[1], 2)
+                    Math.pow(nextCoords[0] - currentCoords[0], 2) +
+                        Math.pow(nextCoords[1] - currentCoords[1], 2),
                 );
                 const distanceToCurrent = Math.sqrt(
-                    Math.pow(drone.lon - currentCoords[0], 2) + 
-                    Math.pow(drone.lat - currentCoords[1], 2)
+                    Math.pow(drone.lon - currentCoords[0], 2) +
+                        Math.pow(drone.lat - currentCoords[1], 2),
                 );
-                
-                const segmentProgress = segmentLength > 0 ? Math.min(1, distanceToCurrent / segmentLength) : 0;
+
+                const segmentProgress =
+                    segmentLength > 0 ? Math.min(1, distanceToCurrent / segmentLength) : 0;
                 return ((completedWaypoints + segmentProgress) / totalWaypoints) * 100;
             } catch (e) {
                 return (completedWaypoints / totalWaypoints) * 100;
             }
         }
-        
+
         return (completedWaypoints / totalWaypoints) * 100;
     }
 
@@ -734,14 +797,14 @@ export default function EnhancedMonitoringMap() {
     function processTelemetry(payload: DroneTelemetry | DroneTelemetry[]) {
         const items = Array.isArray(payload) ? payload : [payload];
         let anyChange = false;
-        
+
         for (const t of items) {
             const id = t.id;
             const lon = t.lon;
             const lat = t.lat;
             const heading = t.heading ?? 0;
             const now = Date.now();
-            
+
             let current = dronesRef.current[id];
             if (!current) {
                 const drone = drones.find(d => d.id.toString() === id || d.serialNumber === id);
@@ -765,7 +828,7 @@ export default function EnhancedMonitoringMap() {
                 current.speed = t.speed ?? current.speed;
                 current.battery = t.battery ?? current.battery;
                 current.timestamp = t.timestamp;
-                
+
                 if (t.battery !== undefined) {
                     current.batteryHistory.push({ time: now, value: t.battery });
                     if (current.batteryHistory.length > MAX_HISTORY_POINTS) {
@@ -785,14 +848,14 @@ export default function EnhancedMonitoringMap() {
                     }
                 }
             }
-            
+
             upsertMarker(current);
             if (checkNoFlyZoneViolations(current)) {
                 console.warn(`Drone ${id} is in no-fly zone!`);
             }
             anyChange = true;
         }
-        
+
         if (anyChange) {
             updateTrailsSource();
             forceRerender(s => s + 1);
@@ -814,11 +877,11 @@ export default function EnhancedMonitoringMap() {
                 center: [106.6648, 10.7626] as LngLatLike,
                 zoom: 12,
             });
-            
+
             mapRef.current.on('load', () => {
                 readyRef.current = true;
                 setMapReady(true);
-                
+
                 mapRef.current!.addSource('drone-trails', {
                     type: 'geojson',
                     data: { type: 'FeatureCollection', features: [] },
@@ -829,26 +892,27 @@ export default function EnhancedMonitoringMap() {
                     source: 'drone-trails',
                     paint: { 'line-width': 3, 'line-opacity': 0.8, 'line-color': '#06b6d4' },
                 });
-                
+
                 // Zones and missions will be added via useEffect when data is ready
             });
         }
 
         // Only connect to real socket if not using fake telemetry
         if (!useFakeTelemetry) {
-            const token = localStorage.getItem('access_token') || localStorage.getItem('accessToken');
+            const token =
+                localStorage.getItem('access_token') || localStorage.getItem('accessToken');
             const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:3000';
             const socket = io(`${wsUrl}/drone`, {
                 transports: ['websocket', 'polling'],
                 auth: token ? { authorization: `Bearer ${token}` } : undefined,
             });
-            
+
             socketRef.current = socket;
-            
+
             socket.on('connect', () => {
                 console.log('Connected to drone gateway');
             });
-            
+
             socket.on('drone:location_updated', (data: { droneId: string; location: any }) => {
                 const loc = data.location;
                 processTelemetry({
@@ -862,7 +926,7 @@ export default function EnhancedMonitoringMap() {
                     timestamp: Date.now(),
                 });
             });
-            
+
             socket.on('drone:status_updated', (data: { droneId: string; status: any }) => {
                 const drone = dronesRef.current[data.droneId];
                 if (drone) {
@@ -888,27 +952,30 @@ export default function EnhancedMonitoringMap() {
     useEffect(() => {
         if (!useFakeTelemetry || !mapReady) return;
 
-        const fakeDroneStates = new Map<string, {
-            missionId: number;
-            missionDrone: any;
-            waypoints: any[];
-            currentWaypointIndex: number;
-            progress: number; // 0-1 between waypoints
-            speed: number;
-            battery: number;
-        }>();
+        const fakeDroneStates = new Map<
+            string,
+            {
+                missionId: number;
+                missionDrone: any;
+                waypoints: any[];
+                currentWaypointIndex: number;
+                progress: number; // 0-1 between waypoints
+                speed: number;
+                battery: number;
+            }
+        >();
 
         // Initialize fake drones from active missions
         const activeMissions = missions.filter(m => m.status === 'in_progress');
         activeMissions.forEach(mission => {
             if (!mission.missionDrones || mission.missionDrones.length === 0) return;
-            
+
             mission.missionDrones.forEach((md, idx) => {
                 if (!md.waypoints || md.waypoints.length < 2) return;
-                
+
                 const sortedWaypoints = [...md.waypoints].sort((a, b) => a.seqNumber - b.seqNumber);
                 const droneId = md.droneId?.toString() || `fake-${mission.id}-${idx}`;
-                
+
                 fakeDroneStates.set(droneId, {
                     missionId: mission.id,
                     missionDrone: md,
@@ -927,7 +994,7 @@ export default function EnhancedMonitoringMap() {
                 const centerLat = 10.7626;
                 const centerLon = 106.6648;
                 const radius = 0.01; // ~1km
-                
+
                 const waypoints = Array.from({ length: 5 }, (_, i) => ({
                     seqNumber: i,
                     geoPoint: {
@@ -956,16 +1023,16 @@ export default function EnhancedMonitoringMap() {
         const interval = setInterval(() => {
             fakeDroneStates.forEach((state, droneId) => {
                 const { waypoints, currentWaypointIndex, progress } = state;
-                
+
                 if (waypoints.length === 0) return;
-                
+
                 const currentWp = waypoints[currentWaypointIndex];
                 const nextWp = waypoints[(currentWaypointIndex + 1) % waypoints.length];
-                
+
                 // Parse waypoint coordinates
                 let currentCoords: [number, number];
                 let nextCoords: [number, number];
-                
+
                 try {
                     if (typeof currentWp.geoPoint === 'string') {
                         if (currentWp.geoPoint.trim().startsWith('{')) {
@@ -979,7 +1046,7 @@ export default function EnhancedMonitoringMap() {
                     } else {
                         currentCoords = currentWp.geoPoint.coordinates;
                     }
-                    
+
                     if (typeof nextWp.geoPoint === 'string') {
                         if (nextWp.geoPoint.trim().startsWith('{')) {
                             const parsed = JSON.parse(nextWp.geoPoint);
@@ -996,28 +1063,28 @@ export default function EnhancedMonitoringMap() {
                     console.error('Failed to parse waypoint:', e);
                     return;
                 }
-                
+
                 // Interpolate position
                 const newProgress = progress + 0.02; // Move 2% per update
                 const finalProgress = newProgress > 1 ? 0 : newProgress;
-                
+
                 const lon = currentCoords[0] + (nextCoords[0] - currentCoords[0]) * finalProgress;
                 const lat = currentCoords[1] + (nextCoords[1] - currentCoords[1]) * finalProgress;
-                
+
                 // Calculate heading
                 const dx = nextCoords[0] - currentCoords[0];
                 const dy = nextCoords[1] - currentCoords[1];
                 const heading = (Math.atan2(dy, dx) * 180) / Math.PI;
-                
+
                 // Update state
                 state.progress = finalProgress;
                 if (finalProgress === 0) {
                     state.currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.length;
                 }
-                
+
                 // Gradually decrease battery
                 state.battery = Math.max(20, state.battery - 0.1);
-                
+
                 // Send fake telemetry
                 processTelemetry({
                     id: droneId,
@@ -1029,7 +1096,7 @@ export default function EnhancedMonitoringMap() {
                     battery: Math.round(state.battery),
                     timestamp: Date.now(),
                 });
-                
+
                 // Update progress if observing a mission
                 if (observingMissionId && state.missionId === observingMissionId) {
                     const mission = missions.find(m => m.id === observingMissionId);
@@ -1049,33 +1116,33 @@ export default function EnhancedMonitoringMap() {
     // Update progress for observed mission drones periodically
     useEffect(() => {
         if (!observingMissionId || !mapReady) return;
-        
+
         const mission = missions.find(m => m.id === observingMissionId);
         if (!mission || !mission.missionDrones) return;
-        
+
         const updateProgress = () => {
             const progressUpdates: Record<string, number> = {};
             mission.missionDrones?.forEach(md => {
                 const droneId = md.droneId?.toString();
                 if (!droneId) return;
-                
+
                 const drone = dronesRef.current[droneId];
                 if (drone) {
                     progressUpdates[droneId] = calculateDroneProgress(droneId, mission);
                 }
             });
-            
+
             if (Object.keys(progressUpdates).length > 0) {
                 setMissionProgress(prev => ({ ...prev, ...progressUpdates }));
             }
         };
-        
+
         // Update immediately
         updateProgress();
-        
+
         // Update every second
         const interval = setInterval(updateProgress, 1000);
-        
+
         return () => clearInterval(interval);
     }, [observingMissionId, missions, mapReady]);
 
@@ -1083,7 +1150,11 @@ export default function EnhancedMonitoringMap() {
         if (mapRef.current && readyRef.current) {
             const layer = mapRef.current.getLayer('trails-layer');
             if (layer) {
-                mapRef.current.setLayoutProperty('trails-layer', 'visibility', showTrails ? 'visible' : 'none');
+                mapRef.current.setLayoutProperty(
+                    'trails-layer',
+                    'visibility',
+                    showTrails ? 'visible' : 'none',
+                );
             }
         }
     }, [showTrails]);
@@ -1093,10 +1164,18 @@ export default function EnhancedMonitoringMap() {
             const fillLayer = mapRef.current.getLayer('no-fly-zones-fill');
             const strokeLayer = mapRef.current.getLayer('no-fly-zones-stroke');
             if (fillLayer) {
-                mapRef.current.setLayoutProperty('no-fly-zones-fill', 'visibility', showNoFlyZones ? 'visible' : 'none');
+                mapRef.current.setLayoutProperty(
+                    'no-fly-zones-fill',
+                    'visibility',
+                    showNoFlyZones ? 'visible' : 'none',
+                );
             }
             if (strokeLayer) {
-                mapRef.current.setLayoutProperty('no-fly-zones-stroke', 'visibility', showNoFlyZones ? 'visible' : 'none');
+                mapRef.current.setLayoutProperty(
+                    'no-fly-zones-stroke',
+                    'visibility',
+                    showNoFlyZones ? 'visible' : 'none',
+                );
             }
         }
     }, [showNoFlyZones]);
@@ -1127,7 +1206,12 @@ export default function EnhancedMonitoringMap() {
             if (routeLayer) {
                 mapRef.current.setLayoutProperty('mission-routes-layer', 'visibility', visibility);
             }
-            const waypointLayers = ['waypoints-start', 'waypoints-end', 'waypoints-intermediate', 'waypoints-labels'];
+            const waypointLayers = [
+                'waypoints-start',
+                'waypoints-end',
+                'waypoints-intermediate',
+                'waypoints-labels',
+            ];
             waypointLayers.forEach(layerId => {
                 const layer = mapRef.current!.getLayer(layerId);
                 if (layer) {
@@ -1137,15 +1221,18 @@ export default function EnhancedMonitoringMap() {
         }
     }, [showMissions]);
 
-    const observedMission = observingMissionId ? missions.find(m => m.id === observingMissionId) : null;
-    const observedMissionDroneIds = observedMission?.missionDrones?.map(md => md.droneId?.toString()).filter(Boolean) || [];
-    
+    const observedMission = observingMissionId
+        ? missions.find(m => m.id === observingMissionId)
+        : null;
+    const observedMissionDroneIds =
+        observedMission?.missionDrones?.map(md => md.droneId?.toString()).filter(Boolean) || [];
+
     const visibleDrones = Object.values(dronesRef.current).filter(d => {
         // If observing a mission, only show drones in that mission
         if (observingMissionId && !observedMissionDroneIds.includes(d.id)) {
             return false;
         }
-        
+
         if (statusFilter === 'all') return true;
         return d.status === statusFilter;
     });
@@ -1153,7 +1240,9 @@ export default function EnhancedMonitoringMap() {
     const metrics = {
         total: Object.keys(dronesRef.current).length,
         flying: Object.values(dronesRef.current).filter(d => d.status === 'flying').length,
-        avgBattery: Object.values(dronesRef.current).reduce((sum, d) => sum + (d.battery ?? 0), 0) / Math.max(visibleDrones.length, 1),
+        avgBattery:
+            Object.values(dronesRef.current).reduce((sum, d) => sum + (d.battery ?? 0), 0) /
+            Math.max(visibleDrones.length, 1),
         inMission: Object.values(dronesRef.current).filter(d => d.status === 'in_mission').length,
     };
 
@@ -1161,39 +1250,43 @@ export default function EnhancedMonitoringMap() {
         if (history.length === 0) {
             return {
                 labels: [],
-                datasets: [{
-                    label,
-                    data: [],
-                    borderColor: color,
-                    backgroundColor: `${color}20`,
-                    fill: true,
-                    tension: 0.4,
-                }],
+                datasets: [
+                    {
+                        label,
+                        data: [],
+                        borderColor: color,
+                        backgroundColor: `${color}20`,
+                        fill: true,
+                        tension: 0.4,
+                    },
+                ],
             };
         }
-        
+
         const labels = history.map((_, i) => {
             const time = new Date(history[i].time);
             return `${time.getMinutes()}:${time.getSeconds().toString().padStart(2, '0')}`;
         });
-        
+
         return {
             labels,
-            datasets: [{
-                label,
-                data: history.map(h => h.value),
-                borderColor: color,
-                backgroundColor: `${color}20`,
-                fill: true,
-                tension: 0.4,
-            }],
+            datasets: [
+                {
+                    label,
+                    data: history.map(h => h.value),
+                    borderColor: color,
+                    backgroundColor: `${color}20`,
+                    fill: true,
+                    tension: 0.4,
+                },
+            ],
         };
     };
 
     return (
         <div className="w-full h-screen flex">
             <div ref={mapContainer} className="flex-1 relative" />
-            
+
             <aside className="w-96 p-4 bg-white border-l border-slate-200 overflow-y-auto">
                 <div className="space-y-4">
                     <Card>
@@ -1219,7 +1312,9 @@ export default function EnhancedMonitoringMap() {
                                 </div>
                                 <div className="p-2 bg-orange-50 rounded">
                                     <div className="text-xs text-slate-600">Avg Battery</div>
-                                    <div className="text-xl font-bold">{metrics.avgBattery.toFixed(0)}%</div>
+                                    <div className="text-xl font-bold">
+                                        {metrics.avgBattery.toFixed(0)}%
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>
@@ -1232,7 +1327,10 @@ export default function EnhancedMonitoringMap() {
                         <CardContent className="space-y-3">
                             <div>
                                 <Label>Status Filter</Label>
-                                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                                <Select
+                                    value={statusFilter}
+                                    onValueChange={v => setStatusFilter(v as any)}
+                                >
                                     <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>
@@ -1247,37 +1345,53 @@ export default function EnhancedMonitoringMap() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            
+
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="trails" className="flex items-center gap-2">
                                     <Layers className="w-4 h-4" />
                                     Show Trails
                                 </Label>
-                                <Switch id="trails" checked={showTrails} onCheckedChange={setShowTrails} />
+                                <Switch
+                                    id="trails"
+                                    checked={showTrails}
+                                    onCheckedChange={setShowTrails}
+                                />
                             </div>
-                            
+
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="zones" className="flex items-center gap-2">
                                     <AlertTriangle className="w-4 h-4" />
                                     No-Fly Zones
                                 </Label>
-                                <Switch id="zones" checked={showNoFlyZones} onCheckedChange={setShowNoFlyZones} />
+                                <Switch
+                                    id="zones"
+                                    checked={showNoFlyZones}
+                                    onCheckedChange={setShowNoFlyZones}
+                                />
                             </div>
-                            
+
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="missions" className="flex items-center gap-2">
                                     <Plane className="w-4 h-4" />
                                     Mission Routes
                                 </Label>
-                                <Switch id="missions" checked={showMissions} onCheckedChange={setShowMissions} />
+                                <Switch
+                                    id="missions"
+                                    checked={showMissions}
+                                    onCheckedChange={setShowMissions}
+                                />
                             </div>
-                            
+
                             <div className="flex items-center justify-between mt-2 pt-2 border-t">
                                 <Label htmlFor="fake-telemetry" className="flex items-center gap-2">
                                     <Activity className="w-4 h-4" />
                                     Fake Telemetry
                                 </Label>
-                                <Switch id="fake-telemetry" checked={useFakeTelemetry} onCheckedChange={setUseFakeTelemetry} />
+                                <Switch
+                                    id="fake-telemetry"
+                                    checked={useFakeTelemetry}
+                                    onCheckedChange={setUseFakeTelemetry}
+                                />
                             </div>
                         </CardContent>
                     </Card>
@@ -1290,7 +1404,11 @@ export default function EnhancedMonitoringMap() {
                                         <Plane className="w-4 h-4" />
                                         Observing: {observedMission.missionName}
                                     </CardTitle>
-                                    <Button size="sm" variant="outline" onClick={stopObservingMission}>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={stopObservingMission}
+                                    >
                                         <Square className="w-3 h-3 mr-1" />
                                         Stop
                                     </Button>
@@ -1299,15 +1417,19 @@ export default function EnhancedMonitoringMap() {
                             <CardContent>
                                 {observedMission.missionDrones?.map(md => {
                                     const droneId = md.droneId?.toString();
-                                    const progress = droneId ? (missionProgress[droneId] || 0) : 0;
+                                    const progress = droneId ? missionProgress[droneId] || 0 : 0;
                                     const droneName = md.drone?.name || `Drone ${md.droneId}`;
                                     const waypointCount = md.waypoints?.length || 0;
-                                    
+
                                     return (
                                         <div key={md.id} className="mb-3 last:mb-0">
                                             <div className="flex items-center justify-between mb-1">
-                                                <span className="text-sm font-medium">{droneName}</span>
-                                                <span className="text-xs text-slate-600">{progress.toFixed(1)}%</span>
+                                                <span className="text-sm font-medium">
+                                                    {droneName}
+                                                </span>
+                                                <span className="text-xs text-slate-600">
+                                                    {progress.toFixed(1)}%
+                                                </span>
                                             </div>
                                             <Progress value={progress} className="h-2" />
                                             <div className="text-xs text-slate-500 mt-1">
@@ -1326,7 +1448,7 @@ export default function EnhancedMonitoringMap() {
                             <TabsTrigger value="missions">Missions</TabsTrigger>
                             <TabsTrigger value="charts">Charts</TabsTrigger>
                         </TabsList>
-                        
+
                         <TabsContent value="missions" className="space-y-2">
                             <div className="max-h-[400px] overflow-auto space-y-2">
                                 {missions.length === 0 ? (
@@ -1338,32 +1460,54 @@ export default function EnhancedMonitoringMap() {
                                         <Card
                                             key={mission.id}
                                             className={`transition-colors ${
-                                                observingMissionId === mission.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                                                observingMissionId === mission.id
+                                                    ? 'ring-2 ring-blue-500 bg-blue-50'
+                                                    : ''
                                             }`}
                                         >
                                             <CardContent className="p-3">
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex-1">
-                                                        <div className="font-medium text-sm">{mission.missionName}</div>
+                                                        <div className="font-medium text-sm">
+                                                            {mission.missionName}
+                                                        </div>
                                                         <div className="text-xs text-slate-500 mt-1">
                                                             Status: {mission.status}
                                                         </div>
                                                         <div className="text-xs text-slate-500">
-                                                            {mission.missionDrones?.length || 0} drone(s)
+                                                            {mission.missionDrones?.length || 0}{' '}
+                                                            drone(s)
                                                         </div>
                                                         {observingMissionId === mission.id && (
                                                             <div className="mt-2 space-y-1">
                                                                 {mission.missionDrones?.map(md => {
-                                                                    const droneId = md.droneId?.toString();
-                                                                    const progress = droneId ? (missionProgress[droneId] || 0) : 0;
-                                                                    const droneName = md.drone?.name || `Drone ${md.droneId}`;
+                                                                    const droneId =
+                                                                        md.droneId?.toString();
+                                                                    const progress = droneId
+                                                                        ? missionProgress[
+                                                                              droneId
+                                                                          ] || 0
+                                                                        : 0;
+                                                                    const droneName =
+                                                                        md.drone?.name ||
+                                                                        `Drone ${md.droneId}`;
                                                                     return (
                                                                         <div key={md.id}>
                                                                             <div className="flex items-center justify-between text-xs mb-0.5">
-                                                                                <span>{droneName}</span>
-                                                                                <span className="font-medium">{progress.toFixed(1)}%</span>
+                                                                                <span>
+                                                                                    {droneName}
+                                                                                </span>
+                                                                                <span className="font-medium">
+                                                                                    {progress.toFixed(
+                                                                                        1,
+                                                                                    )}
+                                                                                    %
+                                                                                </span>
                                                                             </div>
-                                                                            <Progress value={progress} className="h-1.5" />
+                                                                            <Progress
+                                                                                value={progress}
+                                                                                className="h-1.5"
+                                                                            />
                                                                         </div>
                                                                     );
                                                                 })}
@@ -1372,14 +1516,26 @@ export default function EnhancedMonitoringMap() {
                                                     </div>
                                                     <div className="ml-2">
                                                         {observingMissionId === mission.id ? (
-                                                            <Button size="sm" variant="outline" onClick={stopObservingMission}>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={stopObservingMission}
+                                                            >
                                                                 <Square className="w-3 h-3" />
                                                             </Button>
                                                         ) : (
-                                                            <Button 
-                                                                size="sm" 
-                                                                onClick={() => startObservingMission(mission.id)}
-                                                                disabled={!mission.missionDrones || mission.missionDrones.length === 0}
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    startObservingMission(
+                                                                        mission.id,
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    !mission.missionDrones ||
+                                                                    mission.missionDrones.length ===
+                                                                        0
+                                                                }
                                                             >
                                                                 <Play className="w-3 h-3" />
                                                             </Button>
@@ -1392,7 +1548,7 @@ export default function EnhancedMonitoringMap() {
                                 )}
                             </div>
                         </TabsContent>
-                        
+
                         <TabsContent value="list" className="space-y-2">
                             <div className="max-h-[400px] overflow-auto space-y-2">
                                 {visibleDrones.map(d => (
@@ -1412,12 +1568,17 @@ export default function EnhancedMonitoringMap() {
                                         <CardContent className="p-3">
                                             <div className="flex items-start justify-between">
                                                 <div className="flex-1">
-                                                    <div className="font-medium text-sm">{d.name || d.id}</div>
+                                                    <div className="font-medium text-sm">
+                                                        {d.name || d.id}
+                                                    </div>
                                                     <div className="text-xs text-slate-500 mt-1">
                                                         {d.lat.toFixed(5)}, {d.lon.toFixed(5)}
                                                     </div>
                                                     <div className="flex gap-2 mt-2">
-                                                        <Badge variant="outline" className="text-xs">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-xs"
+                                                        >
                                                             {d.status || 'unknown'}
                                                         </Badge>
                                                     </div>
@@ -1429,11 +1590,17 @@ export default function EnhancedMonitoringMap() {
                                                     </div>
                                                     <div className="flex items-center gap-1">
                                                         <Gauge className="w-3 h-3" />
-                                                        {typeof d.speed === 'number' ? d.speed.toFixed(1) : d.speed ?? '-'} m/s
+                                                        {typeof d.speed === 'number'
+                                                            ? d.speed.toFixed(1)
+                                                            : (d.speed ?? '-')}{' '}
+                                                        m/s
                                                     </div>
                                                     <div className="flex items-center gap-1">
                                                         <Activity className="w-3 h-3" />
-                                                        {typeof d.altitude === 'number' ? d.altitude.toFixed(1) : d.altitude ?? '-'} m
+                                                        {typeof d.altitude === 'number'
+                                                            ? d.altitude.toFixed(1)
+                                                            : (d.altitude ?? '-')}{' '}
+                                                        m
                                                     </div>
                                                 </div>
                                             </div>
@@ -1447,7 +1614,7 @@ export default function EnhancedMonitoringMap() {
                                 )}
                             </div>
                         </TabsContent>
-                        
+
                         <TabsContent value="charts">
                             {selectedDrone ? (
                                 <div className="space-y-4">
@@ -1457,7 +1624,11 @@ export default function EnhancedMonitoringMap() {
                                         </CardHeader>
                                         <CardContent>
                                             <Line
-                                                data={prepareChartData(selectedDrone.batteryHistory, 'Battery %', '#f59e0b')}
+                                                data={prepareChartData(
+                                                    selectedDrone.batteryHistory,
+                                                    'Battery %',
+                                                    '#f59e0b',
+                                                )}
                                                 options={{
                                                     responsive: true,
                                                     maintainAspectRatio: false,
@@ -1470,14 +1641,18 @@ export default function EnhancedMonitoringMap() {
                                             />
                                         </CardContent>
                                     </Card>
-                                    
+
                                     <Card>
                                         <CardHeader>
                                             <CardTitle className="text-sm">Altitude</CardTitle>
                                         </CardHeader>
                                         <CardContent>
                                             <Line
-                                                data={prepareChartData(selectedDrone.altitudeHistory, 'Altitude (m)', '#10b981')}
+                                                data={prepareChartData(
+                                                    selectedDrone.altitudeHistory,
+                                                    'Altitude (m)',
+                                                    '#10b981',
+                                                )}
                                                 options={{
                                                     responsive: true,
                                                     maintainAspectRatio: false,
@@ -1487,14 +1662,18 @@ export default function EnhancedMonitoringMap() {
                                             />
                                         </CardContent>
                                     </Card>
-                                    
+
                                     <Card>
                                         <CardHeader>
                                             <CardTitle className="text-sm">Speed</CardTitle>
                                         </CardHeader>
                                         <CardContent>
                                             <Line
-                                                data={prepareChartData(selectedDrone.speedHistory, 'Speed (m/s)', '#3b82f6')}
+                                                data={prepareChartData(
+                                                    selectedDrone.speedHistory,
+                                                    'Speed (m/s)',
+                                                    '#3b82f6',
+                                                )}
                                                 options={{
                                                     responsive: true,
                                                     maintainAspectRatio: false,
@@ -1514,7 +1693,7 @@ export default function EnhancedMonitoringMap() {
                     </Tabs>
                 </div>
             </aside>
-            
+
             <style>{`
                 .drone-marker { 
                     transform-origin: center; 
@@ -1528,4 +1707,3 @@ export default function EnhancedMonitoringMap() {
         </div>
     );
 }
-

@@ -30,11 +30,11 @@ export default function AlertsLogs() {
         total: logs.length,
         critical: logs.filter(l =>
             ['altitude_violation', 'no_fly_zone_violation', 'emergency_landing'].includes(
-                l.eventType
-            )
+                l.eventType,
+            ),
         ).length,
         warnings: logs.filter(l =>
-            ['battery_low', 'signal_loss', 'gps_error', 'weather_warning'].includes(l.eventType)
+            ['battery_low', 'signal_loss', 'gps_error', 'weather_warning'].includes(l.eventType),
         ).length,
     };
 
@@ -162,7 +162,7 @@ export default function AlertsLogs() {
                 log =>
                     log.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     log.mission?.missionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    log.mission?.pilot?.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    log.mission?.pilot?.name.toLowerCase().includes(searchTerm.toLowerCase()),
             );
         }
 
@@ -329,9 +329,11 @@ export default function AlertsLogs() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <Badge className={getSeverityColor(log.eventType)}>
-                                                    {['altitude_violation', 'no_fly_zone_violation', 'emergency_landing'].includes(
-                                                        log.eventType
-                                                    )
+                                                    {[
+                                                        'altitude_violation',
+                                                        'no_fly_zone_violation',
+                                                        'emergency_landing',
+                                                    ].includes(log.eventType)
                                                         ? 'Critical'
                                                         : 'Warning'}
                                                 </Badge>
@@ -364,4 +366,3 @@ export default function AlertsLogs() {
         </div>
     );
 }
-

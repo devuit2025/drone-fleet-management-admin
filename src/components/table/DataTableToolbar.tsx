@@ -36,7 +36,10 @@ export function DataTableToolbar<T>({
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [visibleColumns, setVisibleColumns] = useState<string[]>(columns.map(c => c.key));
     // const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const debouncedSearch = useDebounce((newFilters: Record<string, string>) => handleSearch(newFilters), 500);
+    const debouncedSearch = useDebounce(
+        (newFilters: Record<string, string>) => handleSearch(newFilters),
+        500,
+    );
 
     const handleChange = (value: string, debounce: boolean = false) => {
         console.log('value', value);
@@ -83,7 +86,7 @@ export function DataTableToolbar<T>({
             <div className="flex items-center gap-2">
                 {/* Create New Button */}
                 <Button onClick={() => navigate(`/${prefix}/create`)}>
-                    <Plus/>
+                    <Plus />
                     Create New
                 </Button>
                 {/* Bulk Actions */}

@@ -4,8 +4,8 @@ import { DataTable } from '@/components/table/DataTable';
 import type { ColumnDef } from '@/components/table/types';
 import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
 import { toast } from 'sonner';
-import { DroneBrandMutation } from '@/api/models/drone-brand/droneBrandMutation'
-import { DroneBrandClient, type DroneBrand } from '@/api/models/drone-brand/droneBrandClient'
+import { DroneBrandMutation } from '@/api/models/drone-brand/droneBrandMutation';
+import { DroneBrandClient, type DroneBrand } from '@/api/models/drone-brand/droneBrandClient';
 
 export default function DroneBrandList() {
     const navigate = useNavigate();
@@ -25,7 +25,14 @@ export default function DroneBrandList() {
         {
             key: 'website',
             header: 'Website',
-            render: r => r.website ? <a href={r.website} target="_blank" className="text-blue-500 underline">{r.website}</a> : '-'
+            render: r =>
+                r.website ? (
+                    <a href={r.website} target="_blank" className="text-blue-500 underline">
+                        {r.website}
+                    </a>
+                ) : (
+                    '-'
+                ),
         },
         { key: 'createdAt', header: 'Created At', render: r => r.createdAt.slice(0, 10) },
         { key: 'updatedAt', header: 'Updated At', render: r => r.updatedAt.slice(0, 10) },

@@ -22,7 +22,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { type CreateLicenseDto, type UpdateLicenseDto, type LicenseType, type QualificationLevel, LicenseClient } from '@/api/models/license/licenseClient';
+import {
+    type CreateLicenseDto,
+    type UpdateLicenseDto,
+    type LicenseType,
+    type QualificationLevel,
+    LicenseClient,
+} from '@/api/models/license/licenseClient';
 import { LicenseMutation } from '@/api/models/license/licenseMutation';
 import { PilotClient, type Pilot } from '@/api/models/pilot/pilotClient';
 
@@ -108,7 +114,10 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
                 }
                 navigate('/licenses');
             } catch (err: any) {
-                toast.error(err?.response?.data?.message || (isEdit ? 'Cập nhật license thất bại' : 'Tạo license thất bại'));
+                toast.error(
+                    err?.response?.data?.message ||
+                        (isEdit ? 'Cập nhật license thất bại' : 'Tạo license thất bại'),
+                );
                 console.error(err);
             }
         },
@@ -125,8 +134,14 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
                     form.setFieldValue('licenseType', license.licenseType);
                     form.setFieldValue('qualificationLevel', license.qualificationLevel);
                     form.setFieldValue('issuingAuthority', license.issuingAuthority);
-                    form.setFieldValue('issuedDate', license.issuedDate ? license.issuedDate.split('T')[0] : '');
-                    form.setFieldValue('expiryDate', license.expiryDate ? license.expiryDate.split('T')[0] : '');
+                    form.setFieldValue(
+                        'issuedDate',
+                        license.issuedDate ? license.issuedDate.split('T')[0] : '',
+                    );
+                    form.setFieldValue(
+                        'expiryDate',
+                        license.expiryDate ? license.expiryDate.split('T')[0] : '',
+                    );
                     form.setFieldValue('active', license.active);
                     setLoadingData(false);
                 })
@@ -172,7 +187,9 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
                                             <Select
                                                 value={field.state.value?.toString() || ''}
                                                 onValueChange={val =>
-                                                    field.handleChange(val ? Number(val) : undefined)
+                                                    field.handleChange(
+                                                        val ? Number(val) : undefined,
+                                                    )
                                                 }
                                                 disabled={loading}
                                             >
@@ -208,7 +225,9 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
                                         field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>License Number *</FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>
+                                                License Number *
+                                            </FieldLabel>
                                             <Input
                                                 id={field.name}
                                                 name={field.name}
@@ -234,7 +253,9 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
                                         field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>License Type *</FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>
+                                                License Type *
+                                            </FieldLabel>
                                             <Select
                                                 value={field.state.value}
                                                 onValueChange={val =>
@@ -245,8 +266,12 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
                                                     <SelectValue placeholder="Chọn license type" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="commercial">Commercial</SelectItem>
-                                                    <SelectItem value="recreational">Recreational</SelectItem>
+                                                    <SelectItem value="commercial">
+                                                        Commercial
+                                                    </SelectItem>
+                                                    <SelectItem value="recreational">
+                                                        Recreational
+                                                    </SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             {isInvalid && (
@@ -264,7 +289,9 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
                                         field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>Qualification Level *</FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Qualification Level *
+                                            </FieldLabel>
                                             <Select
                                                 value={field.state.value}
                                                 onValueChange={val =>
@@ -276,7 +303,9 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="basic">Basic</SelectItem>
-                                                    <SelectItem value="advanced">Advanced</SelectItem>
+                                                    <SelectItem value="advanced">
+                                                        Advanced
+                                                    </SelectItem>
                                                     <SelectItem value="expert">Expert</SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -295,7 +324,9 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
                                         field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>Issuing Authority *</FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Issuing Authority *
+                                            </FieldLabel>
                                             <Input
                                                 id={field.name}
                                                 name={field.name}
@@ -321,7 +352,9 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
                                         field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>Issued Date *</FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Issued Date *
+                                            </FieldLabel>
                                             <Input
                                                 id={field.name}
                                                 name={field.name}
@@ -346,7 +379,9 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
                                         field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>Expiry Date *</FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Expiry Date *
+                                            </FieldLabel>
                                             <Input
                                                 id={field.name}
                                                 name={field.name}
@@ -405,5 +440,3 @@ export default function LicenseForm({ isEdit = false }: LicenseFormProps) {
         </Card>
     );
 }
-
-

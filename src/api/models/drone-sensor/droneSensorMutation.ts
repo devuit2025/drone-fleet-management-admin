@@ -1,4 +1,9 @@
-import { DroneSensorClient, type CreateDroneSensorDto, type UpdateDroneSensorDto, type DroneSensor } from './droneSensorClient';
+import {
+    DroneSensorClient,
+    type CreateDroneSensorDto,
+    type UpdateDroneSensorDto,
+    type DroneSensor,
+} from './droneSensorClient';
 
 export const DroneSensorMutation = {
     async create(data: CreateDroneSensorDto): Promise<DroneSensor> {
