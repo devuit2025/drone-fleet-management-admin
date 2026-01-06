@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DroneClient, type Drone, type DroneStatus } from '@/api/models/drone/droneClient';
 import { NoFlyZoneClient, type NoFlyZone } from '@/api/models/no-fly-zone/noFlyZoneClient';
 import { MissionClient, type Mission } from '@/api/models/mission/missionClient';
-import { io, Socket } from 'socket.io-client';
+import { useWebSocket } from '@/providers/WebSocketProvider';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { pointFromWkt } from '@/lib/geo';
+import VideoStreamModal from '@/components/VideoStreamModal';
 
 ChartJS.register(
     CategoryScale,
@@ -88,7 +89,6 @@ const TRAIL_LENGTH = 100;
 export default function EnhancedMonitoringMap() {
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<MapboxMap | null>(null);
-    const socketRef = useRef<Socket | null>(null);
     const dronesRef = useRef<Record<string, DroneState>>({});
     const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
     const [, forceRerender] = useState(0);
@@ -106,7 +106,9 @@ export default function EnhancedMonitoringMap() {
     const [useFakeTelemetry, setUseFakeTelemetry] = useState(true); // Enable fake telemetry by default
     const [observingMissionId, setObservingMissionId] = useState<number | null>(null);
     const [missionProgress, setMissionProgress] = useState<Record<string, number>>({}); // droneId -> progress %
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
+    const { subscribe, unsubscribe } = useWebSocket();
     const selectedDrone = selectedDroneId ? dronesRef.current[selectedDroneId] : null;
 
     function createDroneMarkerEl(id: string, heading = 0, status?: DroneStatus) {
@@ -897,23 +899,9 @@ export default function EnhancedMonitoringMap() {
             });
         }
 
-        // Only connect to real socket if not using fake telemetry
+        // Only subscribe to real socket events if not using fake telemetry
         if (!useFakeTelemetry) {
-            const token =
-                localStorage.getItem('access_token') || localStorage.getItem('accessToken');
-            const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:3000';
-            const socket = io(`${wsUrl}/drone`, {
-                transports: ['websocket', 'polling'],
-                auth: token ? { authorization: `Bearer ${token}` } : undefined,
-            });
-
-            socketRef.current = socket;
-
-            socket.on('connect', () => {
-                console.log('Connected to drone gateway');
-            });
-
-            socket.on('drone:location_updated', (data: { droneId: string; location: any }) => {
+            const handleLocationUpdate = (data: { droneId: string; location: any }) => {
                 const loc = data.location;
                 processTelemetry({
                     id: data.droneId,
@@ -925,28 +913,28 @@ export default function EnhancedMonitoringMap() {
                     battery: loc.battery,
                     timestamp: Date.now(),
                 });
-            });
+            };
 
-            socket.on('drone:status_updated', (data: { droneId: string; status: any }) => {
+            const handleStatusUpdate = (data: { droneId: string; status: any }) => {
                 const drone = dronesRef.current[data.droneId];
                 if (drone) {
                     drone.status = data.status.status;
                     upsertMarker(drone);
                     forceRerender(s => s + 1);
                 }
-            });
+            };
+
+            subscribe('drone:location_updated', handleLocationUpdate);
+            subscribe('drone:status_updated', handleStatusUpdate);
+
+            return () => {
+                unsubscribe('drone:location_updated', handleLocationUpdate);
+                unsubscribe('drone:status_updated', handleStatusUpdate);
+            };
         } else {
             console.log('Using fake telemetry mode');
         }
-
-        return () => {
-            if (socketRef.current && !useFakeTelemetry) {
-                socketRef.current.disconnect();
-                socketRef.current = null;
-            }
-            // Don't remove map here, it's handled in cleanup
-        };
-    }, [useFakeTelemetry]);
+    }, [useFakeTelemetry, subscribe, unsubscribe]);
 
     // Fake telemetry generator
     useEffect(() => {
@@ -1582,6 +1570,20 @@ export default function EnhancedMonitoringMap() {
                                                             {d.status || 'unknown'}
                                                         </Badge>
                                                     </div>
+                                                    <div className="mt-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="w-full"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedDroneId(d.id);
+                                                                setIsVideoModalOpen(true);
+                                                            }}
+                                                        >
+                                                            📹 Video
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                                 <div className="text-right text-xs space-y-1">
                                                     <div className="flex items-center gap-1">
@@ -1704,6 +1706,16 @@ export default function EnhancedMonitoringMap() {
                     transform: scale(1.2) rotate(var(--heading, 0deg));
                 }
             `}</style>
+
+            {/* Video Stream Modal */}
+            {selectedDroneId && (
+                <VideoStreamModal
+                    open={isVideoModalOpen}
+                    onOpenChange={setIsVideoModalOpen}
+                    droneId={selectedDroneId}
+                    droneTelemetry={dronesRef.current[selectedDroneId]}
+                />
+            )}
         </div>
     );
 }

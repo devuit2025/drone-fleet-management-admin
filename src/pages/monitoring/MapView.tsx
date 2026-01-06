@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl, { LngLatLike, Map as MapboxMap } from 'mapbox-gl';
+import { useEffect, useRef, useState } from 'react';
+import mapboxgl, { type LngLatLike, type Map as MapboxMap } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useLocalFakeTelem } from '@/hooks/useLocalFakeTelem'; // new import
+import VideoStreamModal from '@/components/VideoStreamModal';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
 
@@ -31,7 +32,11 @@ export default function MapView() {
     const readyRef = useRef(false);
     const TRAIL_LENGTH = 60;
     const WS_URL = import.meta.env.VITE_DRONE_WS_URL || 'ws://localhost:4000/telemetry';
-    const USE_FAKE = import.meta.env.VITE_USE_FAKE === 'true';
+    const USE_FAKE = false;
+    
+    // Video stream modal state
+    const [selectedDroneId, setSelectedDroneId] = useState<string | null>(null);
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
     function createDroneMarkerEl(id: string, heading = 0) {
         const el = document.createElement('div');
@@ -72,11 +77,11 @@ export default function MapView() {
     function updateTrailsSource() {
         if (!mapRef.current) return;
         const features = Object.values(dronesRef.current).map(d => ({
-            type: 'Feature',
-            geometry: { type: 'LineString', coordinates: d.path },
+            type: 'Feature' as const,
+            geometry: { type: 'LineString' as const, coordinates: d.path },
             properties: { id: d.id },
         }));
-        const data = { type: 'FeatureCollection', features };
+        const data = { type: 'FeatureCollection' as const, features };
         if (mapRef.current.getSource('drone-trails')) {
             (mapRef.current.getSource('drone-trails') as mapboxgl.GeoJSONSource).setData(data);
         }
@@ -211,6 +216,16 @@ export default function MapView() {
                                         >
                                             Center
                                         </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="default"
+                                            onClick={() => {
+                                                setSelectedDroneId(d.id);
+                                                setIsVideoModalOpen(true);
+                                            }}
+                                        >
+                                            📹 Video
+                                        </Button>
                                     </div>
                                 </div>
                             ))}
@@ -227,6 +242,16 @@ export default function MapView() {
                 </div>
             </aside>
             <style>{`.drone-marker { transform-origin: center; cursor: pointer; }`}</style>
+            
+            {/* Video Stream Modal */}
+            {selectedDroneId && (
+                <VideoStreamModal
+                    open={isVideoModalOpen}
+                    onOpenChange={setIsVideoModalOpen}
+                    droneId={selectedDroneId}
+                    droneTelemetry={drones.find(d => d.id === selectedDroneId)}
+                />
+            )}
         </div>
     );
 }
