@@ -48,18 +48,22 @@ export function Sidebar({ className }: SidebarProps) {
                     active
                 />
 
-                {/* Real-Time Monitoring */}
-                <SidebarGroup
+                <SidebarItem
                     icon={<Activity className="h-5 w-5" />}
-                    label="Giám sát Thời gian thực"
+                    label="Bản đồ trực tiếp"
+                    href="/monitoring"
                     collapsed={collapsed}
-                    items={[
-                        { label: 'Bản đồ trực tiếp', href: '/monitoring' },
-                        // { label: 'Bảng Telemetry', href: '/monitoring/telemetry' },
-                        // { label: 'Bảng Cảnh báo', href: '/monitoring/alerts' },
-                    ]}
+                    active
                 />
 
+                <SidebarItem
+                    icon={<AlertTriangle className="h-5 w-5" />}
+                    label="Trung tâm Cảnh báo"
+                    href="/alerts/logs"
+                    collapsed={collapsed}
+                    active
+                />
+                
                 {/* Drone Management */}
                 <SidebarGroup
                     icon={<Plane className="h-5 w-5" />}
@@ -75,52 +79,36 @@ export function Sidebar({ className }: SidebarProps) {
                     ]}
                 />
 
-                {/* Pilot Management */}
-                <SidebarGroup
+                <SidebarItem
                     icon={<User className="h-5 w-5" />}
                     label="Quản lý Phi công"
+                    href="/pilots"
                     collapsed={collapsed}
-                    items={[
-                        { label: 'Danh sách Phi công', href: '/pilots' },
-                        // { label: 'Chi tiết Phi công', href: '/pilots/details' },
-                        // { label: 'Xác thực Giấy phép', href: '/pilots/license' },
-                    ]}
+                    active
                 />
-
-                {/* Mission Management */}
-                <SidebarGroup
+                
+                <SidebarItem
                     icon={<Map className="h-5 w-5" />}
                     label="Quản lý Nhiệm vụ"
+                    href="/missions"
                     collapsed={collapsed}
-                    items={[
-                        { label: 'Danh sách Nhiệm vụ', href: '/missions' },
-                        // { label: 'Tạo Nhiệm vụ mới', href: '/missions/create' },
-                        // { label: 'Chi tiết Nhiệm vụ', href: '/missions/details' },
-                    ]}
+                    active
                 />
 
-                {/* Flight Planning */}
-                <SidebarGroup
+                <SidebarItem
                     icon={<FileText className="h-5 w-5" />}
-                    label="Lập kế hoạch bay"
+                    label="Khu vực cấm bay"
+                    href="/no-fly-zones"
                     collapsed={collapsed}
-                    items={[
-                        // { label: 'Tạo tuyến bay', href: '/planning/create' },
-                        { label: 'Khu vực cấm bay', href: '/no-fly-zones' },
-                        // { label: 'Kiểm tra hợp lệ', href: '/planning/validate' },
-                    ]}
+                    active
                 />
 
-                {/* Permit Management */}
-                <SidebarGroup
+                <SidebarItem
                     icon={<Shield className="h-5 w-5" />}
                     label="Giấy phép bay"
+                    href="/licenses"
                     collapsed={collapsed}
-                    items={[
-                        { label: 'Đăng ký Giấy phép', href: '/licenses' },
-                        // { label: 'Kiểm tra hợp lệ', href: '/permits/check' },
-                        // { label: 'Lịch sử phê duyệt', href: '/permits/logs' },
-                    ]}
+                    active
                 />
 
                 {/* Analytics */}
@@ -132,31 +120,6 @@ export function Sidebar({ className }: SidebarProps) {
                         { label: 'Thống kê chuyến bay', href: '/analytics/flights' },
                         { label: 'Báo cáo tổng hợp', href: '/analytics/reports' },
                         { label: 'Xu hướng thời gian bay', href: '/analytics/trends' },
-                    ]}
-                />
-
-                {/* Simulation & Testing */}
-                {/* <SidebarGroup
-                    icon={<Terminal className="h-5 w-5" />}
-                    label="Mô phỏng & Kiểm thử"
-                    collapsed={collapsed}
-                    items={[
-                        { label: 'Điều khiển Drone', href: '/control' },
-                        { label: 'Kết nối ArduPilot', href: '/simulation/ardupilot' },
-                        { label: 'Nhiệm vụ mô phỏng', href: '/simulation/missions' },
-                        { label: 'So sánh dữ liệu', href: '/simulation/compare' },
-                    ]}
-                /> */}
-
-                {/* Error & Alert Center */}
-                <SidebarGroup
-                    icon={<AlertTriangle className="h-5 w-5" />}
-                    label="Trung tâm Cảnh báo"
-                    collapsed={collapsed}
-                    items={[
-                        // { label: 'Cảnh báo hệ thống', href: '/alerts/system' },
-                        // { label: 'Cảnh báo an toàn', href: '/alerts/safety' },
-                        { label: 'Nhật ký cảnh báo', href: '/alerts/logs' },
                     ]}
                 />
 
