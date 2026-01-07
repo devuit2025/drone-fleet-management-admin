@@ -7,6 +7,7 @@ interface WebSocketContextValue {
   subscribe: (subject: string, callback: MessageCallback) => void;
   unsubscribe: (subject: string, callback: MessageCallback) => void;
   send: (message: any) => void;
+  reconnect: () => void;
   isConnected: boolean;
   connectionState: 'connecting' | 'connected' | 'disconnected' | 'error';
 }
@@ -26,11 +27,13 @@ export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNod
   const subscribedSubjectsRef = useRef<Set<string>>(new Set());
   const hasConnectedOnceRef = useRef(false);
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectKeyRef = useRef(0);
 
   // State to trigger re-render if needed (not strictly necessary)
   const [, setSubscriptions] = useState<Record<string, Set<MessageCallback>>>({});
   const [isConnected, setIsConnected] = useState(false);
   const [connectionState, setConnectionState] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
+  const [reconnectKey, setReconnectKey] = useState(0);
 
   useEffect(() => {
     // Parse URL: ws://localhost:3000/drone -> http://localhost:3000, namespace: /drone
@@ -122,7 +125,7 @@ export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNod
       setConnectionState('disconnected');
       hasConnectedOnceRef.current = false;
     };
-  }, [url]);
+  }, [url, reconnectKey]);
 
   const subscribe = useCallback((subject: string, callback: MessageCallback) => {
     console.log('[WS] Subscribe to:', subject, 'socket connected:', socketRef.current?.connected);
@@ -198,8 +201,19 @@ export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNod
     }
   }, []);
 
+  const reconnect = useCallback(() => {
+    console.log('[WS] Manual reconnect requested');
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+    // Force re-render by updating reconnectKey
+    reconnectKeyRef.current += 1;
+    setReconnectKey(reconnectKeyRef.current);
+    setConnectionState('connecting');
+  }, []);
+
   return (
-    <WebSocketContext.Provider value={{ subscribe, unsubscribe, send, isConnected, connectionState }}>
+    <WebSocketContext.Provider value={{ subscribe, unsubscribe, send, reconnect, isConnected, connectionState }}>
       {children}
     </WebSocketContext.Provider>
   );

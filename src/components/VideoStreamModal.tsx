@@ -533,19 +533,19 @@ export default function VideoStreamModal({
                                 <div>
                                     <div className="text-muted-foreground">Location</div>
                                     <div className="font-medium">
-                                        {telemetry?.lat?.toFixed(6) ?? '-'}, {telemetry?.lon?.toFixed(6) ?? '-'}
+                                        {typeof telemetry?.lat === 'number' ? telemetry.lat.toFixed(6) : '-'}, {typeof telemetry?.lon === 'number' ? telemetry.lon.toFixed(6) : '-'}
                                     </div>
                                 </div>
                                 <div>
                                     <div className="text-muted-foreground">Altitude</div>
                                     <div className="font-medium">
-                                        {telemetry?.altitude?.toFixed(2) ?? '-'} m
+                                        {typeof telemetry?.altitude === 'number' ? telemetry.altitude.toFixed(2) : '-'} m
                                     </div>
                                 </div>
                                 <div>
                                     <div className="text-muted-foreground">Speed</div>
                                     <div className="font-medium">
-                                        {telemetry?.speed?.toFixed(2) ?? '-'} m/s
+                                        {typeof telemetry?.speed === 'number' ? telemetry.speed.toFixed(2) : '-'} m/s
                                     </div>
                                 </div>
                                 <div>
@@ -557,7 +557,7 @@ export default function VideoStreamModal({
                                 <div>
                                     <div className="text-muted-foreground">Heading</div>
                                     <div className="font-medium">
-                                        {telemetry?.heading?.toFixed(1) ?? '-'}°
+                                        {typeof telemetry?.heading === 'number' ? telemetry.heading.toFixed(1) : '-'}°
                                     </div>
                                 </div>
                                 <div>

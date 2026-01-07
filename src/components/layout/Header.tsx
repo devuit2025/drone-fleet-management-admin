@@ -1,13 +1,33 @@
 // Header.tsx
-import { Bell, PanelLeft } from 'lucide-react';
+import { Bell, PanelLeft, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAdminLayout } from '@/contexts/AdminLayoutContext';
 import { cn } from '@/lib/utils';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
+import { useWebSocket } from '@/providers/WebSocketProvider';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function Header() {
     const { toggleCollapse } = useAdminLayout();
+    const { isConnected, connectionState, reconnect } = useWebSocket();
+
+    const getConnectionIcon = () => {
+        if (connectionState === 'connecting') {
+            return <Loader2 className="h-4 w-4 animate-spin" />;
+        }
+        return isConnected ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />;
+    };
+
+    const getConnectionTooltip = () => {
+        if (connectionState === 'connecting') {
+            return 'Đang kết nối...';
+        }
+        if (isConnected) {
+            return 'WebSocket đã kết nối';
+        }
+        return 'WebSocket chưa kết nối. Click để reconnect';
+    };
 
     return (
         <header className="flex items-center justify-between px-6 py-3  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -52,6 +72,29 @@ export function Header() {
             </div>
 
             <div className="flex items-center gap-3">
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={reconnect}
+                                disabled={connectionState === 'connecting'}
+                                className={cn(
+                                    isConnected
+                                        ? 'text-green-600 hover:text-green-700 dark:text-green-400'
+                                        : 'text-red-600 hover:text-red-700 dark:text-red-400',
+                                )}
+                            >
+                                {getConnectionIcon()}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>{getConnectionTooltip()}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+
                 <Button variant="ghost" size="icon">
                     <Bell className="h-5 w-5" />
                 </Button>

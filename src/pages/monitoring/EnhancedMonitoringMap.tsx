@@ -42,6 +42,7 @@ import {
     Square,
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { pointFromWkt } from '@/lib/geo';
 import VideoStreamModal from '@/components/VideoStreamModal';
 
@@ -103,27 +104,34 @@ export default function EnhancedMonitoringMap() {
     const [showTrails, setShowTrails] = useState(true);
     const [showNoFlyZones, setShowNoFlyZones] = useState(true);
     const [showMissions, setShowMissions] = useState(true);
-    const [useFakeTelemetry, setUseFakeTelemetry] = useState(true); // Enable fake telemetry by default
+    const [useFakeTelemetry, setUseFakeTelemetry] = useState(false); // Disable fake telemetry by default - use real WebSocket data
     const [observingMissionId, setObservingMissionId] = useState<number | null>(null);
     const [missionProgress, setMissionProgress] = useState<Record<string, number>>({}); // droneId -> progress %
     const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
-    const { subscribe, unsubscribe } = useWebSocket();
+    const { subscribe, unsubscribe, isConnected } = useWebSocket();
     const selectedDrone = selectedDroneId ? dronesRef.current[selectedDroneId] : null;
 
-    function createDroneMarkerEl(id: string, heading = 0, status?: DroneStatus) {
+    function createDroneMarkerEl(id: string, heading = 0, status?: DroneStatus, isActive = false) {
         const el = document.createElement('div');
         el.className =
             'drone-marker w-10 h-10 rounded-full flex items-center justify-center cursor-pointer';
         el.style.transform = `rotate(${heading}deg)`;
+        el.style.position = 'relative';
 
         const statusColor = getStatusColor(status);
+        // Thêm indicator màu xanh lá nếu drone đang active
+        const activeIndicator = isActive 
+            ? '<div class="active-indicator" style="position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; background: #10b981; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px rgba(16, 185, 129, 0.6);"></div>'
+            : '';
+        
         el.innerHTML = `
       <svg width="36" height="36" viewBox="0 0 24 24">
         <g transform="translate(12,12)">
           <path d="M0 -10 L6 8 L0 4 L-6 8 Z" fill="${statusColor}" stroke="#083344" stroke-width="0.5" />
         </g>
       </svg>
+      ${activeIndicator}
     `;
         el.dataset.droneId = id;
         return el;
@@ -146,15 +154,24 @@ export default function EnhancedMonitoringMap() {
         }
     }
 
+    // Check if drone is actively communicating (telemetry received within last 10 seconds)
+    function isDroneActive(drone: DroneState): boolean {
+        if (!drone.timestamp) return false;
+        const now = Date.now();
+        const timeSinceLastUpdate = now - drone.timestamp;
+        return timeSinceLastUpdate < 3000; // 3 seconds
+    }
+
     function upsertMarker(drone: DroneState) {
         const { id, lon, lat, heading, status } = drone;
         const markerId = `marker-${id}`;
+        const isActive = isDroneActive(drone);
 
         if (!mapRef.current) return;
 
         let marker = markersRef.current[id];
         if (!marker) {
-            const el = createDroneMarkerEl(id, heading ?? 0, status);
+            const el = createDroneMarkerEl(id, heading ?? 0, status, isActive);
             el.setAttribute('data-marker-id', markerId);
             marker = new mapboxgl.Marker(el).setLngLat([lon, lat]).addTo(mapRef.current);
 
@@ -172,6 +189,19 @@ export default function EnhancedMonitoringMap() {
                 const svg = el.querySelector('svg path');
                 if (svg) {
                     svg.setAttribute('fill', getStatusColor(status));
+                }
+                
+                // Update active indicator
+                let activeIndicator = el.querySelector('.active-indicator') as HTMLElement;
+                if (isActive && !activeIndicator) {
+                    // Add indicator if active but doesn't exist
+                    activeIndicator = document.createElement('div');
+                    activeIndicator.className = 'active-indicator';
+                    activeIndicator.style.cssText = 'position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; background: #10b981; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px rgba(16, 185, 129, 0.6);';
+                    el.appendChild(activeIndicator);
+                } else if (!isActive && activeIndicator) {
+                    // Remove indicator if not active but exists
+                    activeIndicator.remove();
                 }
             }
         }
@@ -870,6 +900,39 @@ export default function EnhancedMonitoringMap() {
         loadMissions();
     }, []);
 
+    // Populate dronesRef.current from drones state (even without telemetry)
+    useEffect(() => {
+        drones.forEach(drone => {
+            const id = drone.id.toString();
+            if (!dronesRef.current[id]) {
+                // Initialize drone state even without telemetry data
+                // Use default location (center of map) if no telemetry available
+                dronesRef.current[id] = {
+                    id,
+                    lat: 10.7626, // Default to map center
+                    lon: 106.6648,
+                    altitude: undefined,
+                    heading: undefined,
+                    speed: undefined,
+                    battery: undefined,
+                    timestamp: Date.now(),
+                    path: [],
+                    status: drone.status,
+                    name: drone.name,
+                    batteryHistory: [],
+                    altitudeHistory: [],
+                    speedHistory: [],
+                } as DroneState;
+            } else {
+                // Update existing drone with API data (status, name)
+                dronesRef.current[id].status = drone.status;
+                dronesRef.current[id].name = drone.name;
+            }
+        });
+        // Force re-render to update visible drones
+        forceRerender(s => s + 1);
+    }, [drones]);
+
     useEffect(() => {
         if (!mapContainer.current) return;
         if (!mapRef.current) {
@@ -915,6 +978,22 @@ export default function EnhancedMonitoringMap() {
                 });
             };
 
+            const handleTelemetryData = (data: { droneId: string; telemetry: any }) => {
+                // Handle raw telemetry data from Android app (fallback)
+                if (data.telemetry && data.droneId) {
+                    processTelemetry({
+                        id: data.droneId,
+                        lat: data.telemetry.latitude,
+                        lon: data.telemetry.longitude,
+                        altitude: data.telemetry.altitude_m,
+                        heading: data.telemetry.heading_deg,
+                        speed: data.telemetry.speed_mps,
+                        battery: data.telemetry.battery_percent,
+                        timestamp: Date.now(),
+                    });
+                }
+            };
+
             const handleStatusUpdate = (data: { droneId: string; status: any }) => {
                 const drone = dronesRef.current[data.droneId];
                 if (drone) {
@@ -925,10 +1004,12 @@ export default function EnhancedMonitoringMap() {
             };
 
             subscribe('drone:location_updated', handleLocationUpdate);
+            subscribe('telemetry:data', handleTelemetryData);
             subscribe('drone:status_updated', handleStatusUpdate);
 
             return () => {
                 unsubscribe('drone:location_updated', handleLocationUpdate);
+                unsubscribe('telemetry:data', handleTelemetryData);
                 unsubscribe('drone:status_updated', handleStatusUpdate);
             };
         } else {
@@ -1556,8 +1637,14 @@ export default function EnhancedMonitoringMap() {
                                         <CardContent className="p-3">
                                             <div className="flex items-start justify-between">
                                                 <div className="flex-1">
-                                                    <div className="font-medium text-sm">
+                                                    <div className="font-medium text-sm flex items-center gap-2">
                                                         {d.name || d.id}
+                                                        {isDroneActive(d) && (
+                                                            <div 
+                                                                className="w-2 h-2 rounded-full bg-green-500 animate-pulse"
+                                                                title="Đang giao tiếp với server"
+                                                            />
+                                                        )}
                                                     </div>
                                                     <div className="text-xs text-slate-500 mt-1">
                                                         {d.lat.toFixed(5)}, {d.lon.toFixed(5)}
@@ -1569,20 +1656,44 @@ export default function EnhancedMonitoringMap() {
                                                         >
                                                             {d.status || 'unknown'}
                                                         </Badge>
+                                                        {isDroneActive(d) && (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-xs bg-green-50 text-green-700 border-green-300"
+                                                            >
+                                                                Active
+                                                            </Badge>
+                                                        )}
                                                     </div>
                                                     <div className="mt-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="w-full"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setSelectedDroneId(d.id);
-                                                                setIsVideoModalOpen(true);
-                                                            }}
-                                                        >
-                                                            📹 Video
-                                                        </Button>
+                                                        <TooltipProvider>
+                                                            <UITooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <span className="w-full">
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            className="w-full"
+                                                                            disabled={!isConnected}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                if (isConnected) {
+                                                                                    setSelectedDroneId(d.id);
+                                                                                    setIsVideoModalOpen(true);
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            Access
+                                                                        </Button>
+                                                                    </span>
+                                                                </TooltipTrigger>
+                                                                {!isConnected && (
+                                                                    <TooltipContent>
+                                                                        <p>WebSocket chưa kết nối. Vui lòng đợi...</p>
+                                                                    </TooltipContent>
+                                                                )}
+                                                            </UITooltip>
+                                                        </TooltipProvider>
                                                     </div>
                                                 </div>
                                                 <div className="text-right text-xs space-y-1">
