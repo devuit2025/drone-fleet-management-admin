@@ -27,6 +27,8 @@ import {
     featureCollectionFromRing,
     intersectsAnyPolygon,
     ringFromFeatureCollection,
+    isPointInPermitArea,
+    isPointNearPermitBoundary,
 } from '@/lib/geo';
 import { toast } from 'sonner';
 
@@ -79,6 +81,7 @@ interface MissionDroneSelectorProps {
     onChange: (next: MissionDroneDraft[]) => void;
     droneOptions: DroneOption[];
     disabledZones?: FeatureCollection<Polygon> | null;
+    permitAreas?: FeatureCollection<Polygon> | null;
 }
 
 interface EditorState {
@@ -122,6 +125,7 @@ export function MissionDroneSelector({
     onChange,
     droneOptions,
     disabledZones = null,
+    permitAreas = null,
 }: MissionDroneSelectorProps) {
     const [editorIndex, setEditorIndex] = useState<number | null>(null);
     const [editorState, setEditorState] = useState<EditorState | null>(null);
@@ -159,6 +163,40 @@ export function MissionDroneSelector({
             toast.error('Vui lòng vẽ tối thiểu một waypoint cho drone này');
             return;
         }
+
+        // Validate permit areas before saving
+        if (permitAreas && permitAreas.features.length > 0) {
+            const outsidePermit: number[] = [];
+            const nearBoundary: number[] = [];
+            
+            for (let i = 0; i < editorState.waypoints.length; i++) {
+                const wp = editorState.waypoints[i];
+                if (!isPointInPermitArea(wp.lon, wp.lat, permitAreas)) {
+                    outsidePermit.push(i + 1);
+                } else if (isPointNearPermitBoundary(wp.lon, wp.lat, permitAreas, 50)) {
+                    nearBoundary.push(i + 1);
+                }
+            }
+
+            if (outsidePermit.length > 0) {
+                toast.error(
+                    `Waypoint ${outsidePermit.join(', ')} nằm ngoài vùng được phép bay. Vui lòng điều chỉnh.`,
+                );
+                return;
+            }
+
+            if (nearBoundary.length > 0) {
+                toast.warning(
+                    `Cảnh báo: Waypoint ${nearBoundary.join(', ')} quá gần biên vùng phép bay (< 50m). Có thể vi phạm do yếu tố môi trường.`,
+                );
+            }
+        }
+
+        if (editorState.hasConflict) {
+            toast.error('Polygon đang chồng lấp với khu vực cấm bay hoặc nằm ngoài vùng được phép bay. Vui lòng điều chỉnh.');
+            return;
+        }
+
         const next = [...value];
         next[editorIndex] = {
             ...target,
@@ -168,32 +206,46 @@ export function MissionDroneSelector({
         };
         onChange(next);
         closeEditor();
-    }, [closeEditor, editorIndex, editorState, onChange, value]);
+    }, [closeEditor, editorIndex, editorState, onChange, value, permitAreas]);
 
     const updateEditorFeatures = useCallback(
         (fc: FeatureCollection<Polygon>) => {
             const ring = ringFromFeatureCollection(fc);
-            console.log('ring', ring);
             const closed = ensureClosedRing(ring);
-            console.log('closed', closed);
             const normalizedFc =
                 closed.length > 0 ? featureCollectionFromRing(closed) : EMPTY_FEATURE_COLLECTION;
-            console.log('normalizedFc', normalizedFc);
             const nextWaypoints = buildWaypoints(closed, editorState?.waypoints);
-            console.log('nextWaypoints', nextWaypoints);
+            
             let conflict = false;
+            let outsidePermit = false;
+            let nearBoundary = false;
+            const boundaryWarnings: number[] = [];
+
+            // Check no-fly zones conflict
             if (disabledZones && normalizedFc.features.length > 0) {
                 conflict = intersectsAnyPolygon(normalizedFc, disabledZones);
-                console.log('conflict', conflict);
+            }
+
+            // Check permit areas
+            if (permitAreas && permitAreas.features.length > 0 && nextWaypoints.length > 0) {
+                for (let i = 0; i < nextWaypoints.length; i++) {
+                    const wp = nextWaypoints[i];
+                    if (!isPointInPermitArea(wp.lon, wp.lat, permitAreas)) {
+                        outsidePermit = true;
+                    } else if (isPointNearPermitBoundary(wp.lon, wp.lat, permitAreas, 50)) {
+                        nearBoundary = true;
+                        boundaryWarnings.push(i + 1);
+                    }
+                }
             }
 
             setEditorState({
                 featureCollection: normalizedFc,
                 waypoints: nextWaypoints,
-                hasConflict: conflict,
+                hasConflict: conflict || outsidePermit,
             });
         },
-        [disabledZones, editorState?.waypoints],
+        [disabledZones, permitAreas, editorState?.waypoints],
     );
 
     const handleWaypointFieldChange = useCallback(
@@ -367,6 +419,7 @@ export function MissionDroneSelector({
                         <div className="flex flex-1 flex-col gap-4 overflow-hidden">
                             <div className="flex-1 overflow-hidden rounded border bg-muted/20">
                                 <MapboxPolygonEditor
+                                    permitAreas={permitAreas}
                                     style={{ height: '100%', width: '100%' }}
                                     value={editorState.featureCollection}
                                     onChange={updateEditorFeatures}
@@ -375,8 +428,13 @@ export function MissionDroneSelector({
                             </div>
                             {editorState.hasConflict && (
                                 <p className="rounded border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-                                    Polygon đang chồng lấp với khu vực cấm bay. Điều chỉnh lại trước
+                                    Polygon đang chồng lấp với khu vực cấm bay hoặc nằm ngoài vùng được phép bay. Điều chỉnh lại trước
                                     khi lưu.
+                                </p>
+                            )}
+                            {permitAreas && permitAreas.features.length === 0 && (
+                                <p className="rounded border border-yellow-400/40 bg-yellow-400/10 p-3 text-sm text-yellow-800 dark:text-yellow-200">
+                                    Không có phép bay hợp lệ cho license này. Vui lòng tạo phép bay trước khi vẽ waypoint.
                                 </p>
                             )}
                             <div className="max-h-52 overflow-auto rounded border bg-muted/30 p-4">

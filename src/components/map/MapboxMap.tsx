@@ -13,6 +13,7 @@ interface MapboxMapProps {
     features?: FeatureCollection<Polygon> | null;
     onFeaturesChange?: (features: FeatureCollection<Polygon>) => void;
     disabledZones?: FeatureCollection<Polygon> | null;
+    permitAreas?: FeatureCollection<Polygon> | null;
     readOnly?: boolean;
     markers?: Array<{
         id?: string | number;
@@ -38,6 +39,7 @@ export function MapboxMap({
     features = null,
     onFeaturesChange,
     disabledZones = null,
+    permitAreas = null,
     readOnly = false,
     markers = [],
     onDrawCreate,
@@ -363,6 +365,75 @@ export function MapboxMap({
             updateDisabledZones();
         }
     }, [disabledZones]);
+
+    // Update permit areas data when prop changes
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map) return;
+        if (!permitAreas) return;
+
+        const updatePermitAreas = () => {
+            try {
+                let src = map.getSource('permit-areas') as mapboxgl.GeoJSONSource | undefined;
+                if (!src) {
+                    // Tạo source nếu chưa có
+                    map.addSource('permit-areas', {
+                        type: 'geojson',
+                        data: permitAreas as any,
+                    });
+                    src = map.getSource('permit-areas') as mapboxgl.GeoJSONSource;
+
+                    // Tạo layers nếu chưa có
+                    if (!map.getLayer('permit-areas-outline')) {
+                        map.addLayer({
+                            id: 'permit-areas-outline',
+                            type: 'line',
+                            source: 'permit-areas',
+                            paint: {
+                                'line-color': '#16a34a',
+                                'line-width': 3,
+                            },
+                        });
+                    }
+                    if (!map.getLayer('permit-areas-label')) {
+                        map.addLayer({
+                            id: 'permit-areas-label',
+                            type: 'symbol',
+                            source: 'permit-areas',
+                            layout: {
+                                'text-field': ['coalesce', ['get', 'name'], ''],
+                                'text-size': 12,
+                                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                                'text-anchor': 'center',
+                                'text-allow-overlap': false,
+                                'text-ignore-placement': false,
+                            },
+                            paint: {
+                                'text-color': '#0f172a',
+                                'text-halo-color': '#ffffff',
+                                'text-halo-width': 2,
+                            },
+                        });
+                    }
+                } else {
+                    src.setData(permitAreas as any);
+                }
+            } catch (error) {
+                console.warn('Failed to update permit areas:', error);
+            }
+        };
+
+        // Kiểm tra map đã load xong chưa
+        if (!map.loaded()) {
+            const handler = () => updatePermitAreas();
+            map.once('load', handler);
+            return () => {
+                map.off('load', handler);
+            };
+        } else {
+            updatePermitAreas();
+        }
+    }, [permitAreas]);
 
     useEffect(() => {
         console.log('markers', markers);

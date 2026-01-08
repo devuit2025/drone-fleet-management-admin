@@ -7,6 +7,7 @@ export interface MapboxPolygonEditorProps {
     value: FeatureCollection<Polygon> | null;
     onChange: (value: FeatureCollection<Polygon>) => void;
     disabledZones?: FeatureCollection<Polygon> | null;
+    permitAreas?: FeatureCollection<Polygon> | null;
     readOnly?: boolean;
     className?: string;
     style?: CSSProperties;
@@ -19,6 +20,7 @@ function MapboxPolygonEditorImpl({
     value,
     onChange,
     disabledZones = null,
+    permitAreas = null,
     readOnly = false,
     className,
     style,
@@ -33,6 +35,7 @@ function MapboxPolygonEditorImpl({
             features={value}
             onFeaturesChange={onChange}
             disabledZones={disabledZones}
+            permitAreas={permitAreas}
             readOnly={readOnly}
             onDrawCreate={onDrawCreate}
             onDrawUpdate={onDrawUpdate}

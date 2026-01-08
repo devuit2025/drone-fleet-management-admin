@@ -113,3 +113,66 @@ export function isPointInAnyPolygon(
     }
     return false;
 }
+
+/**
+ * Check if a point is inside any permit area
+ */
+export function isPointInPermitArea(
+    lon: number,
+    lat: number,
+    permitAreas: FeatureCollection<Polygon> | Feature<Polygon>[] | null,
+): boolean {
+    return isPointInAnyPolygon(lon, lat, permitAreas);
+}
+
+/**
+ * Calculate minimum distance from point to permit area boundary (in meters)
+ * Returns null if point is outside all permit areas
+ */
+export function distanceToPermitBoundary(
+    lon: number,
+    lat: number,
+    permitAreas: FeatureCollection<Polygon> | Feature<Polygon>[] | null,
+): number | null {
+    if (!permitAreas) return null;
+
+    const point = turf.point([lon, lat]);
+    const permitList: Feature<Polygon>[] = Array.isArray(permitAreas)
+        ? (permitAreas as Feature<Polygon>[])
+        : (permitAreas as FeatureCollection<Polygon>).features;
+
+    let minDistance: number | null = null;
+
+    for (const permit of permitList) {
+        try {
+            // Check if point is inside permit area
+            if (turf.booleanPointInPolygon(point, permit as any)) {
+                // Point is inside, calculate distance to boundary
+                const boundary = turf.polygonToLine(permit as any);
+                const distance = turf.pointToLineDistance(point, boundary as any, { units: 'meters' });
+                if (minDistance === null || distance < minDistance) {
+                    minDistance = distance;
+                }
+            }
+        } catch {
+            // ignore bogus geometries
+        }
+    }
+
+    return minDistance;
+}
+
+/**
+ * Check if a point is too close to permit area boundary (within buffer zone)
+ * @param bufferMeters - Buffer distance in meters (default: 50m)
+ */
+export function isPointNearPermitBoundary(
+    lon: number,
+    lat: number,
+    permitAreas: FeatureCollection<Polygon> | Feature<Polygon>[] | null,
+    bufferMeters: number = 50,
+): boolean {
+    const distance = distanceToPermitBoundary(lon, lat, permitAreas);
+    if (distance === null) return false;
+    return distance < bufferMeters;
+}

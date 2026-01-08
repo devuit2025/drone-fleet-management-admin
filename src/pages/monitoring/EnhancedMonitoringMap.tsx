@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DroneClient, type Drone, type DroneStatus } from '@/api/models/drone/droneClient';
 import { NoFlyZoneClient, type NoFlyZone } from '@/api/models/no-fly-zone/noFlyZoneClient';
 import { MissionClient, type Mission } from '@/api/models/mission/missionClient';
+import { FlightPermitClient, type FlightPermit } from '@/api/models/flight-permit/flightPermitClient';
 import { useWebSocket } from '@/providers/WebSocketProvider';
 import {
     Chart as ChartJS,
@@ -98,11 +99,13 @@ export default function EnhancedMonitoringMap() {
 
     const [drones, setDrones] = useState<Drone[]>([]);
     const [noFlyZones, setNoFlyZones] = useState<NoFlyZone[]>([]);
+    const [flightPermits, setFlightPermits] = useState<FlightPermit[]>([]);
     const [missions, setMissions] = useState<Mission[]>([]);
     const [selectedDroneId, setSelectedDroneId] = useState<string | null>(null);
     const [statusFilter, setStatusFilter] = useState<DroneStatus | 'all'>('all');
     const [showTrails, setShowTrails] = useState(true);
     const [showNoFlyZones, setShowNoFlyZones] = useState(true);
+    const [showFlightPermits, setShowFlightPermits] = useState(true);
     const [showMissions, setShowMissions] = useState(true);
     const [useFakeTelemetry, setUseFakeTelemetry] = useState(false); // Disable fake telemetry by default - use real WebSocket data
     const [observingMissionId, setObservingMissionId] = useState<number | null>(null);
@@ -252,6 +255,98 @@ export default function EnhancedMonitoringMap() {
                 // Zones will be added to map via useEffect when map is ready
             })
             .catch(err => console.error('Failed to load no-fly zones', err));
+    }
+
+    function loadFlightPermits() {
+        FlightPermitClient.findAll()
+            .then(permits => {
+                console.log('Loaded flight permits:', permits.length);
+                setFlightPermits(permits);
+                // Permits will be added to map via useEffect when map is ready
+            })
+            .catch(err => console.error('Failed to load flight permits', err));
+    }
+
+    function addFlightPermitsToMap(permits: FlightPermit[]) {
+        if (!mapRef.current) {
+            console.warn('Map not ready, cannot add flight permits');
+            return;
+        }
+
+        console.log('Adding flight permits to map:', permits.length);
+
+        const features: GeoJSON.Feature[] = permits
+            .map(permit => {
+                try {
+                    let geom: GeoJSON.Geometry;
+
+                    if (typeof permit.airspaceArea === 'string') {
+                        const trimmed = permit.airspaceArea.trim();
+                        // Try JSON parse first
+                        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                            try {
+                                geom = JSON.parse(trimmed);
+                            } catch (e) {
+                                console.error(
+                                    `Failed to parse permit ${permit.id} geometry as JSON:`,
+                                    trimmed.substring(0, 100),
+                                );
+                                return null;
+                            }
+                        } else {
+                            console.error(
+                                `Permit ${permit.id} geometry is not JSON format:`,
+                                trimmed.substring(0, 100),
+                            );
+                            return null;
+                        }
+                    } else {
+                        geom = permit.airspaceArea as any;
+                    }
+
+                    // Validate geometry
+                    if (!geom || !geom.type) {
+                        console.error(`Permit ${permit.id} has invalid geometry structure:`, geom);
+                        return null;
+                    }
+
+                    return {
+                        type: 'Feature' as const,
+                        geometry: geom,
+                        properties: { id: permit.id, name: permit.permitNumber, applicant: permit.applicantName },
+                    } as GeoJSON.Feature;
+                } catch (e) {
+                    console.error(`Failed to parse permit ${permit.id} geometry:`, e, permit.airspaceArea);
+                    return null;
+                }
+            })
+            .filter((f): f is GeoJSON.Feature => f !== null);
+
+        console.log('Parsed flight permit features:', features.length);
+
+        const data: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features };
+        const source = mapRef.current.getSource('flight-permits') as mapboxgl.GeoJSONSource;
+        if (source) {
+            source.setData(data);
+            console.log('Updated existing flight-permits source');
+        } else {
+            console.log('Creating new flight-permits source');
+            mapRef.current.addSource('flight-permits', {
+                type: 'geojson',
+                data,
+            });
+            // Chỉ thêm viền, không có fill
+            mapRef.current.addLayer({
+                id: 'flight-permits-stroke',
+                type: 'line',
+                source: 'flight-permits',
+                paint: {
+                    'line-color': '#16a34a',
+                    'line-width': 3,
+                    'line-opacity': 0.8,
+                },
+            });
+        }
     }
 
     function addNoFlyZonesToMap(zones: NoFlyZone[]) {
@@ -897,6 +992,7 @@ export default function EnhancedMonitoringMap() {
     useEffect(() => {
         DroneClient.findAll().then(setDrones).catch(console.error);
         loadNoFlyZones();
+        loadFlightPermits();
         loadMissions();
     }, []);
 
@@ -1249,6 +1345,19 @@ export default function EnhancedMonitoringMap() {
         }
     }, [showNoFlyZones]);
 
+    useEffect(() => {
+        if (mapRef.current && readyRef.current) {
+            const strokeLayer = mapRef.current.getLayer('flight-permits-stroke');
+            if (strokeLayer) {
+                mapRef.current.setLayoutProperty(
+                    'flight-permits-stroke',
+                    'visibility',
+                    showFlightPermits ? 'visible' : 'none',
+                );
+            }
+        }
+    }, [showFlightPermits]);
+
     // Add no-fly zones to map when zones data or map is ready
     useEffect(() => {
         if (mapRef.current && mapReady && noFlyZones.length > 0) {
@@ -1256,6 +1365,14 @@ export default function EnhancedMonitoringMap() {
             addNoFlyZonesToMap(noFlyZones);
         }
     }, [noFlyZones, mapReady]);
+
+    // Add flight permits to map when permits data or map is ready
+    useEffect(() => {
+        if (mapRef.current && mapReady && flightPermits.length > 0) {
+            console.log('Adding flight permits to map:', flightPermits.length);
+            addFlightPermitsToMap(flightPermits);
+        }
+    }, [flightPermits, mapReady]);
 
     // Add missions to map when missions data or map is ready
     useEffect(() => {
@@ -1436,6 +1553,18 @@ export default function EnhancedMonitoringMap() {
                                     id="zones"
                                     checked={showNoFlyZones}
                                     onCheckedChange={setShowNoFlyZones}
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="permits" className="flex items-center gap-2">
+                                    <Plane className="w-4 h-4" />
+                                    Flight Permits
+                                </Label>
+                                <Switch
+                                    id="permits"
+                                    checked={showFlightPermits}
+                                    onCheckedChange={setShowFlightPermits}
                                 />
                             </div>
 

@@ -34,6 +34,7 @@ import {
 import { MissionMutation } from '@/api/models/mission/missionMutation';
 import { PilotClient, type Pilot } from '@/api/models/pilot/pilotClient';
 import { DroneClient, type Drone } from '@/api/models/drone/droneClient';
+import { LicenseClient, type License } from '@/api/models/license/licenseClient';
 import {
     MissionDroneSelector,
     createEmptyMissionDroneDraft,
@@ -46,9 +47,12 @@ import {
     pointFromWkt,
     closeRingIfNeeded,
     isPointInAnyPolygon,
+    isPointInPermitArea,
+    isPointNearPermitBoundary,
 } from '@/lib/geo';
 import type { Feature } from 'geojson';
 import { MapboxMap } from '@/components/map/MapboxMap';
+import { FlightPermitClient, type FlightPermit } from '@/api/models/flight-permit/flightPermitClient';
 
 const missionStatusValues = ['planned', 'in_progress', 'completed', 'failed'] as const;
 
@@ -105,6 +109,8 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
     const [loadingPilots, setLoadingPilots] = useState(true);
     const [drones, setDrones] = useState<Drone[]>([]);
     const [loadingDrones, setLoadingDrones] = useState(true);
+    const [licenses, setLicenses] = useState<License[]>([]);
+    const [loadingLicenses, setLoadingLicenses] = useState(true);
     const [loadingData, setLoadingData] = useState(isEdit);
     const [missionDrones, setMissionDrones] = useState<MissionDroneDraft[]>([
         createEmptyMissionDroneDraft(),
@@ -113,6 +119,8 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
     const disabledZones = useNoFlyZoneStore(state => state.zones);
     const zonesLoaded = useNoFlyZoneStore(state => state.loaded);
     const fetchNoFlyZones = useNoFlyZoneStore(state => state.fetchZones);
+    const [permitAreas, setPermitAreas] = useState<FeatureCollection<Polygon> | null>(null);
+    const [loadingPermits, setLoadingPermits] = useState(false);
 
     const droneOptions = useMemo(
         () =>
@@ -152,6 +160,18 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
             .catch(err => {
                 console.error('Failed to load drones:', err);
                 setLoadingDrones(false);
+            });
+    }, []);
+
+    useEffect(() => {
+        LicenseClient.findAll()
+            .then(res => {
+                setLicenses(res);
+                setLoadingLicenses(false);
+            })
+            .catch(err => {
+                console.error('Failed to load licenses:', err);
+                setLoadingLicenses(false);
             });
     }, []);
 
@@ -213,6 +233,30 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                             }
                         }
                     }
+                }
+
+                // Kiểm tra waypoints có nằm trong permit area không
+                if (permitAreas && permitAreas.features.length > 0) {
+                    for (const item of missionDrones) {
+                        if (!item.droneId || !item.waypoints || item.waypoints.length === 0)
+                            continue;
+
+                        for (let idx = 0; idx < item.waypoints.length; idx++) {
+                            const wp = item.waypoints[idx];
+                            if (!isPointInPermitArea(wp.lon, wp.lat, permitAreas)) {
+                                const droneName = item.droneName ?? `Drone #${item.droneId}`;
+                                toast.error(
+                                    `Waypoint #${idx + 1} của ${droneName} nằm ngoài vùng được phép bay. Vui lòng điều chỉnh trước khi lưu.`,
+                                );
+                                return;
+                            }
+                        }
+                    }
+                } else if (form.state.values.licenseId) {
+                    toast.error(
+                        'Không tìm thấy phép bay hợp lệ cho license này. Vui lòng kiểm tra lại.',
+                    );
+                    return;
                 }
 
                 const dronesPayload = buildMissionDronesPayload();
@@ -322,6 +366,96 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                 navigate('/missions');
             });
     }, [isEdit, id, form, navigate]);
+
+    // Load permit areas when licenseId changes
+    useEffect(() => {
+        const licenseId = form.state.values.licenseId;
+        if (!licenseId) {
+            setPermitAreas(null);
+            return;
+        }
+
+        setLoadingPermits(true);
+        
+        // First, check if license is active and not expired
+        LicenseClient.findOne(licenseId)
+            .then(license => {
+                const now = new Date();
+                const isExpired = license.expiryDate && new Date(license.expiryDate) < now;
+                
+                if (!license.active || isExpired) {
+                    console.warn('[MissionForm] License is not active or expired:', license);
+                    setPermitAreas(null);
+                    setLoadingPermits(false);
+                    if (!license.active) {
+                        toast.warning('License đã bị vô hiệu hóa. Vui lòng chọn license khác.');
+                    } else if (isExpired) {
+                        toast.warning('License đã hết hạn. Vui lòng chọn license khác.');
+                    }
+                    return;
+                }
+
+                // License is valid, load all permits for this license
+                return FlightPermitClient.findAll({ licenseId });
+            })
+            .then(permits => {
+                if (!permits) return; // License check failed
+                
+                console.log('[MissionForm] Loaded permits:', permits);
+
+                // Convert to FeatureCollection (no status filter)
+                const features = permits
+                    .map(permit => {
+                        try {
+                            console.log('[MissionForm] Processing permit:', permit.id, 'airspaceArea type:', typeof permit.airspaceArea);
+                            
+                            let geometry: any;
+                            if (typeof permit.airspaceArea === 'string') {
+                                geometry = JSON.parse(permit.airspaceArea);
+                            } else if (permit.airspaceArea && typeof permit.airspaceArea === 'object') {
+                                geometry = permit.airspaceArea;
+                            } else {
+                                console.warn('[MissionForm] Invalid airspaceArea for permit:', permit.id);
+                                return null;
+                            }
+                            
+                            if (!geometry || geometry.type !== 'Polygon') {
+                                console.warn('[MissionForm] Geometry is not Polygon for permit:', permit.id, geometry);
+                                return null;
+                            }
+                            
+                            return {
+                                type: 'Feature' as const,
+                                id: permit.id,
+                                geometry: geometry as Polygon,
+                                properties: {
+                                    name: permit.permitNumber,
+                                    status: permit.status,
+                                },
+                            };
+                        } catch (err) {
+                            console.error('[MissionForm] Error parsing permit geometry:', permit.id, err);
+                            return null;
+                        }
+                    })
+                    .filter(Boolean) as Feature<Polygon>[];
+
+                console.log('[MissionForm] Converted features:', features);
+                
+                setPermitAreas({
+                    type: 'FeatureCollection',
+                    features,
+                });
+            })
+            .catch(err => {
+                console.error('[MissionForm] Failed to load permit areas:', err);
+                setPermitAreas(null);
+                toast.error('Không thể tải thông tin license hoặc permit areas');
+            })
+            .finally(() => {
+                setLoadingPermits(false);
+            });
+    }, [form.state.values.licenseId]);
 
     useEffect(() => {
         if (!disabledZones) return;
@@ -593,26 +727,33 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                         field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>License ID</FieldLabel>
-                                            <Input
-                                                id={field.name}
-                                                name={field.name}
-                                                type="number"
-                                                value={field.state.value || ''}
-                                                onBlur={field.handleBlur}
-                                                onChange={e =>
+                                            <FieldLabel htmlFor={field.name}>License</FieldLabel>
+                                            <Select
+                                                value={field.state.value?.toString() || ''}
+                                                onValueChange={val =>
                                                     field.handleChange(
-                                                        e.target.value
-                                                            ? Number(e.target.value)
-                                                            : undefined,
+                                                        val ? Number(val) : undefined,
                                                     )
                                                 }
-                                                aria-invalid={isInvalid}
-                                                placeholder="Nhập license ID (tùy chọn)"
-                                                autoComplete="off"
-                                            />
+                                                disabled={loadingLicenses}
+                                                onBlur={field.handleBlur}
+                                            >
+                                                <SelectTrigger id={field.name} aria-invalid={isInvalid}>
+                                                    <SelectValue placeholder="Chọn license (tùy chọn)" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {licenses.map(license => (
+                                                        <SelectItem
+                                                            key={license.id}
+                                                            value={license.id.toString()}
+                                                        >
+                                                            {license.licenseNumber} (ID: {license.id})
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FieldDescription>
-                                                License sử dụng cho mission (tùy chọn)
+                                                Chọn license để hiển thị vùng được phép bay trên bản đồ. Khi chọn license, các permit areas (vùng xanh lá) sẽ tự động hiển thị trên map.
                                             </FieldDescription>
                                             {isInvalid && (
                                                 <FieldError errors={field.state.meta.errors} />
@@ -752,6 +893,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                 onChange={setMissionDrones}
                                 droneOptions={droneOptions}
                                 disabledZones={disabledZones}
+                                permitAreas={permitAreas}
                             />
                             {loadingDrones && (
                                 <p className="text-xs text-muted-foreground">
@@ -777,6 +919,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                                 : EMPTY_FEATURE_COLLECTION
                                         }
                                         disabledZones={disabledZones}
+                                        permitAreas={permitAreas}
                                         readOnly
                                         markers={overviewMarkers}
                                     />

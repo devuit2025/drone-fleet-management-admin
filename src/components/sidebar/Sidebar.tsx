@@ -12,6 +12,7 @@ import {
     Terminal,
     AlertTriangle,
     LogOut,
+    Layers,
 } from 'lucide-react';
 import { SidebarItem } from './SidebarItem';
 import { SidebarGroup } from './SidebarGroup';
@@ -24,7 +25,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-    const { collapsed } = useAdminLayout();
+    const { collapsed, isActive } = useAdminLayout();
     const { logout } = useLogout();
 
     return (
@@ -100,7 +101,14 @@ export function Sidebar({ className }: SidebarProps) {
                     label="Khu vực cấm bay"
                     href="/no-fly-zones"
                     collapsed={collapsed}
-                    active
+                    active={isActive('/no-fly-zones')}
+                />
+                <SidebarItem
+                    icon={<Layers className="h-5 w-5" />}
+                    label="Phép bay"
+                    href="/flight-permits"
+                    collapsed={collapsed}
+                    active={isActive('/flight-permits')}
                 />
 
                 <SidebarItem
