@@ -32,8 +32,8 @@ export default function MapView() {
     const readyRef = useRef(false);
     const TRAIL_LENGTH = 60;
     const WS_URL = import.meta.env.VITE_DRONE_WS_URL || 'ws://localhost:4000/telemetry';
-    const USE_FAKE = false;
-    
+    const USE_FAKE = true;
+
     // Video stream modal state
     const [selectedDroneId, setSelectedDroneId] = useState<string | null>(null);
     const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -143,6 +143,7 @@ export default function MapView() {
             });
         }
 
+        console.log(USE_FAKE);
         if (!USE_FAKE) {
             const ws = new WebSocket(WS_URL);
             wsRef.current = ws;
@@ -242,7 +243,7 @@ export default function MapView() {
                 </div>
             </aside>
             <style>{`.drone-marker { transform-origin: center; cursor: pointer; }`}</style>
-            
+
             {/* Video Stream Modal */}
             {selectedDroneId && (
                 <VideoStreamModal

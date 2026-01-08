@@ -64,7 +64,7 @@ export function Sidebar({ className }: SidebarProps) {
                     collapsed={collapsed}
                     active
                 />
-                
+
                 {/* Drone Management */}
                 <SidebarGroup
                     icon={<Plane className="h-5 w-5" />}
@@ -87,7 +87,7 @@ export function Sidebar({ className }: SidebarProps) {
                     collapsed={collapsed}
                     active
                 />
-                
+
                 <SidebarItem
                     icon={<Map className="h-5 w-5" />}
                     label="Quản lý Nhiệm vụ"

@@ -37,7 +37,7 @@ export default function LoginPage() {
             <FormGenerator
                 schema={loginSchema}
                 fields={loginFields}
-                defaultValues={{ email: '', password: '' }}
+                defaultValues={{ email: '123123@dronefleet.com', password: '123123' }}
                 onSubmit={handleSubmit}
                 title="Đăng nhập"
                 description="Nhập thông tin tài khoản để quản lý đội bay drone của bạn"

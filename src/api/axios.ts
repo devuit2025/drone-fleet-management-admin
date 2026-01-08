@@ -17,16 +17,16 @@ api.interceptors.request.use(config => {
     return config;
 });
 
-api.interceptors.response.use(
-    response => response.data,
-    error => {
-        console.error('[API Error]', error);
-        throw error.response?.data || error;
-    },
-);
+// api.interceptors.response.use(
+//     response => response.data,
+//     error => {
+//         console.error('[API Error]', error);
+//         throw error.response?.data || error;
+//     },
+// );
 
 api.interceptors.response.use(
-    response => response,
+    response => response.data,
     error => {
         console.error('[API Error]', error);
 

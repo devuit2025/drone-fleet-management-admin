@@ -43,7 +43,12 @@ import {
     Square,
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    Tooltip as UITooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { pointFromWkt } from '@/lib/geo';
 import VideoStreamModal from '@/components/VideoStreamModal';
 
@@ -124,10 +129,10 @@ export default function EnhancedMonitoringMap() {
 
         const statusColor = getStatusColor(status);
         // Thêm indicator màu xanh lá nếu drone đang active
-        const activeIndicator = isActive 
+        const activeIndicator = isActive
             ? '<div class="active-indicator" style="position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; background: #10b981; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px rgba(16, 185, 129, 0.6);"></div>'
             : '';
-        
+
         el.innerHTML = `
       <svg width="36" height="36" viewBox="0 0 24 24">
         <g transform="translate(12,12)">
@@ -193,14 +198,15 @@ export default function EnhancedMonitoringMap() {
                 if (svg) {
                     svg.setAttribute('fill', getStatusColor(status));
                 }
-                
+
                 // Update active indicator
                 let activeIndicator = el.querySelector('.active-indicator') as HTMLElement;
                 if (isActive && !activeIndicator) {
                     // Add indicator if active but doesn't exist
                     activeIndicator = document.createElement('div');
                     activeIndicator.className = 'active-indicator';
-                    activeIndicator.style.cssText = 'position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; background: #10b981; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px rgba(16, 185, 129, 0.6);';
+                    activeIndicator.style.cssText =
+                        'position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; background: #10b981; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px rgba(16, 185, 129, 0.6);';
                     el.appendChild(activeIndicator);
                 } else if (!isActive && activeIndicator) {
                     // Remove indicator if not active but exists
@@ -1769,7 +1775,7 @@ export default function EnhancedMonitoringMap() {
                                                     <div className="font-medium text-sm flex items-center gap-2">
                                                         {d.name || d.id}
                                                         {isDroneActive(d) && (
-                                                            <div 
+                                                            <div
                                                                 className="w-2 h-2 rounded-full bg-green-500 animate-pulse"
                                                                 title="Đang giao tiếp với server"
                                                             />
@@ -1804,11 +1810,15 @@ export default function EnhancedMonitoringMap() {
                                                                             variant="outline"
                                                                             className="w-full"
                                                                             disabled={!isConnected}
-                                                                            onClick={(e) => {
+                                                                            onClick={e => {
                                                                                 e.stopPropagation();
                                                                                 if (isConnected) {
-                                                                                    setSelectedDroneId(d.id);
-                                                                                    setIsVideoModalOpen(true);
+                                                                                    setSelectedDroneId(
+                                                                                        d.id,
+                                                                                    );
+                                                                                    setIsVideoModalOpen(
+                                                                                        true,
+                                                                                    );
                                                                                 }
                                                                             }}
                                                                         >
@@ -1818,7 +1828,10 @@ export default function EnhancedMonitoringMap() {
                                                                 </TooltipTrigger>
                                                                 {!isConnected && (
                                                                     <TooltipContent>
-                                                                        <p>WebSocket chưa kết nối. Vui lòng đợi...</p>
+                                                                        <p>
+                                                                            WebSocket chưa kết nối.
+                                                                            Vui lòng đợi...
+                                                                        </p>
                                                                     </TooltipContent>
                                                                 )}
                                                             </UITooltip>

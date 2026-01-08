@@ -26,7 +26,8 @@ export default defineConfig({
         },
         hmr: {
             protocol: 'ws',
-            host: 'admin.dronefleet.test',
+            // host: 'admin.dronefleet.test',
+            host: 'localhost', // #Here must add .env
             port: 5173,
         },
     }

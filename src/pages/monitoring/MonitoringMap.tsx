@@ -31,7 +31,7 @@ export default function DroneMap() {
     const readyRef = useRef(false);
     const TRAIL_LENGTH = 60;
     const WS_URL = import.meta.env.VITE_DRONE_WS_URL || 'ws://localhost:4000/telemetry';
-    const USE_FAKE = false;
+    const USE_FAKE = true;
 
     function createDroneMarkerEl(id: string, heading = 0) {
         const el = document.createElement('div');
@@ -137,7 +137,7 @@ export default function DroneMap() {
                 });
             });
         }
-
+        console.log(USE_FAKE);
         if (!USE_FAKE) {
             const ws = new WebSocket(WS_URL);
             wsRef.current = ws;
