@@ -103,20 +103,15 @@ export function Sidebar({ className }: SidebarProps) {
                     collapsed={collapsed}
                     active={isActive('/no-fly-zones')}
                 />
-                <SidebarItem
-                    icon={<Layers className="h-5 w-5" />}
-                    label="Phép bay"
-                    href="/flight-permits"
-                    collapsed={collapsed}
-                    active={isActive('/flight-permits')}
-                />
 
-                <SidebarItem
-                    icon={<Shield className="h-5 w-5" />}
+                <SidebarGroup
+                    icon={<Layers className="h-5 w-5" />}
                     label="Giấy phép bay"
-                    href="/licenses"
                     collapsed={collapsed}
-                    active
+                    items={[
+                        { label: 'Giấy phép bay', href: '/licenses' },
+                        { label: 'Đăng ký khu vực bay', href: '/flight-permits' },
+                    ]}
                 />
 
                 {/* Analytics */}
