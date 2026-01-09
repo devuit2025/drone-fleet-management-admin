@@ -109,8 +109,9 @@ export function Sidebar({ className }: SidebarProps) {
                     label="Giấy phép bay"
                     collapsed={collapsed}
                     items={[
+                        { label: 'Đề nghị cấp phép', href: '/licenses/create-with-permit' },
                         { label: 'Giấy phép bay', href: '/licenses' },
-                        { label: 'Đăng ký khu vực bay', href: '/flight-permits' },
+                        { label: 'Khu vực bay', href: '/flight-permits' },
                     ]}
                 />
 

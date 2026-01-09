@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
 import type { FeatureCollection, Polygon } from 'geojson';
 import { LicenseClient } from '@/api/models/license/licenseClient';
+import { FileDown, Loader2 } from 'lucide-react';
 import {
     Select,
     SelectContent,
@@ -111,6 +112,27 @@ export default function FlightPermitList() {
             header: 'Ngày hết hạn',
             render: row => (row.expiryDate ? new Date(row.expiryDate).toLocaleDateString('vi-VN') : '-'),
         },
+        {
+            key: 'actions',
+            header: 'Thao tác',
+            render: row => (
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleExportPDF(row)}
+                        disabled={exportingId === row.id}
+                        title={exportingId === row.id ? "Đang xuất PDF..." : "Export PDF"}
+                    >
+                        {exportingId === row.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <FileDown className="w-4 h-4" />
+                        )}
+                    </Button>
+                </div>
+            ),
+        },
     ];
 
     const handleEdit = (row: FlightPermit) => navigate(`/flight-permits/${row.id}/edit`);
@@ -125,6 +147,88 @@ export default function FlightPermitList() {
         } catch (e: any) {
             console.error(e);
             toast.error(e?.response?.data?.message || 'Xóa thất bại');
+        }
+    };
+
+    const [exportingId, setExportingId] = useState<number | null>(null);
+
+    const handleExportPDF = async (row: FlightPermit) => {
+        try {
+            setExportingId(row.id);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const token = localStorage.getItem('access_token');
+            
+            // 1. Fetch data from API
+            const response = await fetch(`${API_URL}/flight-permits/${row.id}/export-data`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch export data');
+            }
+
+            const data = await response.json();
+            const { permit, license, pilot, missions, drones } = data;
+
+            // 2. Load HTML template
+            const templateResponse = await fetch('/templates/flight-permit-simple.html');
+            let templateHtml = await templateResponse.text();
+
+            // 3. Fill data into template
+            const currentDate = new Date();
+            
+            // Get drone info if available
+            const firstDrone = drones?.[0];
+            
+            const replacements: Record<string, string> = {
+                '{{applicantName}}': permit.applicantName || pilot?.fullName || '',
+                '{{applicantAddress}}': permit.applicantAddress || pilot?.address || '',
+                '{{applicantNationality}}': permit.applicantNationality || pilot?.nationality || 'Việt Nam',
+                '{{applicantPhone}}': permit.applicantPhone || pilot?.phoneNumber || '',
+                '{{manufacturer}}': firstDrone?.manufacturer || 'N/A',
+                '{{serialNumber}}': firstDrone?.serialNumber || 'N/A',
+                '{{flightPurpose}}': permit.flightPurpose || '',
+                '{{airspaceAreaDescription}}': permit.description || 'Xem bản đồ đính kèm / See attached map',
+                '{{flightDates}}': permit.issuedDate && permit.expiryDate 
+                    ? `Từ ${new Date(permit.issuedDate).toLocaleDateString('vi-VN')} đến ${new Date(permit.expiryDate).toLocaleDateString('vi-VN')}`
+                    : '',
+                '{{takeoffLandingLocation}}': permit.takeoffLandingLocation || '',
+                '{{currentDay}}': currentDate.getDate().toString(),
+                '{{currentMonth}}': (currentDate.getMonth() + 1).toString(),
+                '{{currentYear}}': currentDate.getFullYear().toString(),
+            };
+
+            Object.keys(replacements).forEach(key => {
+                const regex = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                templateHtml = templateHtml.replace(regex, replacements[key]);
+            });
+
+            // 4. Open in new tab for preview
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                throw new Error('Please allow popups for this website');
+            }
+            
+            printWindow.document.write(templateHtml);
+            printWindow.document.close();
+            
+            // Wait for content to load then auto trigger print dialog
+            printWindow.onload = () => {
+                setTimeout(() => {
+                    printWindow.print();
+                }, 300);
+            };
+            
+            toast.success('Đã mở PDF preview');
+        } catch (e: any) {
+            console.error('Export PDF error:', e);
+            toast.error('Không thể xuất PDF: ' + (e.message || 'Unknown error'));
+        } finally {
+            setExportingId(null);
         }
     };
 

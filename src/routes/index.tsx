@@ -28,6 +28,7 @@ import NoFlyZoneEdit from '@/pages/models/no-fly-zone/NoFlyZoneEdit';
 import LicenseList from '@/pages/models/license/LicenseList';
 import LicenseCreate from '@/pages/models/license/LicenseCreate';
 import LicenseEdit from '@/pages/models/license/LicenseEdit';
+import LicenseWithPermitCreate from '@/pages/models/license/LicenseWithPermitCreate';
 import FlightPermitList from '@/pages/models/flight-permit/FlightPermitList';
 import FlightPermitCreate from '@/pages/models/flight-permit/FlightPermitCreate';
 import FlightPermitEdit from '@/pages/models/flight-permit/FlightPermitEdit';
@@ -97,6 +98,7 @@ export const routes: RouteObject[] = [
             { path: 'licenses', element: <LicenseList /> },
             { path: 'licenses/create', element: <LicenseCreate /> },
             { path: 'licenses/edit/:id', element: <LicenseEdit /> },
+            { path: 'licenses/create-with-permit', element: <LicenseWithPermitCreate /> },
             { path: 'flight-permits', element: <FlightPermitList /> },
             { path: 'flight-permits/create', element: <FlightPermitCreate /> },
             { path: 'flight-permits/:id/edit', element: <FlightPermitEdit /> },

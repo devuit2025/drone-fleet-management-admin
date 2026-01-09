@@ -39,6 +39,32 @@ export interface UpdateLicenseDto {
     active?: boolean;
 }
 
+export interface CreateLicenseWithPermitDto {
+    license: {
+        pilotId: number;
+        licenseNumber: string;
+        licenseType: LicenseType;
+        qualificationLevel: QualificationLevel;
+        issuingAuthority: string;
+        issuedDate: string;
+        expiryDate: string;
+        active?: boolean;
+    };
+    flightPermit: {
+        permitNumber: string;
+        airspaceArea: string;
+        applicantName: string;
+        description?: string;
+        applicantAddress?: string;
+        applicantNationality?: string;
+        applicantPhone?: string;
+        flightPurpose?: string;
+        issuedDate?: string;
+        expiryDate?: string;
+        takeoffLandingLocation?: string;
+    };
+}
+
 export class LicenseClient {
     private static base = '/licenses';
 
@@ -64,5 +90,10 @@ export class LicenseClient {
 
     static async remove(id: number): Promise<void> {
         await api.delete(`${this.base}/${id}`);
+    }
+
+    static async createWithPermit(data: CreateLicenseWithPermitDto): Promise<any> {
+        const res = await api.post<any>(`${this.base}/with-permit`, data);
+        return res;
     }
 }
