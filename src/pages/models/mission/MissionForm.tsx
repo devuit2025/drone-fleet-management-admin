@@ -124,6 +124,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
     const fetchNoFlyZones = useNoFlyZoneStore(state => state.fetchZones);
     const [permitAreas, setPermitAreas] = useState<FeatureCollection<Polygon> | null>(null);
     const [loadingPermits, setLoadingPermits] = useState(false);
+    const [selectedLicenseId, setSelectedLicenseId] = useState<number | undefined>(undefined);
 
     const droneOptions = useMemo(
         () =>
@@ -311,7 +312,9 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
         MissionClient.findOne(Number(id))
             .then(mission => {
                 form.setFieldValue('pilotId', mission.pilotId);
-                form.setFieldValue('licenseId', mission.licenseId || undefined);
+                const licId = mission.licenseId || undefined;
+                form.setFieldValue('licenseId', licId);
+                setSelectedLicenseId(licId);
                 form.setFieldValue('missionName', mission.missionName);
                 form.setFieldValue('status', mission.status);
                 form.setFieldValue(
@@ -372,8 +375,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
 
     // Load permit areas when licenseId changes
     useEffect(() => {
-        const licenseId = form.state.values.licenseId;
-        if (!licenseId) {
+        if (!selectedLicenseId) {
             setPermitAreas(null);
             return;
         }
@@ -381,7 +383,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
         setLoadingPermits(true);
 
         // First, check if license is active and not expired
-        LicenseClient.findOne(licenseId)
+        LicenseClient.findOne(selectedLicenseId)
             .then(license => {
                 const now = new Date();
                 const isExpired = license.expiryDate && new Date(license.expiryDate) < now;
@@ -399,7 +401,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                 }
 
                 // License is valid, load all permits for this license
-                return FlightPermitClient.findAll({ licenseId });
+                return FlightPermitClient.findAll({ licenseId: selectedLicenseId });
             })
             .then(permits => {
                 if (!permits) return; // License check failed
@@ -477,7 +479,7 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
             .finally(() => {
                 setLoadingPermits(false);
             });
-    }, [form.state.values.licenseId]);
+    }, [selectedLicenseId]);
 
     useEffect(() => {
         if (!disabledZones) return;
@@ -750,15 +752,14 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                     return (
                                         <Field data-invalid={isInvalid}>
                                             <FieldLabel htmlFor={field.name}>License</FieldLabel>
-                                            <Select
-                                                value={field.state.value?.toString() || ''}
-                                                onValueChange={val =>
-                                                    field.handleChange(
-                                                        val ? Number(val) : undefined,
-                                                    )
-                                                }
-                                                disabled={loadingLicenses}
-                                                onBlur={field.handleBlur}
+                            <Select
+                                value={field.state.value?.toString() || ''}
+                                onValueChange={val => {
+                                    const newLicenseId = val ? Number(val) : undefined;
+                                    field.handleChange(newLicenseId);
+                                    setSelectedLicenseId(newLicenseId);
+                                }}
+                                disabled={loadingLicenses}
                                             >
                                                 <SelectTrigger
                                                     id={field.name}
