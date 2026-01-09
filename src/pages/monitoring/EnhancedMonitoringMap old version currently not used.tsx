@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl, { type LngLatLike, type Map as MapboxMap, Popup } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -12,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DroneClient, type Drone, type DroneStatus } from '@/api/models/drone/droneClient';
 import { NoFlyZoneClient, type NoFlyZone } from '@/api/models/no-fly-zone/noFlyZoneClient';
 import { MissionClient, type Mission } from '@/api/models/mission/missionClient';
@@ -52,7 +54,6 @@ import {
 } from '@/components/ui/tooltip';
 import { pointFromWkt } from '@/lib/geo';
 import VideoStreamModal from '@/components/VideoStreamModal';
-import { MonitoringTabs } from './MonitoringTabs';
 
 ChartJS.register(
     CategoryScale,
@@ -1487,28 +1488,41 @@ export default function EnhancedMonitoringMap() {
 
     return (
         <div className="w-full h-screen flex">
-            {/* Map element */}
-            {/* <div ref={mapContainer} className="flex-1 relative" /> */}
+            <div ref={mapContainer} className="flex-1 relative" />
 
             <aside className="w-96 p-4 bg-white border-l border-slate-200 overflow-y-auto">
-                <MonitoringTabs
-                    visibleDrones={visibleDrones}
-                    selectedDroneId={selectedDroneId}
-                    setSelectedDroneId={setSelectedDroneId}
-                    mapRef={mapRef}
-                    isDroneActive={isDroneActive}
-                    isConnected={isConnected}
-                    setIsVideoModalOpen={setIsVideoModalOpen}
-                    missions={missions}
-                    observingMissionId={observingMissionId}
-                    missionProgress={missionProgress}
-                    startObservingMission={startObservingMission}
-                    stopObservingMission={stopObservingMission}
-                    selectedDrone={selectedDrone}
-                    prepareChartData={prepareChartData}
-                />
+                <div className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <MapPin className="w-5 h-5" />
+                                Monitoring Dashboard
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="p-2 bg-blue-50 rounded">
+                                    <div className="text-xs text-slate-600">Total</div>
+                                    <div className="text-xl font-bold">{metrics.total}</div>
+                                </div>
+                                <div className="p-2 bg-green-50 rounded">
+                                    <div className="text-xs text-slate-600">Flying</div>
+                                    <div className="text-xl font-bold">{metrics.flying}</div>
+                                </div>
+                                <div className="p-2 bg-purple-50 rounded">
+                                    <div className="text-xs text-slate-600">In Mission</div>
+                                    <div className="text-xl font-bold">{metrics.inMission}</div>
+                                </div>
+                                <div className="p-2 bg-orange-50 rounded">
+                                    <div className="text-xs text-slate-600">Avg Battery</div>
+                                    <div className="text-xl font-bold">
+                                        {metrics.avgBattery.toFixed(0)}%
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                <div className="space-y-4 mt-4">
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-sm">Filters & Layers</CardTitle>
@@ -1642,6 +1656,307 @@ export default function EnhancedMonitoringMap() {
                             </CardContent>
                         </Card>
                     )}
+
+                    <Tabs defaultValue="list" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="list">Drones</TabsTrigger>
+                            <TabsTrigger value="missions">Missions</TabsTrigger>
+                            <TabsTrigger value="charts">Charts</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="missions" className="space-y-2">
+                            <div className="max-h-[400px] overflow-auto space-y-2">
+                                {missions.length === 0 ? (
+                                    <div className="text-sm text-slate-500 text-center py-4">
+                                        No missions found
+                                    </div>
+                                ) : (
+                                    missions.map(mission => (
+                                        <Card
+                                            key={mission.id}
+                                            className={`transition-colors ${
+                                                observingMissionId === mission.id
+                                                    ? 'ring-2 ring-blue-500 bg-blue-50'
+                                                    : ''
+                                            }`}
+                                        >
+                                            <CardContent className="p-3">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="font-medium text-sm">
+                                                            {mission.missionName}
+                                                        </div>
+                                                        <div className="text-xs text-slate-500 mt-1">
+                                                            Status: {mission.status}
+                                                        </div>
+                                                        <div className="text-xs text-slate-500">
+                                                            {mission.missionDrones?.length || 0}{' '}
+                                                            drone(s)
+                                                        </div>
+                                                        {observingMissionId === mission.id && (
+                                                            <div className="mt-2 space-y-1">
+                                                                {mission.missionDrones?.map(md => {
+                                                                    const droneId =
+                                                                        md.droneId?.toString();
+                                                                    const progress = droneId
+                                                                        ? missionProgress[
+                                                                              droneId
+                                                                          ] || 0
+                                                                        : 0;
+                                                                    const droneName =
+                                                                        md.drone?.name ||
+                                                                        `Drone ${md.droneId}`;
+                                                                    return (
+                                                                        <div key={md.id}>
+                                                                            <div className="flex items-center justify-between text-xs mb-0.5">
+                                                                                <span>
+                                                                                    {droneName}
+                                                                                </span>
+                                                                                <span className="font-medium">
+                                                                                    {progress.toFixed(
+                                                                                        1,
+                                                                                    )}
+                                                                                    %
+                                                                                </span>
+                                                                            </div>
+                                                                            <Progress
+                                                                                value={progress}
+                                                                                className="h-1.5"
+                                                                            />
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="ml-2">
+                                                        {observingMissionId === mission.id ? (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={stopObservingMission}
+                                                            >
+                                                                <Square className="w-3 h-3" />
+                                                            </Button>
+                                                        ) : (
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    startObservingMission(
+                                                                        mission.id,
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    !mission.missionDrones ||
+                                                                    mission.missionDrones.length ===
+                                                                        0
+                                                                }
+                                                            >
+                                                                <Play className="w-3 h-3" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                )}
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="list" className="space-y-2">
+                            <div className="max-h-[400px] overflow-auto space-y-2">
+                                {visibleDrones.map(d => (
+                                    <Card
+                                        key={d.id}
+                                        className={`cursor-pointer transition-colors ${
+                                            selectedDroneId === d.id ? 'ring-2 ring-blue-500' : ''
+                                        }`}
+                                        onClick={() => {
+                                            setSelectedDroneId(d.id);
+                                            mapRef.current?.flyTo({
+                                                center: [d.lon, d.lat],
+                                                zoom: 16,
+                                            });
+                                        }}
+                                    >
+                                        <CardContent className="p-3">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-sm flex items-center gap-2">
+                                                        {d.name || d.id}
+                                                        {isDroneActive(d) && (
+                                                            <div
+                                                                className="w-2 h-2 rounded-full bg-green-500 animate-pulse"
+                                                                title="Đang giao tiếp với server"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                    <div className="text-xs text-slate-500 mt-1">
+                                                        {d.lat.toFixed(5)}, {d.lon.toFixed(5)}
+                                                    </div>
+                                                    <div className="flex gap-2 mt-2">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-xs"
+                                                        >
+                                                            {d.status || 'unknown'}
+                                                        </Badge>
+                                                        {isDroneActive(d) && (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-xs bg-green-50 text-green-700 border-green-300"
+                                                            >
+                                                                Active
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="mt-2">
+                                                        <TooltipProvider>
+                                                            <UITooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <span className="w-full">
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            className="w-full"
+                                                                            disabled={!isConnected}
+                                                                            onClick={e => {
+                                                                                e.stopPropagation();
+                                                                                if (isConnected) {
+                                                                                    setSelectedDroneId(
+                                                                                        d.id,
+                                                                                    );
+                                                                                    setIsVideoModalOpen(
+                                                                                        true,
+                                                                                    );
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            Access
+                                                                        </Button>
+                                                                    </span>
+                                                                </TooltipTrigger>
+                                                                {!isConnected && (
+                                                                    <TooltipContent>
+                                                                        <p>
+                                                                            WebSocket chưa kết nối.
+                                                                            Vui lòng đợi...
+                                                                        </p>
+                                                                    </TooltipContent>
+                                                                )}
+                                                            </UITooltip>
+                                                        </TooltipProvider>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right text-xs space-y-1">
+                                                    <div className="flex items-center gap-1">
+                                                        <Battery className="w-3 h-3" />
+                                                        {d.battery ?? '-'}%
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Gauge className="w-3 h-3" />
+                                                        {typeof d.speed === 'number'
+                                                            ? d.speed.toFixed(1)
+                                                            : (d.speed ?? '-')}{' '}
+                                                        m/s
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Activity className="w-3 h-3" />
+                                                        {typeof d.altitude === 'number'
+                                                            ? d.altitude.toFixed(1)
+                                                            : (d.altitude ?? '-')}{' '}
+                                                        m
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                                {visibleDrones.length === 0 && (
+                                    <div className="text-sm text-slate-500 text-center py-4">
+                                        No drones found
+                                    </div>
+                                )}
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="charts">
+                            {selectedDrone ? (
+                                <div className="space-y-4">
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-sm">Battery Level</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Line
+                                                data={prepareChartData(
+                                                    selectedDrone.batteryHistory,
+                                                    'Battery %',
+                                                    '#f59e0b',
+                                                )}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: { legend: { display: false } },
+                                                    scales: {
+                                                        y: { min: 0, max: 100 },
+                                                    },
+                                                }}
+                                                height={100}
+                                            />
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-sm">Altitude</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Line
+                                                data={prepareChartData(
+                                                    selectedDrone.altitudeHistory,
+                                                    'Altitude (m)',
+                                                    '#10b981',
+                                                )}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: { legend: { display: false } },
+                                                }}
+                                                height={100}
+                                            />
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-sm">Speed</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Line
+                                                data={prepareChartData(
+                                                    selectedDrone.speedHistory,
+                                                    'Speed (m/s)',
+                                                    '#3b82f6',
+                                                )}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: { legend: { display: false } },
+                                                }}
+                                                height={100}
+                                            />
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            ) : (
+                                <div className="text-sm text-slate-500 text-center py-4">
+                                    Select a drone to view charts
+                                </div>
+                            )}
+                        </TabsContent>
+                    </Tabs>
                 </div>
             </aside>
 

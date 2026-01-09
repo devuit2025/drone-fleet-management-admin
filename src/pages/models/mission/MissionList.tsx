@@ -26,10 +26,10 @@ export default function MissionList() {
 
     const columns: ColumnDef<Mission>[] = [
         { key: 'id', header: 'ID', sortable: true },
-        { 
-            key: 'missionName', 
-            header: 'Mission Name', 
-            // filterable: true 
+        {
+            key: 'missionName',
+            header: 'Mission Name',
+            // filterable: true
         },
         {
             key: 'pilotId',

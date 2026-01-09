@@ -149,7 +149,9 @@ export function distanceToPermitBoundary(
             if (turf.booleanPointInPolygon(point, permit as any)) {
                 // Point is inside, calculate distance to boundary
                 const boundary = turf.polygonToLine(permit as any);
-                const distance = turf.pointToLineDistance(point, boundary as any, { units: 'meters' });
+                const distance = turf.pointToLineDistance(point, boundary as any, {
+                    units: 'meters',
+                });
                 if (minDistance === null || distance < minDistance) {
                     minDistance = distance;
                 }

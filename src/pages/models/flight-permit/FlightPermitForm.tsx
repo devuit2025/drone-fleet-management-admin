@@ -21,7 +21,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { MapboxPolygonEditor } from '@/components/map/MapboxPolygonEditor';
-import { FlightPermitClient, type PermitStatus } from '@/api/models/flight-permit/flightPermitClient';
+import {
+    FlightPermitClient,
+    type PermitStatus,
+} from '@/api/models/flight-permit/flightPermitClient';
 import { LicenseClient } from '@/api/models/license/licenseClient';
 import { ringFromFeatureCollection } from '@/lib/geo';
 
@@ -146,7 +149,9 @@ export default function FlightPermitForm({ isEdit = false }: FlightPermitFormPro
             <CardHeader>
                 <CardTitle>{isEdit ? 'Chỉnh sửa Flight Permit' : 'Tạo Flight Permit'}</CardTitle>
                 <CardDescription>
-                    {isEdit ? 'Cập nhật vùng trời được phép bay' : 'Vẽ vùng trời được phép bay và lưu lại'}
+                    {isEdit
+                        ? 'Cập nhật vùng trời được phép bay'
+                        : 'Vẽ vùng trời được phép bay và lưu lại'}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -172,7 +177,9 @@ export default function FlightPermitForm({ isEdit = false }: FlightPermitFormPro
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <FieldDescription>Chọn license liên kết với permit này</FieldDescription>
+                            <FieldDescription>
+                                Chọn license liên kết với permit này
+                            </FieldDescription>
                         </Field>
                         <Field>
                             <FieldLabel>Số phép *</FieldLabel>
@@ -190,7 +197,9 @@ export default function FlightPermitForm({ isEdit = false }: FlightPermitFormPro
                                 onChange={e => setApplicantName(e.target.value)}
                                 placeholder="Tên người/tổ chức đề nghị"
                             />
-                            <FieldDescription>Tên người hoặc tổ chức đề nghị cấp phép</FieldDescription>
+                            <FieldDescription>
+                                Tên người hoặc tổ chức đề nghị cấp phép
+                            </FieldDescription>
                         </Field>
                         <Field>
                             <FieldLabel>Mô tả</FieldLabel>
@@ -218,7 +227,9 @@ export default function FlightPermitForm({ isEdit = false }: FlightPermitFormPro
                                         <SelectItem value="expired">Expired</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <FieldDescription>Cập nhật trạng thái của phép bay</FieldDescription>
+                                <FieldDescription>
+                                    Cập nhật trạng thái của phép bay
+                                </FieldDescription>
                             </Field>
                         )}
                         <Field>
@@ -295,4 +306,3 @@ export default function FlightPermitForm({ isEdit = false }: FlightPermitFormPro
         </Card>
     );
 }
-

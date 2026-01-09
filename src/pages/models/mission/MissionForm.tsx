@@ -52,7 +52,10 @@ import {
 } from '@/lib/geo';
 import type { Feature } from 'geojson';
 import { MapboxMap } from '@/components/map/MapboxMap';
-import { FlightPermitClient, type FlightPermit } from '@/api/models/flight-permit/flightPermitClient';
+import {
+    FlightPermitClient,
+    type FlightPermit,
+} from '@/api/models/flight-permit/flightPermitClient';
 
 const missionStatusValues = ['planned', 'in_progress', 'completed', 'failed'] as const;
 
@@ -376,13 +379,13 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
         }
 
         setLoadingPermits(true);
-        
+
         // First, check if license is active and not expired
         LicenseClient.findOne(licenseId)
             .then(license => {
                 const now = new Date();
                 const isExpired = license.expiryDate && new Date(license.expiryDate) < now;
-                
+
                 if (!license.active || isExpired) {
                     console.warn('[MissionForm] License is not active or expired:', license);
                     setPermitAreas(null);
@@ -400,30 +403,45 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
             })
             .then(permits => {
                 if (!permits) return; // License check failed
-                
+
                 console.log('[MissionForm] Loaded permits:', permits);
 
                 // Convert to FeatureCollection (no status filter)
                 const features = permits
                     .map(permit => {
                         try {
-                            console.log('[MissionForm] Processing permit:', permit.id, 'airspaceArea type:', typeof permit.airspaceArea);
-                            
+                            console.log(
+                                '[MissionForm] Processing permit:',
+                                permit.id,
+                                'airspaceArea type:',
+                                typeof permit.airspaceArea,
+                            );
+
                             let geometry: any;
                             if (typeof permit.airspaceArea === 'string') {
                                 geometry = JSON.parse(permit.airspaceArea);
-                            } else if (permit.airspaceArea && typeof permit.airspaceArea === 'object') {
+                            } else if (
+                                permit.airspaceArea &&
+                                typeof permit.airspaceArea === 'object'
+                            ) {
                                 geometry = permit.airspaceArea;
                             } else {
-                                console.warn('[MissionForm] Invalid airspaceArea for permit:', permit.id);
+                                console.warn(
+                                    '[MissionForm] Invalid airspaceArea for permit:',
+                                    permit.id,
+                                );
                                 return null;
                             }
-                            
+
                             if (!geometry || geometry.type !== 'Polygon') {
-                                console.warn('[MissionForm] Geometry is not Polygon for permit:', permit.id, geometry);
+                                console.warn(
+                                    '[MissionForm] Geometry is not Polygon for permit:',
+                                    permit.id,
+                                    geometry,
+                                );
                                 return null;
                             }
-                            
+
                             return {
                                 type: 'Feature' as const,
                                 id: permit.id,
@@ -434,14 +452,18 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                 },
                             };
                         } catch (err) {
-                            console.error('[MissionForm] Error parsing permit geometry:', permit.id, err);
+                            console.error(
+                                '[MissionForm] Error parsing permit geometry:',
+                                permit.id,
+                                err,
+                            );
                             return null;
                         }
                     })
                     .filter(Boolean) as Feature<Polygon>[];
 
                 console.log('[MissionForm] Converted features:', features);
-                
+
                 setPermitAreas({
                     type: 'FeatureCollection',
                     features,
@@ -738,7 +760,10 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                                 disabled={loadingLicenses}
                                                 onBlur={field.handleBlur}
                                             >
-                                                <SelectTrigger id={field.name} aria-invalid={isInvalid}>
+                                                <SelectTrigger
+                                                    id={field.name}
+                                                    aria-invalid={isInvalid}
+                                                >
                                                     <SelectValue placeholder="Chọn license (tùy chọn)" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -747,13 +772,16 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                                             key={license.id}
                                                             value={license.id.toString()}
                                                         >
-                                                            {license.licenseNumber} (ID: {license.id})
+                                                            {license.licenseNumber} (ID:{' '}
+                                                            {license.id})
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
                                             <FieldDescription>
-                                                Chọn license để hiển thị vùng được phép bay trên bản đồ. Khi chọn license, các permit areas (vùng xanh lá) sẽ tự động hiển thị trên map.
+                                                Chọn license để hiển thị vùng được phép bay trên bản
+                                                đồ. Khi chọn license, các permit areas (vùng xanh
+                                                lá) sẽ tự động hiển thị trên map.
                                             </FieldDescription>
                                             {isInvalid && (
                                                 <FieldError errors={field.state.meta.errors} />

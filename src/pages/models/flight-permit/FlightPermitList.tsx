@@ -14,7 +14,10 @@ import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/table/DataTable';
 import type { ColumnDef } from '@/components/table/types';
 import { MapboxMap } from '@/components/map/MapboxMap';
-import { FlightPermitClient, type FlightPermit } from '@/api/models/flight-permit/flightPermitClient';
+import {
+    FlightPermitClient,
+    type FlightPermit,
+} from '@/api/models/flight-permit/flightPermitClient';
 import { FlightPermitMutation } from '@/api/models/flight-permit/flightPermitMutation';
 import { toast } from 'sonner';
 import { AutoBreadcrumb } from '@/components/breadcrumb/AutoBreadcrumb';
@@ -110,7 +113,8 @@ export default function FlightPermitList() {
         {
             key: 'expiryDate',
             header: 'Ngày hết hạn',
-            render: row => (row.expiryDate ? new Date(row.expiryDate).toLocaleDateString('vi-VN') : '-'),
+            render: row =>
+                row.expiryDate ? new Date(row.expiryDate).toLocaleDateString('vi-VN') : '-',
         },
         {
             key: 'actions',
@@ -274,7 +278,12 @@ export default function FlightPermitList() {
     };
 
     const handleModalSubmit = async () => {
-        if (!modalPolygon || !modalLicenseId || !modalPermitNumber.trim() || !modalApplicantName.trim()) {
+        if (
+            !modalPolygon ||
+            !modalLicenseId ||
+            !modalPermitNumber.trim() ||
+            !modalApplicantName.trim()
+        ) {
             toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
             return;
         }
@@ -318,9 +327,10 @@ export default function FlightPermitList() {
         features: data
             .map(permit => {
                 try {
-                    const geometry = typeof permit.airspaceArea === 'string' 
-                        ? JSON.parse(permit.airspaceArea) 
-                        : permit.airspaceArea;
+                    const geometry =
+                        typeof permit.airspaceArea === 'string'
+                            ? JSON.parse(permit.airspaceArea)
+                            : permit.airspaceArea;
                     if (!geometry || geometry.type !== 'Polygon') {
                         return null;
                     }
@@ -375,8 +385,12 @@ export default function FlightPermitList() {
                             ) : (
                                 <MapboxMap
                                     key={mapKey}
-                                    features={permitFeatures.features.length > 0 ? permitFeatures : null}
-                                    permitAreas={permitFeatures.features.length > 0 ? permitFeatures : null}
+                                    features={
+                                        permitFeatures.features.length > 0 ? permitFeatures : null
+                                    }
+                                    permitAreas={
+                                        permitFeatures.features.length > 0 ? permitFeatures : null
+                                    }
                                     readOnly={false}
                                     onDrawCreate={handleDrawCreate}
                                     onDrawUpdate={handleDrawUpdate}
@@ -385,8 +399,9 @@ export default function FlightPermitList() {
                                 />
                             )}
                             <FieldDescription>
-                                Vẽ polygon trên bản đồ để tạo Flight Permit mới. Tất cả các permit hiện
-                                có sẽ được hiển thị ({permitFeatures.features.length} permit{permitFeatures.features.length !== 1 ? 's' : ''}).
+                                Vẽ polygon trên bản đồ để tạo Flight Permit mới. Tất cả các permit
+                                hiện có sẽ được hiển thị ({permitFeatures.features.length} permit
+                                {permitFeatures.features.length !== 1 ? 's' : ''}).
                             </FieldDescription>
                         </Field>
                     </div>
@@ -403,7 +418,9 @@ export default function FlightPermitList() {
                             <FieldLabel>License *</FieldLabel>
                             <Select
                                 value={modalLicenseId?.toString() || ''}
-                                onValueChange={val => setModalLicenseId(val ? Number(val) : undefined)}
+                                onValueChange={val =>
+                                    setModalLicenseId(val ? Number(val) : undefined)
+                                }
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Chọn license" />
@@ -453,4 +470,3 @@ export default function FlightPermitList() {
         </>
     );
 }
-

@@ -168,7 +168,7 @@ export function MissionDroneSelector({
         if (permitAreas && permitAreas.features.length > 0) {
             const outsidePermit: number[] = [];
             const nearBoundary: number[] = [];
-            
+
             for (let i = 0; i < editorState.waypoints.length; i++) {
                 const wp = editorState.waypoints[i];
                 if (!isPointInPermitArea(wp.lon, wp.lat, permitAreas)) {
@@ -193,7 +193,9 @@ export function MissionDroneSelector({
         }
 
         if (editorState.hasConflict) {
-            toast.error('Polygon đang chồng lấp với khu vực cấm bay hoặc nằm ngoài vùng được phép bay. Vui lòng điều chỉnh.');
+            toast.error(
+                'Polygon đang chồng lấp với khu vực cấm bay hoặc nằm ngoài vùng được phép bay. Vui lòng điều chỉnh.',
+            );
             return;
         }
 
@@ -215,7 +217,7 @@ export function MissionDroneSelector({
             const normalizedFc =
                 closed.length > 0 ? featureCollectionFromRing(closed) : EMPTY_FEATURE_COLLECTION;
             const nextWaypoints = buildWaypoints(closed, editorState?.waypoints);
-            
+
             let conflict = false;
             let outsidePermit = false;
             let nearBoundary = false;
@@ -428,13 +430,14 @@ export function MissionDroneSelector({
                             </div>
                             {editorState.hasConflict && (
                                 <p className="rounded border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-                                    Polygon đang chồng lấp với khu vực cấm bay hoặc nằm ngoài vùng được phép bay. Điều chỉnh lại trước
-                                    khi lưu.
+                                    Polygon đang chồng lấp với khu vực cấm bay hoặc nằm ngoài vùng
+                                    được phép bay. Điều chỉnh lại trước khi lưu.
                                 </p>
                             )}
                             {permitAreas && permitAreas.features.length === 0 && (
                                 <p className="rounded border border-yellow-400/40 bg-yellow-400/10 p-3 text-sm text-yellow-800 dark:text-yellow-200">
-                                    Không có phép bay hợp lệ cho license này. Vui lòng tạo phép bay trước khi vẽ waypoint.
+                                    Không có phép bay hợp lệ cho license này. Vui lòng tạo phép bay
+                                    trước khi vẽ waypoint.
                                 </p>
                             )}
                             <div className="max-h-52 overflow-auto rounded border bg-muted/30 p-4">
