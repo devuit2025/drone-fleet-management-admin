@@ -94,4 +94,8 @@ export class DroneClient {
     static async updateStatus(id: number, data: UpdateDroneStatusDto): Promise<void> {
         await api.patch(`${this.base}/${id}/status`, data);
     }
+
+    static getAll(): Promise<Drone[]> {
+        return api.get<Drone[]>(this.base).then(res => res.data);
+    }
 }

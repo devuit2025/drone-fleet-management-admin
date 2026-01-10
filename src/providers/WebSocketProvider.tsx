@@ -4,22 +4,46 @@ import { io, Socket } from 'socket.io-client';
 type MessageCallback = (data: any) => void;
 
 interface WebSocketContextValue {
+    /**
+     * Subscribe to a subject/event. Multiple callbacks per subject are supported.
+     */
     subscribe: (subject: string, callback: MessageCallback) => void;
+
+    /**
+     * Unsubscribe a callback from a subject. If no callbacks remain, will unsubscribe from server.
+     */
     unsubscribe: (subject: string, callback: MessageCallback) => void;
+
+    /**
+     * Send a message to the server. If `message.action` is present, uses it as the Socket.IO event.
+     */
     send: (message: any) => void;
+
+    /** Force manual reconnect */
     reconnect: () => void;
+
+    /** Is the socket currently connected */
     isConnected: boolean;
+
+    /** Connection state: connecting, connected, disconnected, error */
     connectionState: 'connecting' | 'connected' | 'disconnected' | 'error';
 }
 
 const WebSocketContext = createContext<WebSocketContextValue | null>(null);
 
-export const useWebSocket = () => {
+/**
+ * Hook to use WebSocket context
+ */
+export const useWebSocket = (): WebSocketContextValue => {
     const context = useContext(WebSocketContext);
     if (!context) throw new Error('useWebSocket must be used within WebSocketProvider');
     return context;
 };
 
+/**
+ * WebSocket provider using Socket.IO-client
+ * Handles automatic reconnect, queued messages, and multiple subscriptions per subject
+ */
 export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNode }> = ({
     url,
     children,
@@ -27,26 +51,22 @@ export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNod
     const socketRef = useRef<Socket | null>(null);
     const subscriptionsRef = useRef<Record<string, Set<MessageCallback>>>({});
     const messageQueue = useRef<any[]>([]);
-    const subscribedSubjectsRef = useRef<Set<string>>(new Set());
     const hasConnectedOnceRef = useRef(false);
     const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const reconnectKeyRef = useRef(0);
 
-    // State to trigger re-render if needed (not strictly necessary)
-    const [, setSubscriptions] = useState<Record<string, Set<MessageCallback>>>({});
     const [isConnected, setIsConnected] = useState(false);
     const [connectionState, setConnectionState] = useState<
         'connecting' | 'connected' | 'disconnected' | 'error'
     >('disconnected');
     const [reconnectKey, setReconnectKey] = useState(0);
 
+    /**
+     * Initialize and connect Socket.IO
+     */
     useEffect(() => {
-        // Parse URL: ws://localhost:3000/drone -> http://localhost:3000, namespace: /drone
-        // const urlObj = new URL(url.replace('ws://', 'http://').replace('wss://', 'https://'));
-        // const serverUrl = `${urlObj.protocol}//${urlObj.host}`;
-        // const namespace = urlObj.pathname || '/drone';
+        setConnectionState('connecting');
 
-        const socket = io(import.meta.env.VITE_WS_URL, {
+        const socket = io(url, {
             transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionDelay: 1000,
@@ -55,42 +75,21 @@ export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNod
 
         socketRef.current = socket;
 
-        // Clear any existing timeout
-        if (connectionTimeoutRef.current) {
-            clearTimeout(connectionTimeoutRef.current);
-            connectionTimeoutRef.current = null;
-        }
-
+        // ---- Handle socket events ----
         socket.on('connect', () => {
-            // Clear timeout on successful connection
-            if (connectionTimeoutRef.current) {
-                clearTimeout(connectionTimeoutRef.current);
-                connectionTimeoutRef.current = null;
-            }
-
             console.log('[WS] Connected', socket.id);
             hasConnectedOnceRef.current = true;
             setIsConnected(true);
             setConnectionState('connected');
 
-            // Flush queued messages
-            messageQueue.current.forEach(msg => {
-                if (msg.action) {
-                    socket.emit(msg.action, msg.payload || msg);
-                } else {
-                    socket.emit('message', msg);
-                }
+            // Re-subscribe all subjects
+            Object.keys(subscriptionsRef.current).forEach(subject => {
+                socket.emit('subscribe', subject);
             });
-            messageQueue.current = [];
 
-            // Resubscribe to all active subjects (re-add listeners)
-            subscribedSubjectsRef.current.forEach(subject => {
-                socket.on(subject, data => {
-                    console.log('[WS] Event received on connect:', subject);
-                    subscriptionsRef.current[subject]?.forEach(callback => callback(data));
-                });
-                console.log('[WS] Re-subscribed to:', subject);
-            });
+            // Flush queued messages
+            messageQueue.current.forEach(msg => send(msg));
+            messageQueue.current = [];
         });
 
         socket.on('disconnect', reason => {
@@ -100,19 +99,10 @@ export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNod
         });
 
         socket.on('connect_error', err => {
-            if (document.visibilityState === 'hidden') return;
-
-            // Only log error if we haven't connected yet AND timeout hasn't been set
-            // This prevents spam when Socket.IO is trying websocket then falling back to polling
             if (!hasConnectedOnceRef.current && !connectionTimeoutRef.current) {
-                // Set a timeout: if still not connected after 3 seconds, then it's a real error
                 connectionTimeoutRef.current = setTimeout(() => {
                     if (!socket.connected) {
-                        console.error(
-                            '[WS] Connection Error - Failed to connect after multiple attempts',
-                            err,
-                        );
-                        setIsConnected(false);
+                        console.error('[WS] Connection Error - Failed to connect', err);
                         setConnectionState('error');
                     }
                     connectionTimeoutRef.current = null;
@@ -120,14 +110,19 @@ export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNod
             }
         });
 
-        // Track connecting state
-        setConnectionState('connecting');
-
-        return () => {
-            if (connectionTimeoutRef.current) {
-                clearTimeout(connectionTimeoutRef.current);
-                connectionTimeoutRef.current = null;
+        /**
+         * Dynamically handle all events
+         */
+        socket.onAny((event, data) => {
+            const callbacks = subscriptionsRef.current[event];
+            if (callbacks) {
+                callbacks.forEach(cb => cb(data));
             }
+        });
+
+        // Cleanup on unmount
+        return () => {
+            if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
             socket.disconnect();
             setIsConnected(false);
             setConnectionState('disconnected');
@@ -135,100 +130,64 @@ export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNod
         };
     }, [url, reconnectKey]);
 
+    /**
+     * Subscribe to a subject/event
+     */
     const subscribe = useCallback((subject: string, callback: MessageCallback) => {
-        console.log(
-            '[WS] Subscribe to:',
-            subject,
-            'socket connected:',
-            socketRef.current?.connected,
-        );
+        let isFirstSubscriber = false;
 
-        // Update subscriptions state + ref
-        setSubscriptions(prev => {
-            const newSubs = { ...prev };
-            if (!newSubs[subject]) newSubs[subject] = new Set();
-            newSubs[subject].add(callback);
-            subscriptionsRef.current = newSubs;
-            return newSubs;
-        });
+        if (!subscriptionsRef.current[subject]) {
+            subscriptionsRef.current[subject] = new Set();
+            isFirstSubscriber = true;
+        }
 
-        // Subscribe to Socket.IO event only once per subject
-        if (!subscribedSubjectsRef.current.has(subject)) {
-            subscribedSubjectsRef.current.add(subject);
+        subscriptionsRef.current[subject].add(callback);
 
-            // Add Socket.IO listener that calls all callbacks for this subject
-            const addListener = () => {
-                if (socketRef.current) {
-                    socketRef.current.on(subject, data => {
-                        console.log(
-                            '[WS] Event received:',
-                            subject,
-                            'data type:',
-                            typeof data,
-                            'has callbacks:',
-                            subscriptionsRef.current[subject]?.size || 0,
-                        );
-                        subscriptionsRef.current[subject]?.forEach(cb => cb(data));
-                    });
-                    console.log('[WS] Added Socket.IO listener for:', subject);
-                }
-            };
-
-            if (socketRef.current && socketRef.current.connected) {
-                addListener();
-            } else {
-                console.warn('[WS] Socket not ready yet, will subscribe when connected');
-                // If socket connects later, it will resubscribe via the connect handler
-            }
-        } else {
-            // Subject already subscribed, but callback might be new - listener already exists
-            console.log('[WS] Subject already subscribed, adding callback only');
+        // Only emit subscribe to server if first callback and connected
+        if (isFirstSubscriber && socketRef.current?.connected) {
+            socketRef.current.emit('subscribe', subject);
         }
     }, []);
 
+    /**
+     * Unsubscribe a callback from a subject
+     */
     const unsubscribe = useCallback((subject: string, callback: MessageCallback) => {
-        setSubscriptions(prev => {
-            const newSubs = { ...prev };
-            newSubs[subject]?.delete(callback);
-            if (newSubs[subject]?.size === 0) {
-                delete newSubs[subject];
-                // Remove Socket.IO listener if no more callbacks
-                if (socketRef.current) {
-                    socketRef.current.off(subject);
-                }
-                subscribedSubjectsRef.current.delete(subject);
-            }
-            subscriptionsRef.current = newSubs;
-            return newSubs;
-        });
+        const callbacks = subscriptionsRef.current[subject];
+        if (!callbacks) return;
+
+        callbacks.delete(callback);
+
+        // If no callbacks left, remove subject and unsubscribe from server
+        if (callbacks.size === 0) {
+            delete subscriptionsRef.current[subject];
+            socketRef.current?.emit('unsubscribe', subject);
+        }
     }, []);
 
+    /**
+     * Send a message to server
+     */
     const send = useCallback((message: any) => {
-        if (!socketRef.current) {
+        if (!socketRef.current || !socketRef.current.connected) {
             messageQueue.current.push(message);
             return;
         }
 
-        if (socketRef.current.connected) {
-            // If message has action field, use it as event name (Socket.IO style)
-            if (message.action) {
-                socketRef.current.emit(message.action, message.payload || message);
-            } else {
-                socketRef.current.emit('message', message);
-            }
+        if (message.action) {
+            socketRef.current.emit(message.action, message.payload ?? message);
         } else {
-            messageQueue.current.push(message);
+            socketRef.current.emit('message', message);
         }
     }, []);
 
+    /**
+     * Manual reconnect
+     */
     const reconnect = useCallback(() => {
         console.log('[WS] Manual reconnect requested');
-        if (socketRef.current) {
-            socketRef.current.disconnect();
-        }
-        // Force re-render by updating reconnectKey
-        reconnectKeyRef.current += 1;
-        setReconnectKey(reconnectKeyRef.current);
+        socketRef.current?.disconnect();
+        setReconnectKey(prev => prev + 1);
         setConnectionState('connecting');
     }, []);
 

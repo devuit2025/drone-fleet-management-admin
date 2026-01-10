@@ -752,14 +752,16 @@ export default function MissionForm({ isEdit = false }: MissionFormProps) {
                                     return (
                                         <Field data-invalid={isInvalid}>
                                             <FieldLabel htmlFor={field.name}>License</FieldLabel>
-                            <Select
-                                value={field.state.value?.toString() || ''}
-                                onValueChange={val => {
-                                    const newLicenseId = val ? Number(val) : undefined;
-                                    field.handleChange(newLicenseId);
-                                    setSelectedLicenseId(newLicenseId);
-                                }}
-                                disabled={loadingLicenses}
+                                            <Select
+                                                value={field.state.value?.toString() || ''}
+                                                onValueChange={val => {
+                                                    const newLicenseId = val
+                                                        ? Number(val)
+                                                        : undefined;
+                                                    field.handleChange(newLicenseId);
+                                                    setSelectedLicenseId(newLicenseId);
+                                                }}
+                                                disabled={loadingLicenses}
                                             >
                                                 <SelectTrigger
                                                     id={field.name}

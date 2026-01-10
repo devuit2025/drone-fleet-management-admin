@@ -100,6 +100,3 @@ export class LogsClient {
         return res as unknown as LogsStats;
     }
 }
-
-
-

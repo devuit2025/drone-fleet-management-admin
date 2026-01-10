@@ -25,3 +25,11 @@ body {
 .font-inter {
     font-family: 'Inter', sans-serif;
 }
+
+.pd-2 {
+    padding: 2px;
+}
+
+.mw-100 {
+    max-width: 100px;
+}

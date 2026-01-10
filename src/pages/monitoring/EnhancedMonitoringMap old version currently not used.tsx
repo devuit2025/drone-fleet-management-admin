@@ -1820,7 +1820,12 @@ export default function EnhancedMonitoringMap() {
                                                                             size="sm"
                                                                             variant="outline"
                                                                             className="w-full"
-                                                                            disabled={!isConnected}
+                                                                            disabled={
+                                                                                !(
+                                                                                    isConnected ??
+                                                                                    false
+                                                                                )
+                                                                            }
                                                                             onClick={e => {
                                                                                 e.stopPropagation();
                                                                                 if (isConnected) {

@@ -21,6 +21,7 @@ export interface MissionWaypointInput {
 export interface MissionDroneInput {
     id?: number;
     droneId: number;
+    missionId: number;
     assignedAt?: string;
     drone?: Record<string, any>;
     waypoints?: MissionWaypointInput[];

@@ -17,7 +17,7 @@ export default defineConfig({
             'localhost',
             'api.dronefleet.test',
             'admin.dronefleet.test',   // add your virtual host here
-            '127.0.0.1'
+            '127.0.0.1',
         ],
         host: true,
         watch: {

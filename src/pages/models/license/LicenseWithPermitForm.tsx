@@ -45,7 +45,7 @@ const combinedSchema = z.object({
     licenseIssuedDate: z.string().min(1, 'License issued date is required'),
     licenseExpiryDate: z.string().min(1, 'License expiry date is required'),
     licenseActive: z.boolean().optional(),
-    
+
     // Flight permit fields
     permitNumber: z.string().min(1, 'Permit number is required'),
     applicantName: z.string().min(1, 'Applicant name is required'),
@@ -99,7 +99,7 @@ export default function LicenseWithPermitForm() {
             licenseIssuedDate: '',
             licenseExpiryDate: '',
             licenseActive: true,
-            
+
             // Flight Permit
             permitNumber: '',
             applicantName: '',
@@ -215,7 +215,9 @@ export default function LicenseWithPermitForm() {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <FieldError>{getErrorMessage(field.state.meta.errors?.[0])}</FieldError>
+                                    <FieldError>
+                                        {getErrorMessage(field.state.meta.errors?.[0])}
+                                    </FieldError>
                                 </FieldGroup>
                             )}
                         </form.Field>
@@ -230,7 +232,9 @@ export default function LicenseWithPermitForm() {
                                         onChange={e => field.handleChange(e.target.value)}
                                         placeholder="VD: LIC-2024-001"
                                     />
-                                    <FieldError>{getErrorMessage(field.state.meta.errors?.[0])}</FieldError>
+                                    <FieldError>
+                                        {getErrorMessage(field.state.meta.errors?.[0])}
+                                    </FieldError>
                                 </FieldGroup>
                             )}
                         </form.Field>
@@ -242,17 +246,25 @@ export default function LicenseWithPermitForm() {
                                         <FieldLabel>Loại License *</FieldLabel>
                                         <Select
                                             value={field.state.value}
-                                            onValueChange={v => field.handleChange(v as LicenseType)}
+                                            onValueChange={v =>
+                                                field.handleChange(v as LicenseType)
+                                            }
                                         >
                                             <SelectTrigger>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="commercial">Commercial</SelectItem>
-                                                <SelectItem value="recreational">Recreational</SelectItem>
+                                                <SelectItem value="commercial">
+                                                    Commercial
+                                                </SelectItem>
+                                                <SelectItem value="recreational">
+                                                    Recreational
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <FieldError>{getErrorMessage(field.state.meta.errors?.[0])}</FieldError>
+                                        <FieldError>
+                                            {getErrorMessage(field.state.meta.errors?.[0])}
+                                        </FieldError>
                                     </FieldGroup>
                                 )}
                             </form.Field>
@@ -263,7 +275,9 @@ export default function LicenseWithPermitForm() {
                                         <FieldLabel>Cấp độ *</FieldLabel>
                                         <Select
                                             value={field.state.value}
-                                            onValueChange={v => field.handleChange(v as QualificationLevel)}
+                                            onValueChange={v =>
+                                                field.handleChange(v as QualificationLevel)
+                                            }
                                         >
                                             <SelectTrigger>
                                                 <SelectValue />
@@ -274,7 +288,9 @@ export default function LicenseWithPermitForm() {
                                                 <SelectItem value="expert">Expert</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <FieldError>{getErrorMessage(field.state.meta.errors?.[0])}</FieldError>
+                                        <FieldError>
+                                            {getErrorMessage(field.state.meta.errors?.[0])}
+                                        </FieldError>
                                     </FieldGroup>
                                 )}
                             </form.Field>
@@ -290,7 +306,9 @@ export default function LicenseWithPermitForm() {
                                         onChange={e => field.handleChange(e.target.value)}
                                         placeholder="VD: Cục Hàng không Việt Nam"
                                     />
-                                    <FieldError>{getErrorMessage(field.state.meta.errors?.[0])}</FieldError>
+                                    <FieldError>
+                                        {getErrorMessage(field.state.meta.errors?.[0])}
+                                    </FieldError>
                                 </FieldGroup>
                             )}
                         </form.Field>
@@ -300,29 +318,33 @@ export default function LicenseWithPermitForm() {
                                 {field => (
                                     <FieldGroup>
                                         <FieldLabel>Ngày cấp *</FieldLabel>
-                                    <Input
-                                        type="date"
-                                        value={field.state.value || ''}
-                                        onChange={e => field.handleChange(e.target.value)}
-                                    />
-                                    <FieldError>{getErrorMessage(field.state.meta.errors?.[0])}</FieldError>
-                                </FieldGroup>
-                            )}
-                        </form.Field>
+                                        <Input
+                                            type="date"
+                                            value={field.state.value || ''}
+                                            onChange={e => field.handleChange(e.target.value)}
+                                        />
+                                        <FieldError>
+                                            {getErrorMessage(field.state.meta.errors?.[0])}
+                                        </FieldError>
+                                    </FieldGroup>
+                                )}
+                            </form.Field>
 
                             <form.Field name="licenseExpiryDate">
                                 {field => (
                                     <FieldGroup>
                                         <FieldLabel>Ngày hết hạn *</FieldLabel>
-                                    <Input
-                                        type="date"
-                                        value={field.state.value || ''}
-                                        onChange={e => field.handleChange(e.target.value)}
-                                    />
-                                    <FieldError>{getErrorMessage(field.state.meta.errors?.[0])}</FieldError>
-                                </FieldGroup>
-                            )}
-                        </form.Field>
+                                        <Input
+                                            type="date"
+                                            value={field.state.value || ''}
+                                            onChange={e => field.handleChange(e.target.value)}
+                                        />
+                                        <FieldError>
+                                            {getErrorMessage(field.state.meta.errors?.[0])}
+                                        </FieldError>
+                                    </FieldGroup>
+                                )}
+                            </form.Field>
                         </div>
                     </CardContent>
                 </Card>
@@ -346,7 +368,9 @@ export default function LicenseWithPermitForm() {
                                         onChange={e => field.handleChange(e.target.value)}
                                         placeholder="VD: FP-2024-001"
                                     />
-                                    <FieldError>{getErrorMessage(field.state.meta.errors?.[0])}</FieldError>
+                                    <FieldError>
+                                        {getErrorMessage(field.state.meta.errors?.[0])}
+                                    </FieldError>
                                 </FieldGroup>
                             )}
                         </form.Field>
@@ -362,7 +386,9 @@ export default function LicenseWithPermitForm() {
                                         placeholder="Tự động điền từ Pilot"
                                     />
                                     <FieldDescription>Tự động điền khi chọn Pilot</FieldDescription>
-                                    <FieldError>{getErrorMessage(field.state.meta.errors?.[0])}</FieldError>
+                                    <FieldError>
+                                        {getErrorMessage(field.state.meta.errors?.[0])}
+                                    </FieldError>
                                 </FieldGroup>
                             )}
                         </form.Field>
@@ -500,13 +526,10 @@ export default function LicenseWithPermitForm() {
                         >
                             Hủy
                         </Button>
-                        <Button type="submit">
-                            Tạo License & Permit
-                        </Button>
+                        <Button type="submit">Tạo License & Permit</Button>
                     </CardFooter>
                 </Card>
             </div>
         </form>
     );
 }
-

@@ -126,7 +126,7 @@ export default function FlightPermitList() {
                         size="sm"
                         onClick={() => handleExportPDF(row)}
                         disabled={exportingId === row.id}
-                        title={exportingId === row.id ? "Đang xuất PDF..." : "Export PDF"}
+                        title={exportingId === row.id ? 'Đang xuất PDF...' : 'Export PDF'}
                     >
                         {exportingId === row.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -161,12 +161,12 @@ export default function FlightPermitList() {
             setExportingId(row.id);
             const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
             const token = localStorage.getItem('access_token');
-            
+
             // 1. Fetch data from API
             const response = await fetch(`${API_URL}/flight-permits/${row.id}/export-data`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
             });
@@ -184,22 +184,25 @@ export default function FlightPermitList() {
 
             // 3. Fill data into template
             const currentDate = new Date();
-            
+
             // Get drone info if available
             const firstDrone = drones?.[0];
-            
+
             const replacements: Record<string, string> = {
                 '{{applicantName}}': permit.applicantName || pilot?.fullName || '',
                 '{{applicantAddress}}': permit.applicantAddress || pilot?.address || '',
-                '{{applicantNationality}}': permit.applicantNationality || pilot?.nationality || 'Việt Nam',
+                '{{applicantNationality}}':
+                    permit.applicantNationality || pilot?.nationality || 'Việt Nam',
                 '{{applicantPhone}}': permit.applicantPhone || pilot?.phoneNumber || '',
                 '{{manufacturer}}': firstDrone?.manufacturer || 'N/A',
                 '{{serialNumber}}': firstDrone?.serialNumber || 'N/A',
                 '{{flightPurpose}}': permit.flightPurpose || '',
-                '{{airspaceAreaDescription}}': permit.description || 'Xem bản đồ đính kèm / See attached map',
-                '{{flightDates}}': permit.issuedDate && permit.expiryDate 
-                    ? `Từ ${new Date(permit.issuedDate).toLocaleDateString('vi-VN')} đến ${new Date(permit.expiryDate).toLocaleDateString('vi-VN')}`
-                    : '',
+                '{{airspaceAreaDescription}}':
+                    permit.description || 'Xem bản đồ đính kèm / See attached map',
+                '{{flightDates}}':
+                    permit.issuedDate && permit.expiryDate
+                        ? `Từ ${new Date(permit.issuedDate).toLocaleDateString('vi-VN')} đến ${new Date(permit.expiryDate).toLocaleDateString('vi-VN')}`
+                        : '',
                 '{{takeoffLandingLocation}}': permit.takeoffLandingLocation || '',
                 '{{currentDay}}': currentDate.getDate().toString(),
                 '{{currentMonth}}': (currentDate.getMonth() + 1).toString(),
@@ -216,17 +219,17 @@ export default function FlightPermitList() {
             if (!printWindow) {
                 throw new Error('Please allow popups for this website');
             }
-            
+
             printWindow.document.write(templateHtml);
             printWindow.document.close();
-            
+
             // Wait for content to load then auto trigger print dialog
             printWindow.onload = () => {
                 setTimeout(() => {
                     printWindow.print();
                 }, 300);
             };
-            
+
             toast.success('Đã mở PDF preview');
         } catch (e: any) {
             console.error('Export PDF error:', e);

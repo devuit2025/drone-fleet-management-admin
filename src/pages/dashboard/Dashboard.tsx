@@ -325,9 +325,7 @@ export default function Dashboard() {
                                 <AlertTriangle className="w-3 h-3 text-red-600" />
                                 Expired
                             </span>
-                            <span className="font-bold text-red-600">
-                                {stats.licenses.expired}
-                            </span>
+                            <span className="font-bold text-red-600">{stats.licenses.expired}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -397,4 +395,3 @@ export default function Dashboard() {
         </div>
     );
 }
-

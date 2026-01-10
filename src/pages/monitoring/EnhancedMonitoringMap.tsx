@@ -119,7 +119,7 @@ export default function EnhancedMonitoringMap() {
     const [missionProgress, setMissionProgress] = useState<Record<string, number>>({}); // droneId -> progress %
     const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
-    const { subscribe, unsubscribe, isConnected } = useWebSocket();
+    // const { subscribe, unsubscribe, isConnected } = useWebSocket();
     const selectedDrone = selectedDroneId ? dronesRef.current[selectedDroneId] : null;
 
     function createDroneMarkerEl(id: string, heading = 0, status?: DroneStatus, isActive = false) {
@@ -258,7 +258,7 @@ export default function EnhancedMonitoringMap() {
     function loadNoFlyZones() {
         NoFlyZoneClient.findAll()
             .then(zones => {
-                console.log('Loaded no-fly zones:', zones.length);
+                // console.log('Loaded no-fly zones:', zones.length);
                 setNoFlyZones(zones);
                 // Zones will be added to map via useEffect when map is ready
             })
@@ -268,7 +268,7 @@ export default function EnhancedMonitoringMap() {
     function loadFlightPermits() {
         FlightPermitClient.findAll()
             .then(permits => {
-                console.log('Loaded flight permits:', permits.length);
+                // console.log('Loaded flight permits:', permits.length);
                 setFlightPermits(permits);
                 // Permits will be added to map via useEffect when map is ready
             })
@@ -281,7 +281,7 @@ export default function EnhancedMonitoringMap() {
             return;
         }
 
-        console.log('Adding flight permits to map:', permits.length);
+        // console.log('Adding flight permits to map:', permits.length);
 
         const features: GeoJSON.Feature[] = permits
             .map(permit => {
@@ -338,15 +338,15 @@ export default function EnhancedMonitoringMap() {
             })
             .filter((f): f is GeoJSON.Feature => f !== null);
 
-        console.log('Parsed flight permit features:', features.length);
+        // console.log('Parsed flight permit features:', features.length);
 
         const data: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features };
         const source = mapRef.current.getSource('flight-permits') as mapboxgl.GeoJSONSource;
         if (source) {
             source.setData(data);
-            console.log('Updated existing flight-permits source');
+            // console.log('Updated existing flight-permits source');
         } else {
-            console.log('Creating new flight-permits source');
+            // console.log('Creating new flight-permits source');
             mapRef.current.addSource('flight-permits', {
                 type: 'geojson',
                 data,
@@ -371,7 +371,7 @@ export default function EnhancedMonitoringMap() {
             return;
         }
 
-        console.log('Adding no-fly zones to map:', zones.length);
+        // console.log('Adding no-fly zones to map:', zones.length);
 
         const features: GeoJSON.Feature[] = zones
             .map(zone => {
@@ -429,15 +429,15 @@ export default function EnhancedMonitoringMap() {
             })
             .filter((f): f is GeoJSON.Feature => f !== null);
 
-        console.log('Parsed no-fly zone features:', features.length);
+        // console.log('Parsed no-fly zone features:', features.length);
 
         const data: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features };
         const source = mapRef.current.getSource('no-fly-zones') as mapboxgl.GeoJSONSource;
         if (source) {
             source.setData(data);
-            console.log('Updated existing no-fly-zones source');
+            // console.log('Updated existing no-fly-zones source');
         } else {
-            console.log('Creating new no-fly-zones source');
+            // console.log('Creating new no-fly-zones source');
             mapRef.current.addSource('no-fly-zones', {
                 type: 'geojson',
                 data,
@@ -467,9 +467,9 @@ export default function EnhancedMonitoringMap() {
     function loadMissions() {
         MissionClient.findAllForMonitoring()
             .then(ms => {
-                console.log('Loaded missions:', ms);
+                // console.log('Loaded missions:', ms);
                 const activeMissions = ms.filter(m => m.status === 'in_progress');
-                console.log('Active missions:', activeMissions);
+                // console.log('Active missions:', activeMissions);
                 setMissions(activeMissions);
                 // Missions will be added to map via useEffect when map is ready
             })
@@ -482,7 +482,7 @@ export default function EnhancedMonitoringMap() {
             return;
         }
 
-        console.log('Adding missions to map:', activeMissions.length);
+        // console.log('Adding missions to map:', activeMissions.length);
 
         const routeColors = ['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444'];
 
@@ -616,12 +616,12 @@ export default function EnhancedMonitoringMap() {
             });
         });
 
-        console.log(
-            'Route features:',
-            routeFeatures.length,
-            'Waypoint features:',
-            waypointFeatures.length,
-        );
+        // console.log(
+        //     'Route features:',
+        //     routeFeatures.length,
+        //     'Waypoint features:',
+        //     waypointFeatures.length,
+        // );
 
         // Update routes
         const routesData: GeoJSON.FeatureCollection = {
@@ -631,9 +631,9 @@ export default function EnhancedMonitoringMap() {
         const routesSource = mapRef.current.getSource('mission-routes') as mapboxgl.GeoJSONSource;
         if (routesSource) {
             routesSource.setData(routesData);
-            console.log('Updated existing mission-routes source');
+            // console.log('Updated existing mission-routes source');
         } else {
-            console.log('Creating new mission-routes source');
+            // console.log('Creating new mission-routes source');
             mapRef.current.addSource('mission-routes', {
                 type: 'geojson',
                 data: routesData,
@@ -1115,19 +1115,19 @@ export default function EnhancedMonitoringMap() {
                 }
             };
 
-            subscribe('drone:location_updated', handleLocationUpdate);
-            subscribe('telemetry:data', handleTelemetryData);
-            subscribe('drone:status_updated', handleStatusUpdate);
+            // subscribe('drone:location_updated', handleLocationUpdate);
+            // subscribe('telemetry:data', handleTelemetryData);
+            // subscribe('drone:status_updated', handleStatusUpdate);
 
             return () => {
-                unsubscribe('drone:location_updated', handleLocationUpdate);
-                unsubscribe('telemetry:data', handleTelemetryData);
-                unsubscribe('drone:status_updated', handleStatusUpdate);
+                // unsubscribe('drone:location_updated', handleLocationUpdate);
+                // unsubscribe('telemetry:data', handleTelemetryData);
+                // unsubscribe('drone:status_updated', handleStatusUpdate);
             };
         } else {
-            console.log('Using fake telemetry mode');
+            // console.log('Using fake telemetry mode');
         }
-    }, [useFakeTelemetry, subscribe, unsubscribe]);
+    }, [useFakeTelemetry]);
 
     // Fake telemetry generator
     useEffect(() => {
@@ -1377,7 +1377,7 @@ export default function EnhancedMonitoringMap() {
     // Add no-fly zones to map when zones data or map is ready
     useEffect(() => {
         if (mapRef.current && mapReady && noFlyZones.length > 0) {
-            console.log('Adding no-fly zones to map:', noFlyZones.length);
+            // console.log('Adding no-fly zones to map:', noFlyZones.length);
             addNoFlyZonesToMap(noFlyZones);
         }
     }, [noFlyZones, mapReady]);
@@ -1385,7 +1385,7 @@ export default function EnhancedMonitoringMap() {
     // Add flight permits to map when permits data or map is ready
     useEffect(() => {
         if (mapRef.current && mapReady && flightPermits.length > 0) {
-            console.log('Adding flight permits to map:', flightPermits.length);
+            // console.log('Adding flight permits to map:', flightPermits.length);
             addFlightPermitsToMap(flightPermits);
         }
     }, [flightPermits, mapReady]);
@@ -1395,7 +1395,7 @@ export default function EnhancedMonitoringMap() {
         if (mapRef.current && mapReady && missions.length > 0) {
             const activeMissions = missions.filter(m => m.status === 'in_progress');
             if (activeMissions.length > 0) {
-                console.log('Adding missions to map:', activeMissions.length);
+                // console.log('Adding missions to map:', activeMissions.length);
                 addMissionsToMap(activeMissions);
             }
         }
@@ -1497,7 +1497,6 @@ export default function EnhancedMonitoringMap() {
                     setSelectedDroneId={setSelectedDroneId}
                     mapRef={mapRef}
                     isDroneActive={isDroneActive}
-                    isConnected={isConnected}
                     setIsVideoModalOpen={setIsVideoModalOpen}
                     missions={missions}
                     observingMissionId={observingMissionId}
