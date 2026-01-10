@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Socket.IO Test - Drone</title>
+        <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jmuxer@2.1.0/dist/jmuxer.min.js"></script>
+        <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+        .section {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        input, select, button {
+            padding: 8px 12px;
+            margin: 5px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        #messages {
+            border: 1px solid #ddd;
+            padding: 15px;
+            height: 400px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border-radius: 5px;
+        }
+        .message {
+            margin: 8px 0;
+            padding: 8px;
+            border-left: 3px solid #007bff;
+            background: white;
+            border-radius: 3px;
+        }
+        .message.sent { border-left-color: #28a745; }
+        .message.error { border-left-color: #dc3545; }
+        .message.info { border-left-color: #17a2b8; }
+        
+        /* Command Status Styles */
+        .command-item {
+            margin: 8px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .command-status {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-sent { background: #fff3cd; color: #856404; }
+        .status-received { background: #d1ecf1; color: #0c5460; }
+        .status-executing { background: #cce5ff; color: #004085; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-failed { background: #f8d7da; color: #721c24; }
+        .command-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .mode-switch {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .mode-btn {
+            padding: 8px 16px;
+            border: 2px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .mode-btn.active {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+    </head>
+    <body>
+        <h1>🚁 Socket.IO Drone Test Client</h1>
+
+        <div id="status" class="status disconnected">Disconnected</div>
+
+        <!-- Mode Selection -->
+        <div class="section">
+            <h3>🎭 Test Mode</h3>
+            <div class="mode-switch">
+                <button id="adminMode" class="mode-btn active" onclick="setMode('admin')">
+                    Admin Mode (Send Commands)
+                </button>
+                <button id="droneMode" class="mode-btn" onclick="setMode('drone')">
+                    Drone Mode (Simulate Responses)
+                </button>
+            </div>
+            <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                <strong>Admin Mode:</strong> Send commands and receive feedback<br>
+                <strong>Drone Mode:</strong> Listen for commands and send simulated responses
+            </p>
+        </div>
+
+        <!-- Command Status Monitor -->
+        <div class="section">
+            <h3>📊 Command Status Monitor</h3>
+            <button onclick="clearCommandStatus()" style="background: #6c757d;">Clear</button>
+            <div id="commandStatus" style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
+                <p style="color: #999; text-align: center; padding: 20px;">No commands sent yet</p>
+            </div>
+        </div>
+
+        <!-- Drone Status Update -->
+        <div class="section">
+            <h3>📡 Update Drone Status</h3>
+            <input id="droneId" type="text" placeholder="Drone ID" value="1">
+            <select id="droneStatus">
+                <option value="idle">Idle</option>
+                <option value="active">Active</option>
+                <option value="in_flight">In Flight</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="offline">Offline</option>
+            </select>
+            <input id="battery" type="number" placeholder="Battery %" value="85"
+                min="0" max="100">
+            <button onclick="updateDroneStatus()">Update Status</button>
+        </div>
+
+        <!-- Drone Location Update -->
+        <div class="section">
+            <h3>📍 Update Drone Location</h3>
+            <input id="locDroneId" type="text" placeholder="Drone ID" value="1">
+            <input id="latitude" type="number" step="0.000001"
+                placeholder="Latitude (degrees)" value="21.028511"
+                title="Latitude in degrees (-90 to 90)">
+            <input id="longitude" type="number" step="0.000001"
+                placeholder="Longitude (degrees)" value="105.804817"
+                title="Longitude in degrees (-180 to 180)">
+            <input id="altitude" type="number" placeholder="Altitude (meters)"
+                value="50" title="Altitude in meters above ground">
+            <button onclick="updateDroneLocation()">Update Location</button>
+        </div>
+
+        <!-- PING Test -->
+        <div class="section">
+            <h3>🏓 PING/PONG Test</h3>
+            <button onclick="sendPing()">Send PING</button>
+        </div>
+
+        <!-- Drone Control -->
+        <div class="section">
+            <h3>🚁 Drone Control</h3>
+            <input id="controlDroneId" type="text" placeholder="Drone ID"
+                value="1">
+            <button onclick="sendTakeoff()" style="background: #28a745;">🛫
+                Takeoff</button>
+            <button onclick="sendLand()" style="background: #dc3545;">🛬
+                Land</button>
+            <button onclick="sendReturnHome()" style="background: #ffc107; color: #000;">🏠
+                Return Home</button>
+            <div style="margin-top: 10px;">
+                <button onclick="sendMoveForward()"
+                    style="background: #17a2b8; margin: 5px;">⬆️ Move
+                    Forward</button>
+                <button onclick="sendMoveBackward()"
+                    style="background: #17a2b8; margin: 5px;">⬇️ Move
+                    Backward</button>
+                <button onclick="sendStopMovement()"
+                    style="background: #6c757d; margin: 5px;">⏸️ Stop</button>
+            </div>
+        </div>
+
+        <!-- Video Stream -->
+        <div class="section">
+            <h3>📹 Video Stream</h3>
+            <input id="videoDroneId" type="text" placeholder="Drone ID"
+                value="1">
+            <button onclick="startVideoStream()"
+                style="background: #28a745; margin: 5px;">▶️ Start
+                Stream</button>
+            <button onclick="stopVideoStream()"
+                style="background: #dc3545; margin: 5px;">⏹️ Stop
+                Stream</button>
+            <div style="margin-top: 10px;">
+                <video id="videoPlayer" width="100%" max-width="800px"
+                    style="background: #000; border-radius: 5px;" controls
+                    autoplay muted playsinline></video>
+            </div>
+        </div>
+
+        <!-- Mission Control -->
+        <div class="section">
+            <h3>🎯 Mission Control</h3>
+            <input id="missionDroneId" type="text" placeholder="Drone ID"
+                value="1">
+            <div style="margin: 10px 0;">
+                <h4>Waypoints:</h4>
+                <div id="waypointsList"
+                    style="margin: 10px 0; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
+                    <!-- Waypoints will be added here -->
+                </div>
+                <button onclick="addWaypoint()"
+                    style="background: #17a2b8; margin: 5px 0;">+ Add
+                    Waypoint</button>
+            </div>
+            <div style="margin: 10px 0;">
+                <button onclick="sendStartMission()"
+                    style="background: #28a745; margin: 5px;">▶️ Start
+                    Mission</button>
+                <button onclick="sendEndMission()"
+                    style="background: #dc3545; margin: 5px;">⏹️ End
+                    Mission</button>
+                <button onclick="clearWaypoints()"
+                    style="background: #6c757d; margin: 5px;">🗑️ Clear</button>
+            </div>
+        </div>
+
+        <!-- Join Rooms -->
+        <div class="section">
+            <h3>🔌 Join/Leave Rooms</h3>
+            <input id="roomDroneId" type="text" placeholder="Drone ID"
+                value="1">
+            <button onclick="joinDrone()">Join Drone Room</button>
+            <button onclick="leaveDrone()">Leave Drone Room</button>
+        </div>
+
+        <!-- Telemetry Log -->
+        <div class="section">
+            <h3>📊 Telemetry Log</h3>
+            <button onclick="clearTelemetryLog()"
+                style="background: #6c757d;">Clear</button>
+            <div id="telemetryLog"
+                style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #f9f9f9; font-family: monospace; font-size: 12px; margin-top: 10px;">
+                <!-- Telemetry data will be displayed here -->
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>📨 Messages</h3>
+            <button onclick="clearMessages()">Clear</button>
+            <div id="messages"></div>
+        </div>
+
+        <script>
+        let socket = null;
+        let currentMode = 'admin'; // 'admin' or 'drone'
+        const pendingCommands = new Map(); // commandId -> command info
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('adminMode').classList.toggle('active', mode === 'admin');
+            document.getElementById('droneMode').classList.toggle('active', mode === 'drone');
+            log(`🎭 Switched to ${mode.toUpperCase()} mode`, 'info');
+        }
+
+        function generateCommandId() {
+            return 'cmd_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+        }
+
+        function addCommandToMonitor(commandId, command, droneId) {
+            const statusDiv = document.getElementById('commandStatus');
+            
+            // Remove "No commands" message
+            if (statusDiv.innerHTML.includes('No commands sent yet')) {
+                statusDiv.innerHTML = '';
+            }
+            
+            const commandDiv = document.createElement('div');
+            commandDiv.id = `cmd-${commandId}`;
+            commandDiv.className = 'command-item';
+            commandDiv.innerHTML = `
+                <div class="command-spinner"></div>
+                <div style="flex: 1;">
+                    <strong>${command}</strong> → Drone ${droneId}
+                    <br>
+                    <small>ID: ${commandId}</small>
+                </div>
+                <span class="command-status status-sent">SENT</span>
+            `;
+            
+            statusDiv.insertBefore(commandDiv, statusDiv.firstChild);
+            
+            // Store command info
+            pendingCommands.set(commandId, {
+                command,
+                droneId,
+                timestamp: Date.now(),
+                status: 'sent'
+            });
+            
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                const cmdInfo = pendingCommands.get(commandId);
+                if (cmdInfo && cmdInfo.status === 'sent') {
+                    updateCommandStatus(commandId, 'timeout', '⏱️ No response (timeout)');
+                }
+            }, 10000);
+        }
+
+        function updateCommandStatus(commandId, status, message) {
+            const cmdDiv = document.getElementById(`cmd-${commandId}`);
+            if (!cmdDiv) return;
+            
+            const statusSpan = cmdDiv.querySelector('.command-status');
+            const spinner = cmdDiv.querySelector('.command-spinner');
+            
+            // Update command info
+            const cmdInfo = pendingCommands.get(commandId);
+            if (cmdInfo) {
+                cmdInfo.status = status;
+                cmdInfo.lastUpdate = Date.now();
+            }
+            
+            switch (status) {
+                case 'received':
+                    statusSpan.textContent = 'RECEIVED';
+                    statusSpan.className = 'command-status status-received';
+                    break;
+                case 'executing':
+                    statusSpan.textContent = 'EXECUTING';
+                    statusSpan.className = 'command-status status-executing';
+                    break;
+                case 'success':
+                    if (spinner) spinner.remove();
+                    statusSpan.textContent = '✅ SUCCESS';
+                    statusSpan.className = 'command-status status-success';
+                    if (message) {
+                        const msgDiv = document.createElement('div');
+                        msgDiv.style.cssText = 'font-size: 11px; color: #155724; margin-top: 4px;';
+                        msgDiv.textContent = message;
+                        cmdDiv.querySelector('div[style*="flex"]').appendChild(msgDiv);
+                    }
+                    break;
+                case 'failed':
+                    if (spinner) spinner.remove();
+                    statusSpan.textContent = '❌ FAILED';
+                    statusSpan.className = 'command-status status-failed';
+                    if (message) {
+                        const msgDiv = document.createElement('div');
+                        msgDiv.style.cssText = 'font-size: 11px; color: #721c24; margin-top: 4px;';
+                        msgDiv.textContent = message;
+                        cmdDiv.querySelector('div[style*="flex"]').appendChild(msgDiv);
+                    }
+                    break;
+                case 'timeout':
+                    if (spinner) spinner.remove();
+                    statusSpan.textContent = '⏱️ TIMEOUT';
+                    statusSpan.className = 'command-status status-failed';
+                    break;
+            }
+        }
+
+        function clearCommandStatus() {
+            document.getElementById('commandStatus').innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No commands sent yet</p>';
+            pendingCommands.clear();
+        }
+
+        function connect() {
+            // Socket.IO với namespace /drone
+            // socket = io('https://e759e83604d3.ngrok-free.app/drone', {
+            socket = io('https://chorded-angelita-nonreticently.ngrok-free.dev/drone?ngrok-skip-browser-warning=true', {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionAttempts: 5
+            });
+            
+            socket.on('connect', () => {
+                log('✅ Connected to Socket.IO server', 'info');
+                log(`Socket ID: ${socket.id}`, 'info');
+                updateStatus(true);
+                
+                // Auto-join drone room to receive telemetry
+                const droneId = document.getElementById('roomDroneId').value || '1';
+                socket.emit('join:drone', { droneId });
+                log(`🔌 Auto-joined drone room: ${droneId}`, 'info');
+            });
+            
+            socket.on('disconnect', (reason) => {
+                log(`❌ Disconnected: ${reason}`, 'error');
+                updateStatus(false);
+            });
+            
+            socket.on('connect_error', (err) => {
+                log(`⚠️ Connection Error: ${err.message}`, 'error');
+                updateStatus(false);
+            });
+
+            // Listen to drone location updates
+            socket.on('drone:location_updated', (data) => {
+                log(`📍 Location Updated:\n${JSON.stringify(data, null, 2)}`, 'message');
+            });
+
+            // Listen to drone status updates
+            socket.on('drone:status_updated', (data) => {
+                log(`📡 Status Updated:\n${JSON.stringify(data, null, 2)}`, 'message');
+            });
+
+            // Listen to flight events
+            socket.on('flight:started', (data) => {
+                log(`🛫 Flight Started:\n${JSON.stringify(data, null, 2)}`, 'message');
+            });
+
+            socket.on('flight:ended', (data) => {
+                log(`🛬 Flight Ended:\n${JSON.stringify(data, null, 2)}`, 'message');
+            });
+
+            socket.on('flight:path_point_added', (data) => {
+                log(`🗺️ Path Point Added:\n${JSON.stringify(data, null, 2)}`, 'message');
+            });
+
+            // Listen to drone updates (room-specific)
+            socket.on('drone:update', (data) => {
+                log(`🔔 Drone Update (Room):\n${JSON.stringify(data, null, 2)}`, 'message');
+            });
+
+            // Error from server
+            socket.on('error', (data) => {
+                log(`❌ Server Error: ${data.message}`, 'error');
+            });
+
+            // Listen to pong response
+            socket.on('pong', (data) => {
+                log(`🏓 PONG received: ${JSON.stringify(data, null, 2)}`, 'info');
+            });
+
+            // ===== COMMAND FEEDBACK EVENTS =====
+            
+            // Listen for command acknowledgment (drone received the command)
+            socket.on('command:ack', (data) => {
+                log(`✅ Command ACK: ${JSON.stringify(data, null, 2)}`, 'info');
+                if (data.commandId) {
+                    updateCommandStatus(data.commandId, 'received', null);
+                }
+            });
+            
+            // Listen for command progress (drone is executing)
+            socket.on('command:progress', (data) => {
+                log(`⚙️ Command Progress: ${JSON.stringify(data, null, 2)}`, 'info');
+                if (data.commandId) {
+                    updateCommandStatus(data.commandId, 'executing', null);
+                }
+            });
+            
+            // Listen for command result (success or failed)
+            socket.on('command:result', (data) => {
+                log(`📊 Command Result: ${JSON.stringify(data, null, 2)}`, data.status === 'success' ? 'info' : 'error');
+                if (data.commandId) {
+                    updateCommandStatus(
+                        data.commandId, 
+                        data.status, 
+                        data.message || data.error || null
+                    );
+                }
+            });
+
+            // Listen to drone command responses
+            socket.on('drone:command_response', (data) => {
+                log(`📨 Command Response:\n${JSON.stringify(data, null, 2)}`, 'message');
+            });
+            
+            // ===== DRONE MODE: Listen for commands and simulate responses =====
+            socket.on('drone:command', (data) => {
+                if (currentMode !== 'drone') return;
+                
+                log(`🎯 [DRONE MODE] Received command: ${data.command} (ID: ${data.commandId})`, 'info');
+                
+                if (!data.commandId) {
+                    log('⚠️ Command missing commandId, cannot send feedback', 'error');
+                    return;
+                }
+                
+                // Simulate drone behavior
+                simulateDroneResponse(data.commandId, data.droneId, data.command);
+            });
+            
+            // Listen to command broadcast
+            socket.on('drone:command_broadcast', (data) => {
+                if (data.command === 'start_video_stream' || data.command === 'stop_video_stream') {
+                    log(`📡 Command broadcast: ${data.command} for drone ${data.droneId}`, 'info');
+                }
+            });
+
+            // Listen to mission responses
+            socket.on('mission:started', (data) => {
+                log(`🎯 Mission Started:\n${JSON.stringify(data, null, 2)}`, 'message');
+            });
+
+            socket.on('mission:ended', (data) => {
+                log(`🎯 Mission Ended:\n${JSON.stringify(data, null, 2)}`, 'message');
+            });
+
+            socket.on('mission:waypoint_reached', (data) => {
+                log(`📍 Waypoint Reached:\n${JSON.stringify(data, null, 2)}`, 'message');
+            });
+
+            // Listen to telemetry data
+            socket.on('telemetry:data', (data) => {
+                displayTelemetryData(data);
+            });
+
+            // Listen to app messages
+            socket.on('app:message', (data) => {
+                log(`📱 ${data.message}`, 'info');
+            });
+
+            // Listen to video frames
+            // Server now sends as base64 string to avoid Socket.IO binary issues
+            socket.on('video:frame', (data) => {
+                // Log first frame and every 30th frame
+                if (!window.videoFrameCount) window.videoFrameCount = 0;
+                window.videoFrameCount++;
+                
+                // Convert base64 string to ArrayBuffer
+                let arrayBuffer;
+                if (typeof data === 'string') {
+                    // Base64 string from server
+                    try {
+                        const binaryString = atob(data);
+                        const bytes = new Uint8Array(binaryString.length);
+                        for (let i = 0; i < binaryString.length; i++) {
+                            bytes[i] = binaryString.charCodeAt(i);
+                        }
+                        arrayBuffer = bytes.buffer;
+                        
+                        if (window.videoFrameCount === 1 || window.videoFrameCount % 30 === 0) {
+                            log(`📹 Received video:frame #${window.videoFrameCount} (${arrayBuffer.byteLength} bytes)`, 'info');
+                        }
+                        
+                        // Debug first frame
+                        if (window.videoFrameCount === 1) {
+                            const firstBytes = bytes.slice(0, 10);
+                            const allZeros = Array.from(firstBytes).every(b => b === 0);
+                            console.log('First 10 bytes:', Array.from(firstBytes).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                            if (allZeros) {
+                                console.error('❌ Data is all zeros - corruption detected!');
+                                log('❌ Received data is corrupted (all zeros)', 'error');
+                                return; // Don't process corrupted data
+                            }
+                        }
+                        
+                        handleVideoFrame(arrayBuffer);
+                    } catch (e) {
+                        log(`❌ Error decoding base64: ${e.message}`, 'error');
+                        console.error('Base64 decode error:', e);
+                    }
+                } else {
+                    // Fallback: try to handle as binary (in case server changes back)
+                    if (window.videoFrameCount === 1 || window.videoFrameCount % 30 === 0) {
+                        const size = data?.byteLength || data?.length || 'unknown';
+                        log(`📹 Received video:frame #${window.videoFrameCount} (${size} bytes)`, 'info');
+                    }
+                    handleVideoFrame(data);
+                }
+            });
+            
+            // Debug: log all socket events
+            socket.onAny((eventName, ...args) => {
+                if (eventName === 'video:frame') {
+                    // Already logged above
+                    return;
+                }
+                if (eventName.includes('video') || eventName.includes('stream')) {
+                    log(`🔍 Socket event: ${eventName}`, 'info');
+                }
+            });
+        }
+
+        // Video streaming setup using jmuxer (much simpler!)
+        let jmuxer = null;
+        let frameCount = 0;
+        let lastLogTime = 0;
+
+        function initVideoPlayer() {
+            if (jmuxer) return;
+            
+            try {
+                const video = document.getElementById('videoPlayer');
+                
+                // Ensure video element is ready
+                video.autoplay = true;
+                video.muted = true;
+                video.playsInline = true;
+                
+                // Add event listeners to video element
+                video.addEventListener('loadedmetadata', () => {
+                    log(`✅ Video metadata loaded: ${video.videoWidth}x${video.videoHeight}`, 'info');
+                });
+                
+                video.addEventListener('canplay', () => {
+                    log('✅ Video can play', 'info');
+                    // Try to play
+                    video.play().then(() => {
+                        log('✅ Video playing started', 'info');
+                    }).catch(e => {
+                        log(`⚠️ Autoplay blocked: ${e.message}`, 'error');
+                        log('💡 Click video to play manually', 'info');
+                    });
+                });
+                
+                video.addEventListener('play', () => {
+                    log('▶️ Video is playing', 'info');
+                });
+                
+                video.addEventListener('error', (e) => {
+                    log(`❌ Video element error: ${video.error?.message || 'Unknown error'}`, 'error');
+                    console.error('Video error:', video.error);
+                });
+                
+                // Initialize jmuxer - it handles H.264 to fMP4 conversion automatically
+                // jmuxer creates MediaSource internally and sets it to video element
+                jmuxer = new JMuxer({
+                    node: video,
+                    mode: 'video', // 'video', 'audio', or 'both'
+                    flushingTime: 0, // Flush immediately for low latency
+                    clearBuffer: false, // Don't clear buffer to avoid stuttering
+                    fps: 30, // Expected FPS (will auto-detect from stream)
+                    debug: true // Enable debug to see what's happening
+                });
+                
+                // Listen to jmuxer events for debugging
+                if (jmuxer && typeof jmuxer.on === 'function') {
+                    jmuxer.on('ready', () => {
+                        log('✅ jmuxer ready - video should start playing', 'info');
+                        // Check if video src is set
+                        setTimeout(() => {
+                            if (video.src) {
+                                log(`✅ Video src set: ${video.src.substring(0, 50)}...`, 'info');
+                            } else {
+                                log('⚠️ Video src not set by jmuxer', 'error');
+                            }
+                        }, 100);
+                    });
+                    jmuxer.on('error', (error) => {
+                        log(`❌ jmuxer error: ${error}`, 'error');
+                        console.error('jmuxer error:', error);
+                    });
+                }
+                
+                // Check video src after a delay
+                setTimeout(() => {
+                    if (video.src) {
+                        log(`✅ Video src: ${video.src.substring(0, 50)}...`, 'info');
+                    } else {
+                        log('⚠️ Video src still not set - jmuxer may not be working', 'error');
+                    }
+                }, 1000);
+                
+                log('✅ Video player initialized with jmuxer', 'info');
+            } catch (e) {
+                log(`❌ Error initializing video: ${e.message}`, 'error');
+                console.error('Video init error:', e);
+            }
+        }
+
+        function handleVideoFrame(frameData) {
+            frameCount++;
+            const now = Date.now();
+            
+            // Log every 30 frames or every 1 second
+            if (frameCount % 30 === 0 || now - lastLogTime > 1000) {
+                log(`📹 Received video frame #${frameCount} (${frameData?.byteLength || frameData?.length || 'unknown'} bytes)`, 'info');
+                lastLogTime = now;
+            }
+            
+            if (!jmuxer) {
+                initVideoPlayer();
+            }
+            
+            if (!jmuxer) {
+                return; // Failed to initialize
+            }
+            
+            try {
+                // Debug: Check what we actually received
+                if (frameCount === 1) {
+                    console.log('First frame data type:', typeof frameData, frameData?.constructor?.name);
+                    console.log('First frame:', frameData);
+                    console.log('First frame keys:', frameData && typeof frameData === 'object' ? Object.keys(frameData) : 'N/A');
+                }
+                
+                // Convert to ArrayBuffer (jmuxer needs ArrayBuffer)
+                let arrayBuffer;
+                
+                // Socket.IO might send binary as Blob or ArrayBuffer
+                if (frameData instanceof Blob) {
+                    // Convert Blob to ArrayBuffer
+                    frameData.arrayBuffer().then(ab => {
+                        jmuxer.feed({ video: ab });
+                    }).catch(e => {
+                        log(`❌ Error converting Blob: ${e.message}`, 'error');
+                    });
+                    return; // Will feed async
+                } else if (frameData instanceof ArrayBuffer) {
+                    arrayBuffer = frameData;
+                } else if (frameData instanceof Uint8Array) {
+                    // Check if data is all zeros (corrupt)
+                    const firstBytes = frameData.slice(0, 10);
+                    const allZeros = firstBytes.every(b => b === 0);
+                    if (allZeros && frameCount <= 3) {
+                        console.warn('⚠️ Received data appears to be all zeros - possible corruption');
+                        console.warn('Data type:', typeof frameData, frameData?.constructor?.name);
+                        console.warn('Data length:', frameData.length);
+                        log('⚠️ Frame data appears corrupted (all zeros)', 'error');
+                        // Don't process corrupted data
+                        return;
+                    }
+                    arrayBuffer = frameData.buffer;
+                } else if (frameData && typeof frameData === 'object' && 'buffer' in frameData && 'byteOffset' in frameData) {
+                    // Node.js Buffer-like object - convert to ArrayBuffer
+                    // But Buffer doesn't exist in browser, so this is for compatibility
+                    try {
+                        arrayBuffer = frameData.buffer.slice(frameData.byteOffset, frameData.byteOffset + frameData.byteLength);
+                    } catch (e) {
+                        console.error('Error converting Buffer-like object:', e);
+                        return;
+                    }
+                } else if (frameData && typeof frameData === 'object' && frameData.data) {
+                    // Socket.IO might wrap binary in { data: ... }
+                    const actualData = frameData.data;
+                    if (actualData instanceof ArrayBuffer) {
+                        arrayBuffer = actualData;
+                    } else if (actualData instanceof Uint8Array) {
+                        arrayBuffer = actualData.buffer;
+                    } else if (actualData instanceof Blob) {
+                        actualData.arrayBuffer().then(ab => {
+                            jmuxer.feed({ video: ab });
+                        }).catch(e => {
+                            log(`❌ Error converting nested Blob: ${e.message}`, 'error');
+                        });
+                        return;
+                    } else {
+                        throw new Error('Unknown data format in frameData.data');
+                    }
+                } else if (typeof frameData === 'string') {
+                    // Base64 string
+                    const binaryString = atob(frameData);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    arrayBuffer = bytes.buffer;
+                } else {
+                    // Unknown type - log and skip
+                    console.error('Unknown frame data type:', typeof frameData, frameData?.constructor?.name, frameData);
+                    log(`❌ Unknown frame data type: ${typeof frameData}`, 'error');
+                    return;
+                }
+                
+                // Verify arrayBuffer is valid
+                if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+                    throw new Error('Invalid arrayBuffer: empty or null');
+                }
+                
+                // Check first bytes to ensure it's valid H.264 (should start with 0x00 0x00 0x00 0x01 or 0x00 0x00 0x01)
+                const dataView = new Uint8Array(arrayBuffer);
+                const firstBytes = dataView.slice(0, 10);
+                const isValidH264 = (firstBytes[0] === 0 && firstBytes[1] === 0 && 
+                                    ((firstBytes[2] === 0 && firstBytes[3] === 1) || firstBytes[2] === 1));
+                
+                if (frameCount === 1) {
+                    console.log('First 10 bytes:', Array.from(firstBytes).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                    console.log('Is valid H.264:', isValidH264);
+                    console.log('ArrayBuffer size:', arrayBuffer.byteLength);
+                }
+                
+                if (!isValidH264 && frameCount <= 3) {
+                    console.warn('⚠️ Data does not look like H.264 NAL unit. First bytes:', 
+                        Array.from(firstBytes).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                    log('⚠️ Data format may be incorrect', 'error');
+                    return; // Don't feed invalid data
+                }
+                
+                // jmuxer expects H.264 NAL units with start codes (which Android already sends)
+                // Feed as Uint8Array, not ArrayBuffer - jmuxer may need typed array
+                if (jmuxer) {
+                    try {
+                        // Log what we're feeding to jmuxer
+                        if (frameCount === 1) {
+                            console.log('Feeding to jmuxer:', {
+                                type: 'Uint8Array',
+                                length: dataView.length,
+                                first10Bytes: Array.from(dataView.slice(0, 10)).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+                            });
+                        }
+                        
+                        // jmuxer expects { video: Uint8Array } or { video: ArrayBuffer }
+                        // Try with Uint8Array first
+                        jmuxer.feed({
+                            video: dataView // Use Uint8Array instead of ArrayBuffer
+                        });
+                        
+                        if (frameCount === 1) {
+                            log(`✅ First frame fed to jmuxer (${arrayBuffer.byteLength} bytes)`, 'info');
+                            
+                            // Check video state after first frame
+                            setTimeout(() => {
+                                const video = document.getElementById('videoPlayer');
+                                if (video) {
+                                    log(`📊 Video state: readyState=${video.readyState}, paused=${video.paused}, currentTime=${video.currentTime}`, 'info');
+                                    if (video.readyState >= 2) {
+                                        log('✅ Video has enough data to play', 'info');
+                                    }
+                                }
+                            }, 500);
+                        }
+                        
+                        // Log every 60 frames to track progress
+                        if (frameCount % 60 === 0) {
+                            const video = document.getElementById('videoPlayer');
+                            if (video) {
+                                log(`📊 Frame #${frameCount}: readyState=${video.readyState}, paused=${video.paused}`, 'info');
+                            }
+                        }
+                    } catch (e) {
+                        log(`❌ Error feeding to jmuxer: ${e.message}`, 'error');
+                        console.error('jmuxer feed error:', e);
+                    }
+                } else {
+                    log('⚠️ jmuxer not initialized, cannot feed frame', 'error');
+                }
+                
+            } catch (e) {
+                log(`❌ Error processing video frame #${frameCount}: ${e.message}`, 'error');
+                console.error('Frame processing error:', e);
+                console.error('Frame data type:', typeof frameData, frameData?.constructor?.name);
+                console.error('Frame data:', frameData);
+            }
+        }
+
+        function startVideoStream() {
+            if (!socket || !socket.connected) {
+                log('❌ Socket not connected!', 'error');
+                return;
+            }
+            
+            const droneId = document.getElementById('videoDroneId').value;
+            const payload = {
+                droneId,
+                command: 'start_video_stream',
+                timestamp: new Date().toISOString()
+            };
+            
+            log(`📤 Emitting drone:command with payload: ${JSON.stringify(payload)}`, 'sent');
+            socket.emit('drone:command', payload);
+            log(`📤 Sent START VIDEO STREAM command for drone ${droneId}`, 'sent');
+            
+            // Reset counters
+            frameCount = 0;
+            window.videoFrameCount = 0;
+            lastLogTime = 0;
+            
+            // Initialize jmuxer if not already done
+            initVideoPlayer();
+            
+            // Check if we receive any response
+            setTimeout(() => {
+                if (window.videoFrameCount === 0) {
+                    log('⚠️ No video frames received after 3 seconds. Possible issues:', 'error');
+                    log('   1. Video channel not started in Android app', 'error');
+                    log('   2. Camera stream not active', 'error');
+                    log('   3. Check Android logs for errors', 'error');
+                } else {
+                    log(`✅ Received ${window.videoFrameCount} frames - video should be playing`, 'info');
+                }
+            }, 3000);
+        }
+
+        function stopVideoStream() {
+            const droneId = document.getElementById('videoDroneId').value;
+            const payload = {
+                droneId,
+                command: 'stop_video_stream',
+                timestamp: new Date().toISOString()
+            };
+            socket.emit('drone:command', payload);
+            log(`📤 Sent STOP VIDEO STREAM command for drone ${droneId}`, 'sent');
+            
+            // Clean up jmuxer
+            if (jmuxer) {
+                try {
+                    jmuxer.destroy();
+                } catch (e) {
+                    log(`⚠️ Error destroying jmuxer: ${e.message}`, 'error');
+                }
+                jmuxer = null;
+            }
+            
+            // Clear video element
+            const video = document.getElementById('videoPlayer');
+            if (video) {
+                video.src = '';
+                video.load(); // Reset video element
+            }
+        }
+
+        function updateDroneStatus() {
+            const droneId = document.getElementById('droneId').value;
+            const status = document.getElementById('droneStatus').value;
+            const battery = parseInt(document.getElementById('battery').value);
+            
+            const payload = {
+                droneId,
+                status: {
+                    status,
+                    batteryLevel: battery
+                }
+            };
+            
+            socket.emit('drone:status_update', payload);
+            log(`📤 Sent status update for drone ${droneId}`, 'sent');
+        }
+
+        function updateDroneLocation() {
+            const droneId = document.getElementById('locDroneId').value;
+            const latitude = parseFloat(document.getElementById('latitude').value);
+            const longitude = parseFloat(document.getElementById('longitude').value);
+            const altitude = parseFloat(document.getElementById('altitude').value);
+            
+            const payload = {
+                droneId,
+                location: {
+                    latitude,
+                    longitude,
+                    altitude
+                }
+            };
+            
+            socket.emit('drone:location_update', payload);
+            log(`📤 Sent location update for drone ${droneId}`, 'sent');
+        }
+
+        function joinDrone() {
+            const droneId = document.getElementById('roomDroneId').value;
+            socket.emit('join:drone', { droneId });
+            log(`🔌 Joined drone room: ${droneId}`, 'info');
+        }
+
+        function leaveDrone() {
+            const droneId = document.getElementById('roomDroneId').value;
+            socket.emit('leave:drone', { droneId });
+            log(`🔌 Left drone room: ${droneId}`, 'info');
+        }
+
+        function sendPing() {
+            const timestamp = new Date().toISOString();
+            socket.emit('ping', { timestamp, message: 'PING from client' });
+            log(`📤 Sent PING at ${timestamp}`, 'sent');
+        }
+
+        function sendTakeoff() {
+            const droneId = document.getElementById('controlDroneId').value;
+            const commandId = generateCommandId();
+            
+            const payload = {
+                commandId,
+                droneId,
+                command: 'takeoff',
+                timestamp: new Date().toISOString()
+            };
+            
+            socket.emit('drone:command', payload);
+            log(`📤 Sent TAKEOFF command for drone ${droneId} (ID: ${commandId})`, 'sent');
+            
+            if (currentMode === 'admin') {
+                addCommandToMonitor(commandId, 'TAKEOFF', droneId);
+            }
+        }
+
+        function sendLand() {
+            const droneId = document.getElementById('controlDroneId').value;
+            const commandId = generateCommandId();
+            
+            const payload = {
+                commandId,
+                droneId,
+                command: 'land',
+                timestamp: new Date().toISOString()
+            };
+            
+            socket.emit('drone:command', payload);
+            log(`📤 Sent LAND command for drone ${droneId} (ID: ${commandId})`, 'sent');
+            
+            if (currentMode === 'admin') {
+                addCommandToMonitor(commandId, 'LAND', droneId);
+            }
+        }
+
+        function sendReturnHome() {
+            const droneId = document.getElementById('controlDroneId').value;
+            const commandId = generateCommandId();
+            
+            const payload = {
+                commandId,
+                droneId,
+                command: 'return_to_home',
+                timestamp: new Date().toISOString()
+            };
+            
+            socket.emit('drone:command', payload);
+            log(`📤 Sent RETURN HOME command for drone ${droneId} (ID: ${commandId})`, 'sent');
+            
+            if (currentMode === 'admin') {
+                addCommandToMonitor(commandId, 'RETURN HOME', droneId);
+            }
+        }
+
+        function sendMoveForward() {
+            const droneId = document.getElementById('controlDroneId').value;
+            const commandId = generateCommandId();
+            
+            const payload = {
+                commandId,
+                droneId,
+                command: 'move_forward',
+                timestamp: new Date().toISOString()
+            };
+            
+            socket.emit('drone:command', payload);
+            log(`📤 Sent MOVE FORWARD command for drone ${droneId} (ID: ${commandId})`, 'sent');
+            
+            if (currentMode === 'admin') {
+                addCommandToMonitor(commandId, 'MOVE FORWARD', droneId);
+            }
+        }
+
+        function sendMoveBackward() {
+            const droneId = document.getElementById('controlDroneId').value;
+            const commandId = generateCommandId();
+            
+            const payload = {
+                commandId,
+                droneId,
+                command: 'move_backward',
+                timestamp: new Date().toISOString()
+            };
+            
+            socket.emit('drone:command', payload);
+            log(`📤 Sent MOVE BACKWARD command for drone ${droneId} (ID: ${commandId})`, 'sent');
+            
+            if (currentMode === 'admin') {
+                addCommandToMonitor(commandId, 'MOVE BACKWARD', droneId);
+            }
+        }
+
+        function sendStopMovement() {
+            const droneId = document.getElementById('controlDroneId').value;
+            const commandId = generateCommandId();
+            
+            const payload = {
+                commandId,
+                droneId,
+                command: 'stop_movement',
+                timestamp: new Date().toISOString()
+            };
+            
+            socket.emit('drone:command', payload);
+            log(`📤 Sent STOP MOVEMENT command for drone ${droneId} (ID: ${commandId})`, 'sent');
+            
+            if (currentMode === 'admin') {
+                addCommandToMonitor(commandId, 'STOP MOVEMENT', droneId);
+            }
+        }
+
+        // ===== DRONE MODE SIMULATOR =====
+        function simulateDroneResponse(commandId, droneId, command) {
+            const timestamp = new Date().toISOString();
+            
+            // Step 1: Acknowledge receipt (immediate)
+            setTimeout(() => {
+                socket.emit('command:ack', {
+                    commandId,
+                    droneId,
+                    status: 'received',
+                    timestamp
+                });
+                log(`🤖 [DRONE] Sent ACK for command ${commandId}`, 'sent');
+            }, 100);
+            
+            // Step 2: Notify executing (after 200ms)
+            setTimeout(() => {
+                socket.emit('command:progress', {
+                    commandId,
+                    droneId,
+                    status: 'executing',
+                    timestamp
+                });
+                log(`🤖 [DRONE] Sent PROGRESS for command ${commandId}`, 'sent');
+            }, 300);
+            
+            // Step 3: Send result (after 1-3 seconds)
+            const executionTime = 1000 + Math.random() * 2000;
+            
+            setTimeout(() => {
+                // Simulate 90% success rate
+                const isSuccess = Math.random() > 0.1;
+                
+                const result = {
+                    commandId,
+                    droneId,
+                    status: isSuccess ? 'success' : 'failed',
+                    timestamp
+                };
+                
+                if (isSuccess) {
+                    result.message = `${command.toUpperCase()} completed successfully`;
+                } else {
+                    result.error = `Failed to execute ${command}: Simulated error`;
+                }
+                
+                socket.emit('command:result', result);
+                log(`🤖 [DRONE] Sent RESULT for command ${commandId}: ${result.status}`, isSuccess ? 'sent' : 'error');
+            }, 300 + executionTime);
+        }
+
+        function log(message, type = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.textContent = `[${time}] ${message}`;
+            messagesDiv.appendChild(div);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateStatus(connected) {
+            const status = document.getElementById('status');
+            status.textContent = connected ? '✅ Connected' : '❌ Disconnected';
+            status.className = 'status ' + (connected ? 'connected' : 'disconnected');
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        function displayTelemetryData(data) {
+            const telemetryDiv = document.getElementById('telemetryLog');
+            const time = new Date().toLocaleTimeString();
+            
+            // Extract telemetry from nested structure (Android sends {droneId, telemetry: {...}, timestamp})
+            const telemetry = data.telemetry || data;
+            const droneId = data.droneId || 'Unknown';
+            
+            // Format telemetry data
+            let telemetryText = `[${time}] Drone ${droneId}: `;
+            if (telemetry.latitude !== undefined && telemetry.longitude !== undefined) {
+                telemetryText += `📍 ${telemetry.latitude.toFixed(6)}°, ${telemetry.longitude.toFixed(6)}°`;
+            }
+            if (telemetry.altitude_m !== undefined) {
+                telemetryText += ` | Alt: ${telemetry.altitude_m.toFixed(2)}m`;
+            }
+            if (telemetry.battery_percent !== undefined) {
+                telemetryText += ` | 🔋 ${telemetry.battery_percent}%`;
+            }
+            if (telemetry.speed_mps !== undefined) {
+                telemetryText += ` | ⚡ ${telemetry.speed_mps.toFixed(2)}m/s`;
+            }
+            if (telemetry.heading_deg !== undefined) {
+                telemetryText += ` | 🧭 ${telemetry.heading_deg.toFixed(1)}°`;
+            }
+            if (telemetry.is_flying !== undefined) {
+                telemetryText += ` | ${telemetry.is_flying ? '✈️ Flying' : '🛬 Ground'}`;
+            }
+            if (telemetry.flight_mode !== undefined) {
+                telemetryText += ` | Mode: ${telemetry.flight_mode}`;
+            }
+            if (telemetry.gps_signal_level !== undefined) {
+                telemetryText += ` | 📡 ${telemetry.gps_signal_level}`;
+            }
+            if (telemetry.satellite_count !== undefined) {
+                telemetryText += ` | 🛰️ ${telemetry.satellite_count}`;
+            }
+            
+            const div = document.createElement('div');
+            div.style.cssText = 'margin: 2px 0; padding: 4px; border-bottom: 1px solid #eee; font-size: 12px;';
+            div.textContent = telemetryText;
+            telemetryDiv.appendChild(div);
+            
+            // Auto scroll to bottom
+            telemetryDiv.scrollTop = telemetryDiv.scrollHeight;
+            
+            // Limit to last 100 entries
+            while (telemetryDiv.children.length > 100) {
+                telemetryDiv.removeChild(telemetryDiv.firstChild);
+            }
+        }
+
+        function clearTelemetryLog() {
+            document.getElementById('telemetryLog').innerHTML = '';
+        }
+
+        // Mission functions
+        let waypointIndex = 0;
+        const waypoints = [];
+
+        function addWaypoint() {
+            const waypointDiv = document.createElement('div');
+            waypointDiv.id = `waypoint-${waypointIndex}`;
+            waypointDiv.style.cssText = 'margin: 5px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f9f9f9;';
+            
+            waypointDiv.innerHTML = `
+                <strong>Waypoint ${waypointIndex + 1}:</strong>
+                <input type="number" step="0.000001" placeholder="Latitude (degrees)" id="wp-lat-${waypointIndex}" value="21.028511" style="width: 140px; margin: 5px;" title="Latitude in degrees (-90 to 90)">
+                <input type="number" step="0.000001" placeholder="Longitude (degrees)" id="wp-lng-${waypointIndex}" value="105.804817" style="width: 140px; margin: 5px;" title="Longitude in degrees (-180 to 180)">
+                <input type="number" placeholder="Altitude (meters)" id="wp-alt-${waypointIndex}" value="50" style="width: 120px; margin: 5px;" title="Altitude in meters above ground">
+                <select id="wp-action-${waypointIndex}" style="width: 120px; margin: 5px;">
+                    <option value="fly_to">Fly To</option>
+                    <option value="hover">Hover</option>
+                    <option value="take_photo">Take Photo</option>
+                    <option value="start_recording">Start Recording</option>
+                    <option value="stop_recording">Stop Recording</option>
+                </select>
+                <button onclick="removeWaypoint(${waypointIndex})" style="background: #dc3545; margin: 5px;">Remove</button>
+            `;
+            
+            document.getElementById('waypointsList').appendChild(waypointDiv);
+            waypointIndex++;
+        }
+
+        function removeWaypoint(index) {
+            const waypointDiv = document.getElementById(`waypoint-${index}`);
+            if (waypointDiv) {
+                waypointDiv.remove();
+            }
+        }
+
+        function clearWaypoints() {
+            document.getElementById('waypointsList').innerHTML = '';
+            waypointIndex = 0;
+        }
+
+        function sendStartMission() {
+            const droneId = document.getElementById('missionDroneId').value;
+            const waypointsList = [];
+            
+            // Collect all waypoints
+            for (let i = 0; i < waypointIndex; i++) {
+                const waypointDiv = document.getElementById(`waypoint-${i}`);
+                if (waypointDiv) {
+                    const lat = parseFloat(document.getElementById(`wp-lat-${i}`).value);
+                    const lng = parseFloat(document.getElementById(`wp-lng-${i}`).value);
+                    const alt = parseFloat(document.getElementById(`wp-alt-${i}`).value);
+                    const action = document.getElementById(`wp-action-${i}`).value;
+                    
+                    if (!isNaN(lat) && !isNaN(lng) && !isNaN(alt)) {
+                        waypointsList.push({
+                            latitude: lat,
+                            longitude: lng,
+                            altitude: alt,
+                            action: action
+                        });
+                    }
+                }
+            }
+            
+            if (waypointsList.length === 0) {
+                alert('Please add at least one waypoint!');
+                return;
+            }
+            
+            const payload = {
+                droneId,
+                mission: {
+                    waypoints: waypointsList,
+                    timestamp: new Date().toISOString()
+                }
+            };
+            
+            socket.emit('mission:start', payload);
+            log(`📤 Sent START MISSION command for drone ${droneId} with ${waypointsList.length} waypoints`, 'sent');
+        }
+
+        function sendEndMission() {
+            const droneId = document.getElementById('missionDroneId').value;
+            const payload = {
+                droneId,
+                timestamp: new Date().toISOString()
+            };
+            
+            socket.emit('mission:end', payload);
+            log(`📤 Sent END MISSION command for drone ${droneId}`, 'sent');
+        }
+
+        // Auto connect
+        connect();
+    </script>
+    </body>
+</html>
+</html>
+</html>
