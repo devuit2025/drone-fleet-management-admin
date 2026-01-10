@@ -22,8 +22,8 @@ export const useActiveDroneStore = create<ActiveDroneStore>(set => ({
                     [droneId]: {
                         ...existing,
                         ...partial,
+                        connected: true, // connected with any message
                         lastUpdate: Date.now(),
-                        connected: true,
                     },
                 },
             };

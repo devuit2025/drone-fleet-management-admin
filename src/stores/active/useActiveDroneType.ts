@@ -25,6 +25,18 @@ export interface ActiveDroneState {
         };
     };
 
+    // Battery (camelCase, MAVLink-aligned)
+    battery: {
+        voltageMv: number | null;        // SYS_STATUS.voltage_battery (mV)
+        currentCa: number | null;        // SYS_STATUS.current_battery (cA)
+        remainingPercent: number | null; // SYS_STATUS.battery_remaining (%)
+
+        // Optional / advanced (BATTERY_STATUS)
+        temperatureCdeg?: number | null; // cdegC
+        cellVoltagesMv?: number[] | null; // per-cell mV
+        batteryId?: number | null;
+    };
+
     // System (very minimal for now)
     system: {
         armed: boolean;

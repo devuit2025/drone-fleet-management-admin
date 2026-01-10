@@ -10,7 +10,7 @@ function App() {
 
     useDroneSubscriptions();
 
-    const { activeDroneInit, drones } = useActiveDroneStore();
+    const { activeDroneInit } = useActiveDroneStore();
 
     useEffect(() => {
         activeDroneInit();
@@ -18,19 +18,20 @@ function App() {
 
     return (
         // <DashboardLayout>
-        <div>
-            <div>
-                <h2>Drone List</h2>
-                <ul>
-                    {Object.entries(drones).map(([droneId, drone]) => (
-                        <li key={droneId}>
-                            {droneId} possition: {drone.position.lat}
-                        </li>
-                    ))}
-                </ul>
-            </div>
+        // This for testing only
+        // <div>
+        //     <div>
+        //         <h2>Drone List</h2>
+        //         <ul>
+        //             {Object.entries(drones).map(([droneId, drone]) => (
+        //                 <li key={droneId}>
+        //                     {droneId} possition: {drone.position.lat}
+        //                 </li>
+        //             ))}
+        //         </ul>
+        //     </div>
             <Suspense fallback={<div>Loading...</div>}>{routing}</Suspense>
-        </div>
+        // </div>
         // </DashboardLayout>
     );
 }

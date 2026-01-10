@@ -1,6 +1,4 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DroneClient, type Drone, type DroneStatus } from '@/api/models/drone/droneClient';
-import { MissionClient, type Mission } from '@/api/models/mission/missionClient';
 import { DroneListContent } from './DroneListContent';
 
 interface DroneListTabProps {
@@ -28,7 +26,6 @@ export function DroneListTab({
         <TabsContent value={value} className="space-y-2">
             <div className="max-h-[400px] overflow-auto space-y-2">
                 <DroneListContent
-                    visibleDrones={visibleDrones}
                     selectedDroneId={selectedDroneId}
                     setSelectedDroneId={setSelectedDroneId}
                     mapRef={mapRef}

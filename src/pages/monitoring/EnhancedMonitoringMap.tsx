@@ -19,7 +19,6 @@ import {
     FlightPermitClient,
     type FlightPermit,
 } from '@/api/models/flight-permit/flightPermitClient';
-import { useWebSocket } from '@/providers/WebSocketProvider';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -31,28 +30,22 @@ import {
     Legend,
     Filler,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
 import {
-    Activity,
-    Battery,
-    Gauge,
-    MapPin,
     AlertTriangle,
     Plane,
     Layers,
-    Play,
     Square,
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import {
-    Tooltip as UITooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
+
 import { pointFromWkt } from '@/lib/geo';
 import VideoStreamModal from '@/components/VideoStreamModal';
 import { MonitoringTabs } from './MonitoringTabs';
+import { createAppMap } from '@/services/mapbox/createMap';
+import { renderNoFlyZones } from '@/services/mapbox/layers/noFlyZoneLayer';
+import { useActiveDroneStore } from '@/stores/active/useActiveDroneStore';
+import type { ActiveDroneState } from '@/stores/active/useActiveDroneType';
+import { DroneLayerManager } from '@/services/mapbox/layers/DroneLayerManager';
 
 ChartJS.register(
     CategoryScale,
@@ -92,12 +85,66 @@ type ChartDataPoint = {
     value: number;
 };
 
-const MAX_HISTORY_POINTS = 50;
-const TRAIL_LENGTH = 100;
-
 export default function EnhancedMonitoringMap() {
-    const mapContainer = useRef<HTMLDivElement | null>(null);
-    const mapRef = useRef<MapboxMap | null>(null);
+    /**
+     * Single initial logic
+     */
+    useEffect(() => {
+        const init = async () => {
+            /**
+             * @noFlyZone
+             */
+            const noFlyZones = await NoFlyZoneClient.findAll();
+            setNoFlyZones(noFlyZones)
+            handleMapInitial({ noFlyZones });
+        };
+        init();
+    }, []);
+
+    /**
+     * @map 
+     */
+    const mapContainerRef = useRef<HTMLDivElement | null>(null);
+    const mapRef = useRef<mapboxgl.Map | null>(null);
+
+    const handleMapInitial = (mapOptions: any) => {
+        if (!mapContainerRef.current || mapRef.current) return;
+
+        mapRef.current = createAppMap({
+            container: mapContainerRef.current,
+            onReady: map => {
+                renderNoFlyZones(map, mapOptions.noFlyZones)
+            }},
+        );
+
+        return () => {
+            mapRef.current?.remove();
+            mapRef.current = null;
+        };
+    }
+
+    /**
+     * @noFlyZone 
+     */
+    const [noFlyZones, setNoFlyZones] = useState<NoFlyZone[]>([]);
+
+    /**
+     * @activeDrones
+     */
+   const dronesMap = useActiveDroneStore(s => s.drones);
+
+    useEffect(() => {   
+        if (!mapRef.current) return;
+        const activeDrones = Object.values(dronesMap);
+        // renderDrones(mapRef.current, activeDrones);
+        DroneLayerManager.render(
+            mapRef.current,
+            activeDrones
+        );
+    }, [dronesMap]);
+
+
+
     const dronesRef = useRef<Record<string, DroneState>>({});
     const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
     const [, forceRerender] = useState(0);
@@ -105,7 +152,6 @@ export default function EnhancedMonitoringMap() {
     const [mapReady, setMapReady] = useState(false);
 
     const [drones, setDrones] = useState<Drone[]>([]);
-    const [noFlyZones, setNoFlyZones] = useState<NoFlyZone[]>([]);
     const [flightPermits, setFlightPermits] = useState<FlightPermit[]>([]);
     const [missions, setMissions] = useState<Mission[]>([]);
     const [selectedDroneId, setSelectedDroneId] = useState<string | null>(null);
@@ -114,7 +160,15 @@ export default function EnhancedMonitoringMap() {
     const [showNoFlyZones, setShowNoFlyZones] = useState(true);
     const [showFlightPermits, setShowFlightPermits] = useState(true);
     const [showMissions, setShowMissions] = useState(true);
+
+    /**
+     * @deprecated
+     */
     const [useFakeTelemetry, setUseFakeTelemetry] = useState(false); // Disable fake telemetry by default - use real WebSocket data
+
+    /**
+     * @deprecated
+     */
     const [observingMissionId, setObservingMissionId] = useState<number | null>(null);
     const [missionProgress, setMissionProgress] = useState<Record<string, number>>({}); // droneId -> progress %
     const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -172,6 +226,9 @@ export default function EnhancedMonitoringMap() {
         return timeSinceLastUpdate < 3000; // 3 seconds
     }
 
+    /**
+     * @telemetry
+     */
     function upsertMarker(drone: DroneState) {
         const { id, lon, lat, heading, status } = drone;
         const markerId = `marker-${id}`;
@@ -253,16 +310,6 @@ export default function EnhancedMonitoringMap() {
         if (source) {
             source.setData(data);
         }
-    }
-
-    function loadNoFlyZones() {
-        NoFlyZoneClient.findAll()
-            .then(zones => {
-                // console.log('Loaded no-fly zones:', zones.length);
-                setNoFlyZones(zones);
-                // Zones will be added to map via useEffect when map is ready
-            })
-            .catch(err => console.error('Failed to load no-fly zones', err));
     }
 
     function loadFlightPermits() {
@@ -359,105 +406,6 @@ export default function EnhancedMonitoringMap() {
                 paint: {
                     'line-color': '#16a34a',
                     'line-width': 3,
-                    'line-opacity': 0.8,
-                },
-            });
-        }
-    }
-
-    function addNoFlyZonesToMap(zones: NoFlyZone[]) {
-        if (!mapRef.current) {
-            console.warn('Map not ready, cannot add no-fly zones');
-            return;
-        }
-
-        // console.log('Adding no-fly zones to map:', zones.length);
-
-        const features: GeoJSON.Feature[] = zones
-            .map(zone => {
-                try {
-                    let geom: GeoJSON.Geometry;
-
-                    if (typeof zone.geometry === 'string') {
-                        const trimmed = zone.geometry.trim();
-                        // Try JSON parse first
-                        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-                            try {
-                                geom = JSON.parse(trimmed);
-                            } catch (e) {
-                                console.error(
-                                    `Failed to parse zone ${zone.id} geometry as JSON:`,
-                                    trimmed.substring(0, 100),
-                                );
-                                return null;
-                            }
-                        } else {
-                            console.error(
-                                `Zone ${zone.id} geometry is not JSON format:`,
-                                trimmed.substring(0, 100),
-                            );
-                            return null;
-                        }
-                    } else {
-                        geom = zone.geometry;
-                    }
-
-                    // Validate geometry
-                    if (!geom || !geom.type) {
-                        console.error(`Zone ${zone.id} has invalid geometry structure:`, geom);
-                        return null;
-                    }
-
-                    // Check if geometry has coordinates (Polygon, LineString, Point, etc.)
-                    if ('coordinates' in geom && !Array.isArray((geom as any).coordinates)) {
-                        console.error(
-                            `Zone ${zone.id} geometry coordinates is not an array:`,
-                            geom,
-                        );
-                        return null;
-                    }
-
-                    return {
-                        type: 'Feature' as const,
-                        geometry: geom,
-                        properties: { id: zone.id, name: zone.name, type: zone.zoneType },
-                    } as GeoJSON.Feature;
-                } catch (e) {
-                    console.error(`Failed to parse zone ${zone.id} geometry:`, e, zone.geometry);
-                    return null;
-                }
-            })
-            .filter((f): f is GeoJSON.Feature => f !== null);
-
-        // console.log('Parsed no-fly zone features:', features.length);
-
-        const data: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features };
-        const source = mapRef.current.getSource('no-fly-zones') as mapboxgl.GeoJSONSource;
-        if (source) {
-            source.setData(data);
-            // console.log('Updated existing no-fly-zones source');
-        } else {
-            // console.log('Creating new no-fly-zones source');
-            mapRef.current.addSource('no-fly-zones', {
-                type: 'geojson',
-                data,
-            });
-            mapRef.current.addLayer({
-                id: 'no-fly-zones-fill',
-                type: 'fill',
-                source: 'no-fly-zones',
-                paint: {
-                    'fill-color': '#ef4444',
-                    'fill-opacity': 0.2,
-                },
-            });
-            mapRef.current.addLayer({
-                id: 'no-fly-zones-stroke',
-                type: 'line',
-                source: 'no-fly-zones',
-                paint: {
-                    'line-color': '#ef4444',
-                    'line-width': 2,
                     'line-opacity': 0.8,
                 },
             });
@@ -937,362 +885,11 @@ export default function EnhancedMonitoringMap() {
         setMissionProgress({});
     }
 
-    function processTelemetry(payload: DroneTelemetry | DroneTelemetry[]) {
-        const items = Array.isArray(payload) ? payload : [payload];
-        let anyChange = false;
-
-        for (const t of items) {
-            const id = t.id;
-            const lon = t.lon;
-            const lat = t.lat;
-            const heading = t.heading ?? 0;
-            const now = Date.now();
-
-            let current = dronesRef.current[id];
-            if (!current) {
-                const drone = drones.find(d => d.id.toString() === id || d.serialNumber === id);
-                current = {
-                    ...t,
-                    path: [[lon, lat]],
-                    status: drone?.status,
-                    name: drone?.name,
-                    batteryHistory: t.battery ? [{ time: now, value: t.battery }] : [],
-                    altitudeHistory: t.altitude ? [{ time: now, value: t.altitude }] : [],
-                    speedHistory: t.speed ? [{ time: now, value: t.speed }] : [],
-                } as DroneState;
-                dronesRef.current[id] = current;
-            } else {
-                current.path.push([lon, lat]);
-                if (current.path.length > TRAIL_LENGTH) current.path.shift();
-                current.lat = lat;
-                current.lon = lon;
-                current.heading = heading;
-                current.altitude = t.altitude ?? current.altitude;
-                current.speed = t.speed ?? current.speed;
-                current.battery = t.battery ?? current.battery;
-                current.timestamp = t.timestamp;
-
-                if (t.battery !== undefined) {
-                    current.batteryHistory.push({ time: now, value: t.battery });
-                    if (current.batteryHistory.length > MAX_HISTORY_POINTS) {
-                        current.batteryHistory.shift();
-                    }
-                }
-                if (t.altitude !== undefined) {
-                    current.altitudeHistory.push({ time: now, value: t.altitude });
-                    if (current.altitudeHistory.length > MAX_HISTORY_POINTS) {
-                        current.altitudeHistory.shift();
-                    }
-                }
-                if (t.speed !== undefined) {
-                    current.speedHistory.push({ time: now, value: t.speed });
-                    if (current.speedHistory.length > MAX_HISTORY_POINTS) {
-                        current.speedHistory.shift();
-                    }
-                }
-            }
-
-            upsertMarker(current);
-            if (checkNoFlyZoneViolations(current)) {
-                console.warn(`Drone ${id} is in no-fly zone!`);
-            }
-            anyChange = true;
-        }
-
-        if (anyChange) {
-            updateTrailsSource();
-            forceRerender(s => s + 1);
-        }
-    }
-
     useEffect(() => {
-        DroneClient.findAll().then(setDrones).catch(console.error);
-        loadNoFlyZones();
+        // loadNoFlyZones();
         loadFlightPermits();
         loadMissions();
     }, []);
-
-    // Populate dronesRef.current from drones state (even without telemetry)
-    useEffect(() => {
-        drones.forEach(drone => {
-            const id = drone.id.toString();
-            if (!dronesRef.current[id]) {
-                // Initialize drone state even without telemetry data
-                // Use default location (center of map) if no telemetry available
-                dronesRef.current[id] = {
-                    id,
-                    lat: 10.7626, // Default to map center
-                    lon: 106.6648,
-                    altitude: undefined,
-                    heading: undefined,
-                    speed: undefined,
-                    battery: undefined,
-                    timestamp: Date.now(),
-                    path: [],
-                    status: drone.status,
-                    name: drone.name,
-                    batteryHistory: [],
-                    altitudeHistory: [],
-                    speedHistory: [],
-                } as DroneState;
-            } else {
-                // Update existing drone with API data (status, name)
-                dronesRef.current[id].status = drone.status;
-                dronesRef.current[id].name = drone.name;
-            }
-        });
-        // Force re-render to update visible drones
-        forceRerender(s => s + 1);
-    }, [drones]);
-
-    useEffect(() => {
-        if (!mapContainer.current) return;
-        if (!mapRef.current) {
-            mapRef.current = new mapboxgl.Map({
-                container: mapContainer.current,
-                style: 'mapbox://styles/mapbox/streets-v12',
-                center: [106.6648, 10.7626] as LngLatLike,
-                zoom: 12,
-            });
-
-            mapRef.current.on('load', () => {
-                readyRef.current = true;
-                setMapReady(true);
-
-                mapRef.current!.addSource('drone-trails', {
-                    type: 'geojson',
-                    data: { type: 'FeatureCollection', features: [] },
-                });
-                mapRef.current!.addLayer({
-                    id: 'trails-layer',
-                    type: 'line',
-                    source: 'drone-trails',
-                    paint: { 'line-width': 3, 'line-opacity': 0.8, 'line-color': '#06b6d4' },
-                });
-
-                // Zones and missions will be added via useEffect when data is ready
-            });
-        }
-
-        // Only subscribe to real socket events if not using fake telemetry
-        if (!useFakeTelemetry) {
-            const handleLocationUpdate = (data: { droneId: string; location: any }) => {
-                const loc = data.location;
-                processTelemetry({
-                    id: data.droneId,
-                    lat: loc.latitude ?? loc.lat,
-                    lon: loc.longitude ?? loc.lon,
-                    altitude: loc.altitude,
-                    heading: loc.heading,
-                    speed: loc.speed,
-                    battery: loc.battery,
-                    timestamp: Date.now(),
-                });
-            };
-
-            const handleTelemetryData = (data: { droneId: string; telemetry: any }) => {
-                // Handle raw telemetry data from Android app (fallback)
-                if (data.telemetry && data.droneId) {
-                    processTelemetry({
-                        id: data.droneId,
-                        lat: data.telemetry.latitude,
-                        lon: data.telemetry.longitude,
-                        altitude: data.telemetry.altitude_m,
-                        heading: data.telemetry.heading_deg,
-                        speed: data.telemetry.speed_mps,
-                        battery: data.telemetry.battery_percent,
-                        timestamp: Date.now(),
-                    });
-                }
-            };
-
-            const handleStatusUpdate = (data: { droneId: string; status: any }) => {
-                const drone = dronesRef.current[data.droneId];
-                if (drone) {
-                    drone.status = data.status.status;
-                    upsertMarker(drone);
-                    forceRerender(s => s + 1);
-                }
-            };
-
-            // subscribe('drone:location_updated', handleLocationUpdate);
-            // subscribe('telemetry:data', handleTelemetryData);
-            // subscribe('drone:status_updated', handleStatusUpdate);
-
-            return () => {
-                // unsubscribe('drone:location_updated', handleLocationUpdate);
-                // unsubscribe('telemetry:data', handleTelemetryData);
-                // unsubscribe('drone:status_updated', handleStatusUpdate);
-            };
-        } else {
-            // console.log('Using fake telemetry mode');
-        }
-    }, [useFakeTelemetry]);
-
-    // Fake telemetry generator
-    useEffect(() => {
-        if (!useFakeTelemetry || !mapReady) return;
-
-        const fakeDroneStates = new Map<
-            string,
-            {
-                missionId: number;
-                missionDrone: any;
-                waypoints: any[];
-                currentWaypointIndex: number;
-                progress: number; // 0-1 between waypoints
-                speed: number;
-                battery: number;
-            }
-        >();
-
-        // Initialize fake drones from active missions
-        const activeMissions = missions.filter(m => m.status === 'in_progress');
-        activeMissions.forEach(mission => {
-            if (!mission.missionDrones || mission.missionDrones.length === 0) return;
-
-            mission.missionDrones.forEach((md, idx) => {
-                if (!md.waypoints || md.waypoints.length < 2) return;
-
-                const sortedWaypoints = [...md.waypoints].sort((a, b) => a.seqNumber - b.seqNumber);
-                const droneId = md.droneId?.toString() || `fake-${mission.id}-${idx}`;
-
-                fakeDroneStates.set(droneId, {
-                    missionId: mission.id,
-                    missionDrone: md,
-                    waypoints: sortedWaypoints,
-                    currentWaypointIndex: 0,
-                    progress: 0,
-                    speed: sortedWaypoints[0]?.speedMps || 10,
-                    battery: 100 - idx * 10, // Different battery levels
-                });
-            });
-        });
-
-        // If no missions, create some random fake drones
-        if (fakeDroneStates.size === 0 && drones.length > 0) {
-            drones.slice(0, 3).forEach((drone, idx) => {
-                const centerLat = 10.7626;
-                const centerLon = 106.6648;
-                const radius = 0.01; // ~1km
-
-                const waypoints = Array.from({ length: 5 }, (_, i) => ({
-                    seqNumber: i,
-                    geoPoint: {
-                        type: 'Point',
-                        coordinates: [
-                            centerLon + radius * Math.cos((i * 2 * Math.PI) / 5),
-                            centerLat + radius * Math.sin((i * 2 * Math.PI) / 5),
-                        ],
-                    },
-                    altitudeM: 50 + i * 10,
-                    speedMps: 8 + Math.random() * 4,
-                }));
-
-                fakeDroneStates.set(drone.id.toString(), {
-                    missionId: 0,
-                    missionDrone: { droneId: drone.id },
-                    waypoints,
-                    currentWaypointIndex: 0,
-                    progress: 0,
-                    speed: waypoints[0].speedMps,
-                    battery: 100 - idx * 15,
-                });
-            });
-        }
-
-        const interval = setInterval(() => {
-            fakeDroneStates.forEach((state, droneId) => {
-                const { waypoints, currentWaypointIndex, progress } = state;
-
-                if (waypoints.length === 0) return;
-
-                const currentWp = waypoints[currentWaypointIndex];
-                const nextWp = waypoints[(currentWaypointIndex + 1) % waypoints.length];
-
-                // Parse waypoint coordinates
-                let currentCoords: [number, number];
-                let nextCoords: [number, number];
-
-                try {
-                    if (typeof currentWp.geoPoint === 'string') {
-                        if (currentWp.geoPoint.trim().startsWith('{')) {
-                            const parsed = JSON.parse(currentWp.geoPoint);
-                            currentCoords = parsed.coordinates;
-                        } else {
-                            const coords = pointFromWkt(currentWp.geoPoint);
-                            if (!coords) return;
-                            currentCoords = coords;
-                        }
-                    } else {
-                        currentCoords = currentWp.geoPoint.coordinates;
-                    }
-
-                    if (typeof nextWp.geoPoint === 'string') {
-                        if (nextWp.geoPoint.trim().startsWith('{')) {
-                            const parsed = JSON.parse(nextWp.geoPoint);
-                            nextCoords = parsed.coordinates;
-                        } else {
-                            const coords = pointFromWkt(nextWp.geoPoint);
-                            if (!coords) return;
-                            nextCoords = coords;
-                        }
-                    } else {
-                        nextCoords = nextWp.geoPoint.coordinates;
-                    }
-                } catch (e) {
-                    console.error('Failed to parse waypoint:', e);
-                    return;
-                }
-
-                // Interpolate position
-                const newProgress = progress + 0.02; // Move 2% per update
-                const finalProgress = newProgress > 1 ? 0 : newProgress;
-
-                const lon = currentCoords[0] + (nextCoords[0] - currentCoords[0]) * finalProgress;
-                const lat = currentCoords[1] + (nextCoords[1] - currentCoords[1]) * finalProgress;
-
-                // Calculate heading
-                const dx = nextCoords[0] - currentCoords[0];
-                const dy = nextCoords[1] - currentCoords[1];
-                const heading = (Math.atan2(dy, dx) * 180) / Math.PI;
-
-                // Update state
-                state.progress = finalProgress;
-                if (finalProgress === 0) {
-                    state.currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.length;
-                }
-
-                // Gradually decrease battery
-                state.battery = Math.max(20, state.battery - 0.1);
-
-                // Send fake telemetry
-                processTelemetry({
-                    id: droneId,
-                    lat,
-                    lon,
-                    altitude: currentWp.altitudeM || 50,
-                    heading,
-                    speed: state.speed,
-                    battery: Math.round(state.battery),
-                    timestamp: Date.now(),
-                });
-
-                // Update progress if observing a mission
-                if (observingMissionId && state.missionId === observingMissionId) {
-                    const mission = missions.find(m => m.id === observingMissionId);
-                    if (mission) {
-                        const progress = calculateDroneProgress(droneId, mission);
-                        setMissionProgress(prev => ({ ...prev, [droneId]: progress }));
-                    }
-                }
-            });
-        }, 500); // Update every 500ms
-
-        return () => {
-            clearInterval(interval);
-        };
-    }, [useFakeTelemetry, mapReady, missions, drones, observingMissionId]);
 
     // Update progress for observed mission drones periodically
     useEffect(() => {
@@ -1374,18 +971,13 @@ export default function EnhancedMonitoringMap() {
         }
     }, [showFlightPermits]);
 
-    // Add no-fly zones to map when zones data or map is ready
-    useEffect(() => {
-        if (mapRef.current && mapReady && noFlyZones.length > 0) {
-            // console.log('Adding no-fly zones to map:', noFlyZones.length);
-            addNoFlyZonesToMap(noFlyZones);
-        }
-    }, [noFlyZones, mapReady]);
-
     // Add flight permits to map when permits data or map is ready
     useEffect(() => {
         if (mapRef.current && mapReady && flightPermits.length > 0) {
             // console.log('Adding flight permits to map:', flightPermits.length);
+            /**
+             * @mapReady
+             */
             addFlightPermitsToMap(flightPermits);
         }
     }, [flightPermits, mapReady]);
@@ -1396,6 +988,9 @@ export default function EnhancedMonitoringMap() {
             const activeMissions = missions.filter(m => m.status === 'in_progress');
             if (activeMissions.length > 0) {
                 // console.log('Adding missions to map:', activeMissions.length);
+                /**
+                 * @mapReady
+                 */
                 addMissionsToMap(activeMissions);
             }
         }
@@ -1429,6 +1024,9 @@ export default function EnhancedMonitoringMap() {
     const observedMissionDroneIds =
         observedMission?.missionDrones?.map(md => md.droneId?.toString()).filter(Boolean) || [];
 
+    /**
+     * @deprecated
+     */
     const visibleDrones = Object.values(dronesRef.current).filter(d => {
         // If observing a mission, only show drones in that mission
         if (observingMissionId && !observedMissionDroneIds.includes(d.id)) {
@@ -1439,14 +1037,17 @@ export default function EnhancedMonitoringMap() {
         return d.status === statusFilter;
     });
 
-    const metrics = {
-        total: Object.keys(dronesRef.current).length,
-        flying: Object.values(dronesRef.current).filter(d => d.status === 'flying').length,
-        avgBattery:
-            Object.values(dronesRef.current).reduce((sum, d) => sum + (d.battery ?? 0), 0) /
-            Math.max(visibleDrones.length, 1),
-        inMission: Object.values(dronesRef.current).filter(d => d.status === 'in_mission').length,
-    };
+    /**
+     * Not used yet
+     */
+    // const metrics = {
+    //     total: Object.keys(dronesRef.current).length,
+    //     flying: Object.values(dronesRef.current).filter(d => d.status === 'flying').length,
+    //     avgBattery:
+    //         Object.values(dronesRef.current).reduce((sum, d) => sum + (d.battery ?? 0), 0) /
+    //         Math.max(visibleDrones.length, 1),
+    //     inMission: Object.values(dronesRef.current).filter(d => d.status === 'in_mission').length,
+    // };
 
     const prepareChartData = (history: ChartDataPoint[], label: string, color: string) => {
         if (history.length === 0) {
@@ -1488,7 +1089,7 @@ export default function EnhancedMonitoringMap() {
     return (
         <div className="w-full h-screen flex">
             {/* Map element */}
-            {/* <div ref={mapContainer} className="flex-1 relative" /> */}
+            <div ref={mapContainerRef} className="flex-1 relative" />
 
             <aside className="w-96 p-4 bg-white border-l border-slate-200 overflow-y-auto">
                 <MonitoringTabs
@@ -1582,7 +1183,7 @@ export default function EnhancedMonitoringMap() {
                                 />
                             </div>
 
-                            <div className="flex items-center justify-between mt-2 pt-2 border-t">
+                            {/* <div className="flex items-center justify-between mt-2 pt-2 border-t">
                                 <Label htmlFor="fake-telemetry" className="flex items-center gap-2">
                                     <Activity className="w-4 h-4" />
                                     Fake Telemetry
@@ -1592,7 +1193,7 @@ export default function EnhancedMonitoringMap() {
                                     checked={useFakeTelemetry}
                                     onCheckedChange={setUseFakeTelemetry}
                                 />
-                            </div>
+                            </div> */}
                         </CardContent>
                     </Card>
 
