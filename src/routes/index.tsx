@@ -35,7 +35,7 @@ import FlightPermitEdit from '@/pages/models/flight-permit/FlightPermitEdit';
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
-const Dashboard = lazy(() => import('../pages/Dashboard'));
+const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'));
 const DroneList = lazy(() => import('../pages/models/drone/DroneList'));
 const DroneControl = lazy(() => import('../pages/control/DroneControl'));
 const MavlinkDemo = lazy(() => import('../pages/demo/MavlinkDemo'));
