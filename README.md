@@ -71,3 +71,62 @@ export default defineConfig([
     },
 ]);
 ```
+
+**Core Libraries:**
+- **`mapbox-gl`** (^3.16.0) - Engine render bản đồ 2D/3D với hiệu năng cao
+  - Style customization
+  - Real-time marker updates
+  - Layer management
+  
+- **`@mapbox/mapbox-gl-draw`** (^1.5.1) - Công cụ vẽ trên map
+  - Vẽ polygon (no-fly zones, flight permits)
+  - Line drawing (mission routes)
+  - Point markers (waypoints)
+
+**Utilities:**
+- **`@turf/turf`** (^7.2.0) - Phân tích geospatial
+  - Tính khoảng cách giữa các điểm
+  - Point-in-polygon detection
+  - Area calculations
+  - Geometry transformations
+
+### WebSocket & Real-time Communication
+
+**Core:**
+- **`socket.io-client`** (^4.8.1) - WebSocket client với tính năng:
+  - Auto-reconnection
+  - Message queuing khi disconnect
+  - Multiple subscriptions per channel
+  - Namespace support (`/drone`)
+  - Event-based architecture
+
+**Implementation:**
+- Provider: `src/providers/WebSocketProvider.tsx`
+- Real-time events:
+  - `telemetry` - Dữ liệu vị trí, pin, tốc độ từ drone
+  - `status-changed` - Cập nhật trạng thái drone
+  - `mission-update` - Tiến độ nhiệm vụ
+  - `video-stream` - H.264 video frames
+
+### State Management
+
+**Real-time Data:**
+- **`zustand`** (^5.0.8) - Global state cho drone telemetry
+  - `useActiveDroneStore` - Store vị trí real-time của drones
+  - Lightweight, không cần provider wrapper
+  - TypeScript-first
+
+**Server State:**
+- **`@tanstack/react-query`** (^5.90.5) - Quản lý API calls
+  - Auto caching & invalidation
+  - Background refetch
+  - Optimistic updates
+  - Used for CRUD operations (missions, drones, permits)
+
+### Visualization
+
+**Charts & Metrics:**
+- **`chart.js`** (^4.5.1) + **`react-chartjs-2`** (^5.3.1)
+  - Battery level history
+  - Altitude/speed charts
+  - Mission progress graphs
