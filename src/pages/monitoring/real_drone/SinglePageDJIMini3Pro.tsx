@@ -34,27 +34,27 @@ export default function SinglePageDJIMini3Pro() {
         };
     }, [droneId]);
 
-    const testSend = () => {
-        const message = {
-            action: 'telemetry:data',
-            payload: {
-                droneId: droneId,
-                telemetry: {
-                    latitude: 10.76315, // ~60–70m north of center
-                    longitude: 106.66542, // ~70m east of center
-                    altitude: 48.6, // meters AGL
-                    heading: 132.4, // degrees (SE direction)
-                    speed: 11.8, // m/s (~42 km/h)
-                    battery: 67, // percent
-                },
-            },
-        };
+    // const testSend = () => {
+    //     const message = {
+    //         action: 'telemetry:data',
+    //         payload: {
+    //             droneId: droneId,
+    //             telemetry: {
+    //                 latitude: 10.76315, // ~60–70m north of center
+    //                 longitude: 106.66542, // ~70m east of center
+    //                 altitude: 48.6, // meters AGL
+    //                 heading: 132.4, // degrees (SE direction)
+    //                 speed: 11.8, // m/s (~42 km/h)
+    //                 battery: 67, // percent
+    //             },
+    //         },
+    //     };
 
-        send(message);
-    };
-    setInterval(() => {
-        testSend();
-    }, 1000);
+    //     send(message);
+    // };
+    // setInterval(() => {
+    //     testSend();
+    // }, 1000);
 
     // Subscribe to telemetry:data (fallback nếu có)
     const handleUpdateLocation = useCallback(
