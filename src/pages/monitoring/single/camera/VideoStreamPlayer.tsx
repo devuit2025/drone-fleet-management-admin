@@ -53,12 +53,14 @@ export function VideoStreamPlayer({
             timestamp: new Date().toISOString(),
         };
 
+        console.log('start video:', payload)
+
         const message = {
             action: 'drone:command',
             payload,
         };
 
-        send(message);
+        // send(message);
 
         if (!videoRef.current || jmuxerRef.current) return;
 
@@ -177,7 +179,7 @@ export function VideoStreamPlayer({
      * =============================*/
     return (
         <Card className="w-full h-full p-0">
-            <video ref={videoRef} className="bg-black rounded-md" />
+            <video ref={videoRef} className="bg-black rounded-md max-w-[280px]" />
         </Card>
     );
 }

@@ -26,13 +26,13 @@ export default function SinglePageDJIMini3Pro() {
         DroneLayerManager.render(mapRef.current, [activeDrone]);
     }, [mapRef, droneId, dronesMap]); // listen to mapRef, droneId, and drone data
 
-    useEffect(() => {
-        subscribe('drone:location_updated', handleUpdateLocation);
+    // useEffect(() => {
+    //     subscribe('telemetry:data', handleUpdateTelemetry);
 
-        return () => {
-            unsubscribe('drone:location_updated', handleUpdateLocation);
-        };
-    }, [droneId]);
+    //     return () => {
+    //         unsubscribe('telemetry:data', handleUpdateTelemetry);
+    //     };
+    // }, [droneId]);
 
     // const testSend = () => {
     //     const message = {
@@ -57,13 +57,14 @@ export default function SinglePageDJIMini3Pro() {
     // }, 1000);
 
     // Subscribe to telemetry:data (fallback nếu có)
-    const handleUpdateLocation = useCallback(
-        (data: { droneId: string; telemetry: any } | any) => {
-            const map = DroneTelemetryMapper.toActiveDroneStateFromDJIMini3Pro(data.location);
-            useActiveDroneStore.getState().upsertDrone(data.droneId, map);
-        },
-        [droneId],
-    );
+    // const handleUpdateTelemetry = useCallback(
+    //     (data: { droneId: string; telemetry: any } | any) => {
+    //         console.log("Update telemetry: ", data.telemetry)
+    //         const map = DroneTelemetryMapper.toActiveDroneStateFromDJIMini3Pro(data.telemetry);
+    //         useActiveDroneStore.getState().upsertDrone(data.droneId, map);
+    //     },
+    //     [droneId],
+    // );
 
     return (
         <div className="fixed inset-0 ">

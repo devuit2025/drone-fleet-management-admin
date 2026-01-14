@@ -49,12 +49,20 @@ export class DroneTelemetryMapper {
     }
 
     static toActiveDroneStateFromDJIMini3Pro(msg: any): Partial<ActiveDroneState> {
+//         {
+//     "latitude": 10.76315,
+//     "longitude": 106.66542,
+//     "altitude": 48.6,
+//     "heading": 132.4,
+//     "speed": 11.8,
+//     "battery": 67
+// }
         return {
             position: {
                 lat: msg.latitude,
                 lng: msg.longitude,
-                altitudeM: msg.altitude,
-                relativeAltitudeM: msg.extra?.relative_altitude_m ?? null,
+                altitudeM: msg?.altitude,
+                relativeAltitudeM: msg.altitude ?? null,
             },
             motion: {
                 speedMps: msg.speed ?? null,
@@ -65,6 +73,9 @@ export class DroneTelemetryMapper {
                     vz: msg.extra?.vz ?? null,
                 },
             },
+            battery: {
+                remainingPercent: msg.battery ?? null
+            }
         };
     }
 
