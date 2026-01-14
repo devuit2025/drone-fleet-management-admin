@@ -1,6 +1,7 @@
 export interface ActiveDroneState {
     droneId: any;
     missionId: any; // ← current assigned / active mission
+    name: string;
 
     // Timing / connection
     lastUpdate: number; // ms timestamp of last telemetry
@@ -27,8 +28,8 @@ export interface ActiveDroneState {
 
     // Battery (camelCase, MAVLink-aligned)
     battery: {
-        voltageMv: number | null;        // SYS_STATUS.voltage_battery (mV)
-        currentCa: number | null;        // SYS_STATUS.current_battery (cA)
+        voltageMv: number | null; // SYS_STATUS.voltage_battery (mV)
+        currentCa: number | null; // SYS_STATUS.current_battery (cA)
         remainingPercent: number | null; // SYS_STATUS.battery_remaining (%)
 
         // Optional / advanced (BATTERY_STATUS)

@@ -43,7 +43,12 @@ export const useActiveDroneStore = create<ActiveDroneStore>(set => ({
                         ...createEmptyDroneState(droneId),
                         missionId: null, // or d.missionId if exists
                         lastUpdate: Date.now(),
+                        name: d.name,
                     };
+
+                    if (droneId == import.meta.env.VITE_DJI_MINI_3_PRO_ID) {
+                        // newDrones[droneId].connected = true // static
+                    }
                 }
                 return { drones: newDrones };
             });

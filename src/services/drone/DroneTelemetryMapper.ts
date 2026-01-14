@@ -28,9 +28,7 @@ export class DroneTelemetryMapper {
     /**
      * Map raw telemetry into ActiveDroneState (partial update)
      */
-    static toActiveDroneState(
-        msg: RawDroneTelemetry
-    ): Partial<ActiveDroneState> {
+    static toActiveDroneState(msg: RawDroneTelemetry): Partial<ActiveDroneState> {
         return {
             position: {
                 lat: msg.lat,
@@ -41,6 +39,26 @@ export class DroneTelemetryMapper {
             motion: {
                 speedMps: msg.speed_mps,
                 headingDeg: msg.heading_deg,
+                velocity: {
+                    vx: msg.extra?.vx ?? null,
+                    vy: msg.extra?.vy ?? null,
+                    vz: msg.extra?.vz ?? null,
+                },
+            },
+        };
+    }
+
+    static toActiveDroneStateFromDJIMini3Pro(msg: any): Partial<ActiveDroneState> {
+        return {
+            position: {
+                lat: msg.latitude,
+                lng: msg.longitude,
+                altitudeM: msg.altitude,
+                relativeAltitudeM: msg.extra?.relative_altitude_m ?? null,
+            },
+            motion: {
+                speedMps: msg.speed ?? null,
+                headingDeg: msg.heading ?? null,
                 velocity: {
                     vx: msg.extra?.vx ?? null,
                     vy: msg.extra?.vy ?? null,

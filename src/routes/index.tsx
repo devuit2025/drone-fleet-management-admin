@@ -34,12 +34,23 @@ import FlightPermitCreate from '@/pages/models/flight-permit/FlightPermitCreate'
 import FlightPermitEdit from '@/pages/models/flight-permit/FlightPermitEdit';
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
+import VideoStreamModal from '@/components/VideoStreamModal';
 
 const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'));
 const DroneList = lazy(() => import('../pages/models/drone/DroneList'));
 const DroneControl = lazy(() => import('../pages/control/DroneControl'));
 const MavlinkDemo = lazy(() => import('../pages/demo/MavlinkDemo'));
+
+/**
+ * @activePages
+ */
 const EnhancedMonitoringMap = lazy(() => import('../pages/monitoring/EnhancedMonitoringMap'));
+const SingleDrone = lazy(() => import('../pages/monitoring/single/SingleDrone'));
+const SinglePageDJIMini3Pro = lazy(
+    () => import('../pages/monitoring/real_drone/SinglePageDJIMini3Pro'),
+);
+const DroneCamera = lazy(() => import('../pages/monitoring/single/camera/VideoStreamPlayer'));
+
 const FlightsAnalytics = lazy(() => import('../pages/analytics/FlightsAnalytics'));
 const Reports = lazy(() => import('../pages/analytics/Reports'));
 const Trends = lazy(() => import('../pages/analytics/Trends'));
@@ -121,6 +132,35 @@ export const routes: RouteObject[] = [
             // Alerts routes
             { path: 'alerts/logs', element: <AlertsLogs /> },
         ],
+    },
+    {
+        path: '/monitoring/single/:droneId',
+        element: (
+            <PrivateRoute>
+                <SinglePageDJIMini3Pro />
+            </PrivateRoute>
+        ),
+    },
+    {
+        path: '/monitoring/single/:droneId/modal',
+        element: (
+            <PrivateRoute>
+                <VideoStreamModal
+                // open={isVideoModalOpen}
+                // onOpenChange={setIsVideoModalOpen}
+                // droneId={drone15}
+                // droneTelemetry={dronesRef.current[selectedDroneId]}
+                />
+            </PrivateRoute>
+        ),
+    },
+    {
+        path: '/monitoring/single/:droneId/camera',
+        element: (
+            <PrivateRoute>
+                <DroneCamera />
+            </PrivateRoute>
+        ),
     },
 ];
 

@@ -66,8 +66,6 @@ ChartJS.register(
     Filler,
 );
 
-mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
-
 export type DroneTelemetry = {
     id: string;
     lat: number;
@@ -1015,6 +1013,7 @@ export default function EnhancedMonitoringMap() {
 
     // Populate dronesRef.current from drones state (even without telemetry)
     useEffect(() => {
+        console.log(drones);
         drones.forEach(drone => {
             const id = drone.id.toString();
             if (!dronesRef.current[id]) {

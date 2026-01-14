@@ -30,22 +30,15 @@ import {
     Legend,
     Filler,
 } from 'chart.js';
-import {
-    AlertTriangle,
-    Plane,
-    Layers,
-    Square,
-} from 'lucide-react';
+import { AlertTriangle, Plane, Layers, Square } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 import { pointFromWkt } from '@/lib/geo';
 import VideoStreamModal from '@/components/VideoStreamModal';
 import { MonitoringTabs } from './MonitoringTabs';
-import { createAppMap } from '@/services/mapbox/createMap';
-import { renderNoFlyZones } from '@/services/mapbox/layers/noFlyZoneLayer';
 import { useActiveDroneStore } from '@/stores/active/useActiveDroneStore';
-import type { ActiveDroneState } from '@/stores/active/useActiveDroneType';
 import { DroneLayerManager } from '@/services/mapbox/layers/DroneLayerManager';
+import { useAppMap } from '@/hooks/useAppMap';
 
 ChartJS.register(
     CategoryScale,
@@ -57,8 +50,6 @@ ChartJS.register(
     Legend,
     Filler,
 );
-
-mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
 export type DroneTelemetry = {
     id: string;
@@ -86,64 +77,19 @@ type ChartDataPoint = {
 };
 
 export default function EnhancedMonitoringMap() {
-    /**
-     * Single initial logic
-     */
-    useEffect(() => {
-        const init = async () => {
-            /**
-             * @noFlyZone
-             */
-            const noFlyZones = await NoFlyZoneClient.findAll();
-            setNoFlyZones(noFlyZones)
-            handleMapInitial({ noFlyZones });
-        };
-        init();
-    }, []);
-
-    /**
-     * @map 
-     */
-    const mapContainerRef = useRef<HTMLDivElement | null>(null);
-    const mapRef = useRef<mapboxgl.Map | null>(null);
-
-    const handleMapInitial = (mapOptions: any) => {
-        if (!mapContainerRef.current || mapRef.current) return;
-
-        mapRef.current = createAppMap({
-            container: mapContainerRef.current,
-            onReady: map => {
-                renderNoFlyZones(map, mapOptions.noFlyZones)
-            }},
-        );
-
-        return () => {
-            mapRef.current?.remove();
-            mapRef.current = null;
-        };
-    }
-
-    /**
-     * @noFlyZone 
-     */
-    const [noFlyZones, setNoFlyZones] = useState<NoFlyZone[]>([]);
+    const { mapRef, mapContainerRef } = useAppMap();
 
     /**
      * @activeDrones
      */
-   const dronesMap = useActiveDroneStore(s => s.drones);
+    const dronesMap = useActiveDroneStore(s => s.drones);
 
-    useEffect(() => {   
+    useEffect(() => {
         if (!mapRef.current) return;
         const activeDrones = Object.values(dronesMap);
         // renderDrones(mapRef.current, activeDrones);
-        DroneLayerManager.render(
-            mapRef.current,
-            activeDrones
-        );
+        DroneLayerManager.render(mapRef.current, activeDrones);
     }, [dronesMap]);
-
-
 
     const dronesRef = useRef<Record<string, DroneState>>({});
     const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
@@ -1257,14 +1203,14 @@ export default function EnhancedMonitoringMap() {
             `}</style>
 
             {/* Video Stream Modal */}
-            {selectedDroneId && (
+            {/* {selectedDroneId && (
                 <VideoStreamModal
                     open={isVideoModalOpen}
                     onOpenChange={setIsVideoModalOpen}
                     droneId={selectedDroneId}
                     droneTelemetry={dronesRef.current[selectedDroneId]}
                 />
-            )}
+            )} */}
         </div>
     );
 }

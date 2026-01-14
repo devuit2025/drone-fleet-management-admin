@@ -1,66 +1,53 @@
-import {
-    Card,
-    CardContent,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-    Tooltip as UITooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import {
-    Battery,
-    Gauge,
-    MapPin,
-    AlertTriangle,
-    Plane,
-    Layers,
-} from 'lucide-react';
+import { Battery, Gauge, MapPin, AlertTriangle, Plane, Layers } from 'lucide-react';
 import { useActiveDroneStore } from '@/stores/active/useActiveDroneStore';
 import type { ActiveDroneState } from '@/stores/active/useActiveDroneType';
+import { focusDrone } from '@/services/mapbox/actions/focusDrone';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface DroneListContentProps {
-    selectedDroneId: string | null;
-    setSelectedDroneId: (id: string) => void;
     mapRef: React.RefObject<any>;
-    setIsVideoModalOpen: (open: boolean) => void;
 }
 
-export function DroneListContent({
-    selectedDroneId,
-    setSelectedDroneId,
-    mapRef,
-    setIsVideoModalOpen,
-}: DroneListContentProps) {
+export function DroneListContent({ mapRef }: DroneListContentProps) {
+    const [selectedDroneId, setSelectedDroneId] = useState();
     // Active drone store (source of truth)
     const dronesMap = useActiveDroneStore(s => s.drones);
-
     // Convert Record -> Array
     const activeDrones: ActiveDroneState[] = Object.values(dronesMap);
 
+    const onFocusDrone = (droneId: string) => {
+        if (!mapRef.current) return;
+        focusDrone(mapRef.current, droneId, { bearing: true }, () => setSelectedDroneId(droneId));
+    };
+
+    const navigate = useNavigate();
+
     return (
-        <div className="max-h-[400px] overflow-auto space-y-3">
+        <div className="overflow-auto space-y-3 p-1">
             {activeDrones.map(d => {
                 const selected = selectedDroneId === d.droneId;
-                const isConnected = d.connected
-                const isFlying =
-                    d.system.armed === true &&
-                    (d.motion.speedMps ?? 0) > 1;
+                const isConnected = d.connected;
+                const isFlying = d.system.armed === false && (d.motion.speedMps ?? 0) > 1;
 
-                const hasError = d.connected === false;
+                // const hasError = d.connected === false;
+                const hasError = false;
 
                 return (
                     <Card
                         key={d.droneId}
-                        className="transition-all cursor-pointer hover:bg-slate-50 py-1"
-                        onClick={() => setSelectedDroneId(d.droneId)}
+                        className={`transition-all cursor-pointer py-1 ${
+                            selected ? 'ring-2 ring-blue-500 bg-blue-50 ' : 'hover:bg-slate-50'
+                        }`}
+                        // onClick={() => onFocusDrone(d.droneId)}
                     >
                         <CardContent className="p-4 space-y-3">
                             {/* Header */}
                             <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                     {/* Connection dot */}
                                     <span
                                         className={`w-2.5 h-2.5 rounded-full ${
@@ -72,7 +59,7 @@ export function DroneListContent({
 
                                     <div>
                                         <div className="font-medium text-sm">
-                                            Drone {d.droneId}
+                                            {d.name}
                                             {/* display drone name here */}
                                         </div>
 
@@ -86,9 +73,7 @@ export function DroneListContent({
                                                         : 'border-slate-300 text-slate-500'
                                                 }`}
                                             >
-                                                {d.connected
-                                                    ? 'Kết nối'
-                                                    : 'Không kết nối'}
+                                                {d.connected ? 'Kết nối' : 'Không kết nối'}
                                             </Badge>
 
                                             {/* Flying */}
@@ -119,41 +104,29 @@ export function DroneListContent({
                                 {/* Telemetry */}
                                 <div className="text-right text-xs space-y-1 text-slate-600">
                                     <div className="flex items-center gap-1 justify-end">
-                                            <Battery className="w-3 h-3" />
+                                        <Battery className="w-3 h-3" />
 
-                                        {d.battery?.remainingPercent != null
-                                            ? (
-                                                <span>
-                                                    {d.battery.remainingPercent}%
-                                                </span>
-                                            )
-                                            : (
-                                                <span className="text-slate-400">
-                                                    No battery
-                                                </span>
-                                            )}
-
-                                        
+                                        {d.battery?.remainingPercent != null ? (
+                                            <span>{d.battery.remainingPercent}%</span>
+                                        ) : (
+                                            <span className="text-slate-400">No battery</span>
+                                        )}
                                     </div>
 
                                     <div className="flex items-center gap-1 justify-end">
                                         <Gauge className="w-3 h-3" />
                                         {typeof d.motion.speedMps === 'number'
                                             ? d.motion.speedMps.toFixed(1)
-                                            : '-'}{''}
+                                            : '-'}
+                                        {''}
                                         m/s
                                     </div>
 
                                     <div className="flex items-center gap-1 justify-end">
                                         <Layers className="w-3 h-3" />
-                                        {typeof d.position.relativeAltitudeM ===
-                                        'number'
-                                            ? d.position.relativeAltitudeM.toFixed(
-                                                  1
-                                              )
-                                            : d.position.altitudeM?.toFixed(
-                                                  1
-                                              ) ?? '-'}{' '}
+                                        {typeof d.position.relativeAltitudeM === 'number'
+                                            ? d.position.relativeAltitudeM.toFixed(1)
+                                            : (d.position.altitudeM?.toFixed(1) ?? '-')}{' '}
                                         m
                                     </div>
                                 </div>
@@ -165,60 +138,28 @@ export function DroneListContent({
                                     size="sm"
                                     variant="outline"
                                     className="flex-1"
-                                    onClick={e => {
-                                        e.stopPropagation();
-                                        if (
-                                            d.position.lat == null ||
-                                            d.position.lng == null
-                                        )
-                                            return;
-
-                                        mapRef.current?.flyTo({
-                                            center: [
-                                                d.position.lng,
-                                                d.position.lat,
-                                            ],
-                                            zoom: 16,
-                                        });
-                                    }}
+                                    disabled={!isConnected}
+                                    onClick={() => onFocusDrone(d.droneId)}
                                 >
                                     <MapPin className="w-4 h-4 mr-1" />
                                     {/* vi tri, localtion, handle trigger, handle disabled */}
                                     Vị trí
                                 </Button>
 
-                                <TooltipProvider>
-                                    <UITooltip>
-                                        <TooltipTrigger asChild>
-                                            <span className="flex-1">
-                                                <Button
-                                                    size="sm"
-                                                    className="w-full"
-                                                    disabled={!isConnected}
-                                                    onClick={e => {
-                                                        e.stopPropagation();
-                                                        if (!isConnected)
-                                                            return;
-                                                        setSelectedDroneId(
-                                                            d.droneId
-                                                        );
-                                                        setIsVideoModalOpen(
-                                                            true
-                                                        );
-                                                    }}
-                                                >
-                                                    Chi tiết
-                                                </Button>
-                                            </span>
-                                        </TooltipTrigger>
-
-                                        {!isConnected && (
-                                            <TooltipContent>
-                                                WebSocket chưa kết nối
-                                            </TooltipContent>
-                                        )}
-                                    </UITooltip>
-                                </TooltipProvider>
+                                <span className="flex-1">
+                                    <Button
+                                        size="sm"
+                                        className="w-full"
+                                        disabled={!isConnected}
+                                        onClick={e => {
+                                            navigate(`/monitoring/single/${d.droneId}`);
+                                            // not handle yet
+                                            // should go to another route
+                                        }}
+                                    >
+                                        Chi tiết
+                                    </Button>
+                                </span>
                             </div>
                         </CardContent>
                     </Card>
@@ -226,9 +167,7 @@ export function DroneListContent({
             })}
 
             {activeDrones.length === 0 && (
-                <div className="text-sm text-slate-500 text-center py-6">
-                    No drones connected
-                </div>
+                <div className="text-sm text-slate-500 text-center py-6">No drones connected</div>
             )}
         </div>
     );

@@ -2,9 +2,7 @@
 import mapboxgl from 'mapbox-gl';
 import { NoFlyZoneClient, type NoFlyZone } from '@/api/models/no-fly-zone/noFlyZoneClient';
 
-function parseZoneToFeature(
-    zone: NoFlyZone
-): GeoJSON.Feature | null {
+function parseZoneToFeature(zone: NoFlyZone): GeoJSON.Feature | null {
     let geom: GeoJSON.Geometry;
 
     if (typeof zone.geometry === 'string') {
@@ -31,10 +29,7 @@ function parseZoneToFeature(
     };
 }
 
-export function renderNoFlyZones(
-    map: mapboxgl.Map,
-    zones: NoFlyZone[],
-) {
+export function renderNoFlyZones(map: mapboxgl.Map, zones: NoFlyZone[]) {
     if (!map) return;
 
     const features: GeoJSON.Feature[] = zones

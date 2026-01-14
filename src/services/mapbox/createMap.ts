@@ -1,5 +1,8 @@
 import mapboxgl, { Map } from 'mapbox-gl';
 import type LngLatLike from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
 /* =========================
    Config
@@ -75,10 +78,8 @@ export function createAppMap({
     map.on('load', () => {
         registerSources(map);
         registerLayers(map);
-        
-        onReady?.(map);
 
-        
+        onReady?.(map);
     });
 
     return map;

@@ -30,7 +30,7 @@ function App() {
         //             ))}
         //         </ul>
         //     </div>
-            <Suspense fallback={<div>Loading...</div>}>{routing}</Suspense>
+        <Suspense fallback={<div>Loading...</div>}>{routing}</Suspense>
         // </div>
         // </DashboardLayout>
     );

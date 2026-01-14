@@ -23,21 +23,8 @@ export function DroneListTab({
     setIsVideoModalOpen,
 }: DroneListTabProps) {
     return (
-        <TabsContent value={value} className="space-y-2">
-            <div className="max-h-[400px] overflow-auto space-y-2">
-                <DroneListContent
-                    selectedDroneId={selectedDroneId}
-                    setSelectedDroneId={setSelectedDroneId}
-                    mapRef={mapRef}
-                    isDroneActive={isDroneActive}
-                    isConnected={isConnected}
-                    setIsVideoModalOpen={setIsVideoModalOpen}
-                />
-
-                {visibleDrones.length === 0 && (
-                    <div className="text-sm text-slate-500 text-center py-4">No drones found</div>
-                )}
-            </div>
+        <TabsContent value={value} className="space-y-3">
+            <DroneListContent mapRef={mapRef} />
         </TabsContent>
     );
 }

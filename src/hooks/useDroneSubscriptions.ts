@@ -16,13 +16,8 @@ export const useDroneSubscriptions = () => {
             const handler = (msg: unknown) => {
                 if (!DroneTelemetryMapper.isValid(msg)) return;
 
-                const activeDroneState = DroneTelemetryMapper.toActiveDroneState(msg)
-                useActiveDroneStore
-                    .getState()
-                    .upsertDrone(
-                        droneId,
-                        activeDroneState
-                    );
+                const activeDroneState = DroneTelemetryMapper.toActiveDroneState(msg);
+                useActiveDroneStore.getState().upsertDrone(droneId, activeDroneState);
             };
 
             subscribe(topic, handler);

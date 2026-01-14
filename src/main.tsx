@@ -14,7 +14,8 @@ createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <BrowserRouter>
             <QueryClientProvider client={queryClient}>
-                <WebSocketProvider url={import.meta.env.VITE_WS_URL}>
+                {/* <WebSocketProvider url={import.meta.env.VITE_WS_URL}> */}
+                <WebSocketProvider url={import.meta.env.VITE_API_WEBSOCKET}>
                     <Toaster richColors position="top-right" />
 
                     <App />

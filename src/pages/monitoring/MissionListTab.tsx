@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Play, Square, Plane, Layers, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const FAKE_MISSIONS: Mission[] = [
     {
@@ -65,7 +66,27 @@ export function MissionListTab({
     startObservingMission,
     stopObservingMission,
 }: MissionListTabProps) {
-    const displayMissions = missions && missions.length > 0 ? missions : FAKE_MISSIONS;
+    // const displayMissions = missions && missions.length > 0 ? missions : FAKE_MISSIONS;
+    // console.log(mis)
+
+    const [displayMissions, setMissions] = useState<Mission[]>([]);
+
+    function loadMissions() {
+        MissionClient.findAllForMonitoring()
+            .then(ms => {
+                const activeMissions = ms.filter(
+                    m => m.status !== 'completed' && m.status !== 'failed',
+                );
+
+                // console.log(activeMissions)
+                setMissions(activeMissions);
+            })
+            .catch(err => console.error('Failed to load missions', err));
+    }
+
+    useEffect(() => {
+        loadMissions();
+    }, []);
 
     return (
         <TabsContent value={value} className="space-y-2">
@@ -98,7 +119,7 @@ export function MissionListTab({
                                         <div className="flex items-center gap-2 text-xs">
                                             <Badge
                                                 variant="outline"
-                                                className="flex items-center gap-1"
+                                                className="flex items-center gap-3"
                                             >
                                                 <Layers className="w-3 h-3" />
                                                 {droneCount} drone
@@ -143,7 +164,7 @@ export function MissionListTab({
                                 </div>
 
                                 {/* Active mission → show drones progress */}
-                                {isActive && (
+                                {/* {isActive && (
                                     <div className="space-y-2 pt-2 border-t">
                                         <div className="text-xs text-slate-500 flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
@@ -178,7 +199,7 @@ export function MissionListTab({
                                             </div>
                                         )}
                                     </div>
-                                )}
+                                )} */}
                             </CardContent>
                         </Card>
                     );
