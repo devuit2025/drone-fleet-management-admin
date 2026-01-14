@@ -46,7 +46,7 @@ export const useActiveDroneStore = create<ActiveDroneStore>(set => ({
                         name: d.name,
                     };
 
-                    if (droneId == import.meta.env.VITE_DJI_MINI_3_PRO_ID) {
+                    if (droneId == import.meta.env.VITE_DJI_MINI_3_PRO_ID_STR) {
                         // newDrones[droneId].connected = true // static
                     }
                 }

@@ -46,21 +46,20 @@ export function VideoStreamPlayer({
      * INIT VIDEO + JMUXER
      * =============================*/
     useEffect(() => {
-        const droneId = import.meta.env.VITE_DJI_MINI_3_PRO_ID;
         const payload = {
-            droneId,
+            droneId: import.meta.env.VITE_DJI_MINI_3_PRO_ID,
             command: 'start_video_stream',
             timestamp: new Date().toISOString(),
         };
 
-        console.log('start video:', payload)
+        console.log('start video:', payload);
 
         const message = {
             action: 'drone:command',
             payload,
         };
 
-        // send(message);
+        send(message);
 
         if (!videoRef.current || jmuxerRef.current) return;
 
@@ -108,12 +107,30 @@ export function VideoStreamPlayer({
         });
 
         return () => {
+            stopVideoStream();
             jmuxerRef.current?.destroy?.();
             jmuxerRef.current = null;
         };
     }, [autoPlay, muted, fps]);
 
-    /* =============================
+    function stopVideoStream() {
+        const payload = {
+            droneId: 1,
+            command: 'stop_video_stream',
+            timestamp: new Date().toISOString(),
+        };
+
+        const message = {
+            action: 'drone:command',
+            payload,
+        };
+
+        send(message);
+        console.log(`Sent STOP VIDEO STREAM command for drone `, 'sent');
+    }
+
+    /* ============================
+    =
      * SOCKET → FRAME HANDLER
      * =============================*/
     useEffect(() => {

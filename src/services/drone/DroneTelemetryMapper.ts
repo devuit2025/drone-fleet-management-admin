@@ -49,24 +49,40 @@ export class DroneTelemetryMapper {
     }
 
     static toActiveDroneStateFromDJIMini3Pro(msg: any): Partial<ActiveDroneState> {
-//         {
-//     "latitude": 10.76315,
-//     "longitude": 106.66542,
-//     "altitude": 48.6,
-//     "heading": 132.4,
-//     "speed": 11.8,
-//     "battery": 67
-// }
+        //         {
+        //     "latitude": 10.76315,
+        //     "longitude": 106.66542,
+        //     "altitude": 48.6,
+        //     "heading": 132.4,
+        //     "speed": 11.8,
+        //     "battery": 67
+        // }
+
+        // {
+        //     "timestamp": "14:34:42.708",
+        //     "latitude": 0,
+        //     "longitude": 0,
+        //     "gps_valid": false,
+        //     "altitude_m": 0,
+        //     "battery_percent": 66,
+        //     "speed_mps": 0,
+        //     "heading_deg": 176,
+        //     "is_flying": false,
+        //     "flight_mode": "P-GPS",
+        //     "gps_signal_level": "LEVEL_0",
+        //     "satellite_count": 6
+        // }
+
         return {
             position: {
                 lat: msg.latitude,
                 lng: msg.longitude,
-                altitudeM: msg?.altitude,
-                relativeAltitudeM: msg.altitude ?? null,
+                altitudeM: msg?.altitude_m,
+                relativeAltitudeM: msg.altitude_m ?? null,
             },
             motion: {
-                speedMps: msg.speed ?? null,
-                headingDeg: msg.heading ?? null,
+                speedMps: msg.speed_mps ?? null,
+                headingDeg: msg.heading_deg ?? null,
                 velocity: {
                     vx: msg.extra?.vx ?? null,
                     vy: msg.extra?.vy ?? null,
@@ -74,8 +90,8 @@ export class DroneTelemetryMapper {
                 },
             },
             battery: {
-                remainingPercent: msg.battery ?? null
-            }
+                remainingPercent: msg.battery_percent ?? null,
+            },
         };
     }
 

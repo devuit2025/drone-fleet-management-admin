@@ -16,7 +16,7 @@ export default function SingleDrone() {
     //     useEffect(() => {
     //         if (!mapRef.current) return;
 
-    //         if (droneId == import.meta.env.VITE_DJI_MINI_3_PRO_ID) {
+    //         if (droneId == import.meta.env.VITE_DJI_MINI_3_PRO_ID_STR) {
     //             return;
     //         }
 
@@ -30,7 +30,7 @@ export default function SingleDrone() {
 
     return (
         <div className="fixed inset-0 ">
-            {droneId == import.meta.env.VITE_DJI_MINI_3_PRO_ID ? (
+            {droneId == import.meta.env.VITE_DJI_MINI_3_PRO_ID_STR ? (
                 <SinglePageDJIMini3Pro />
             ) : (
                 <>

@@ -11,7 +11,6 @@ function App() {
     const routing = useRoutes(routes);
     const drones = useActiveDroneStore(s => s.drones);
     // useDroneSubscriptions();
-  
 
     const { subscribe, unsubscribe, send } = useWebSocket();
     useEffect(() => {
@@ -24,33 +23,34 @@ function App() {
 
     const handleUpdateTelemetry = useCallback(
         (data: { droneId: string; telemetry: any } | any) => {
-            console.log("Update telemetry: ", data.telemetry)
+            console.log('Update telemetry: ', data.telemetry);
             const map = DroneTelemetryMapper.toActiveDroneStateFromDJIMini3Pro(data.telemetry);
             useActiveDroneStore.getState().upsertDrone(data.droneId, map);
-        }, [drones],
+        },
+        [drones],
     );
 
-    // const testSend = () => {
-    //     const message = {
-    //         action: 'telemetry:data',
-    //         payload: {
-    //             droneId: import.meta.env.VITE_DJI_MINI_3_PRO_ID,
-    //             telemetry: {
-    //                 latitude: 10.76315, // ~60–70m north of center
-    //                 longitude: 106.66542, // ~70m east of center
-    //                 altitude: 48.6, // meters AGL
-    //                 heading: 132.4, // degrees (SE direction)
-    //                 speed: 11.8, // m/s (~42 km/h)
-    //                 battery: 67, // percent
-    //             },
-    //         },
-    //     };
-    //     send(message);
-    // };
+    const testSend = () => {
+        const message = {
+            action: 'telemetry:data',
+            payload: {
+                droneId: import.meta.env.VITE_DJI_MINI_3_PRO_ID_STR,
+                telemetry: {
+                    latitude: 10.76315, // ~60–70m north of center
+                    longitude: 106.66542, // ~70m east of center
+                    altitude_m: 48.6, // meters AGL
+                    heading_deg: 132.4, // degrees (SE direction)
+                    speed_mps: 11.8, // m/s (~42 km/h)
+                    battery_percent: 67, // percent
+                },
+            },
+        };
+        send(message);
+    };
     // setInterval(() => {
     //     testSend();
-    // }, 1000);
-    
+    // }, 10000);
+
     const { activeDroneInit } = useActiveDroneStore();
 
     useEffect(() => {
